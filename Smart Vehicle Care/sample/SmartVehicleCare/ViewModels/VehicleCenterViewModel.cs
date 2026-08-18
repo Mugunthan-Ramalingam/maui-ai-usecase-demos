@@ -1,11 +1,14 @@
+using Microsoft.Maui.Graphics;
+using Newtonsoft.Json.Linq;
+using SmartVehicleCare.Models;
+using SmartVehicleCare.Services;
+using SmartVehicleCare.ViewModels;
+using Syncfusion.Maui.Maps;
+using Syncfusion.Maui.Scheduler;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
-using Microsoft.Maui.Graphics;
-using Newtonsoft.Json.Linq;
-using Syncfusion.Maui.Maps;
-using Syncfusion.Maui.Scheduler;
 using SmartVehicleCare.Models;
 using SmartVehicleCare.Services;
 
@@ -15,8 +18,8 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
 {
     public VehicleCenterViewModel()
     {
-        SetDayViewCommand   = new Command(() => CurrentSchedulerView = SchedulerView.Day);
-        SetWeekViewCommand  = new Command(() => CurrentSchedulerView = SchedulerView.Week);
+        SetDayViewCommand = new Command(() => CurrentSchedulerView = SchedulerView.Day);
+        SetWeekViewCommand = new Command(() => CurrentSchedulerView = SchedulerView.Week);
         SetMonthViewCommand = new Command(() => CurrentSchedulerView = SchedulerView.Month);
 
         AddScheduleCommand = new Command(() =>
@@ -156,23 +159,23 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
             IsAddFuelBottomSheetVisible = false;
         };
 
-        SelectEditStatusCommand  = new Command<string>(s => EditServiceStatus = s);
-        SelectEditTypeCommand    = new Command<string>(t => EditServiceType   = t);
-        SelectEditFuelTypeCommand = new Command<string>(t => EditFuelType     = t);
+        SelectEditStatusCommand = new Command<string>(s => EditServiceStatus = s);
+        SelectEditTypeCommand = new Command<string>(t => EditServiceType = t);
+        SelectEditFuelTypeCommand = new Command<string>(t => EditFuelType = t);
 
         // Edit service
         EditServiceCommand = new Command<ServiceRecord>(record =>
         {
             if (record == null) return;
             _editingServiceRecord = record;
-            EditServiceDate     = record.ServiceDate;
-            EditServiceType     = record.ServiceType;
-            EditServiceAmount   = record.Amount.Replace("\u20b9", "").Replace(",", "").Trim();
+            EditServiceDate = record.ServiceDate;
+            EditServiceType = record.ServiceType;
+            EditServiceAmount = record.Amount.Replace("\u20b9", "").Replace(",", "").Trim();
             EditServiceWorkshop = record.Workshop;
-            EditServiceMileage  = record.Mileage.Replace(" km", "").Trim();
-            EditServiceNotes    = record.Notes;
-            EditServiceStatus   = record.Status;
-            IsServiceLogPopupVisible   = false;
+            EditServiceMileage = record.Mileage.Replace(" km", "").Trim();
+            EditServiceNotes = record.Notes;
+            EditServiceStatus = record.Status;
+            IsServiceLogPopupVisible = false;
             IsEditServiceDrawerVisible = true;
         });
 
@@ -181,14 +184,14 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
             if (_editingServiceRecord == null) return;
             _editingServiceRecord.ServiceDate = EditServiceDate;
             _editingServiceRecord.ServiceType = EditServiceType;
-            _editingServiceRecord.Amount      = $"\u20b9{EditServiceAmount}";
-            _editingServiceRecord.Workshop    = EditServiceWorkshop;
-            _editingServiceRecord.Mileage     = string.IsNullOrWhiteSpace(EditServiceMileage) ? "\u2014"
+            _editingServiceRecord.Amount = $"\u20b9{EditServiceAmount}";
+            _editingServiceRecord.Workshop = EditServiceWorkshop;
+            _editingServiceRecord.Mileage = string.IsNullOrWhiteSpace(EditServiceMileage) ? "\u2014"
                                                 : EditServiceMileage.Contains("km") ? EditServiceMileage : $"{EditServiceMileage} km";
-            _editingServiceRecord.Notes       = EditServiceNotes;
-            _editingServiceRecord.Status      = EditServiceStatus;
+            _editingServiceRecord.Notes = EditServiceNotes;
+            _editingServiceRecord.Status = EditServiceStatus;
             ComputeStatusColors(EditServiceStatus, out var sc, out var sbg);
-            _editingServiceRecord.StatusColor   = sc;
+            _editingServiceRecord.StatusColor = sc;
             _editingServiceRecord.StatusBgColor = sbg;
             // Re-sort by date and force full collection refresh
             var sorted = ServiceHistory.OrderByDescending(r => r.ServiceDate).ToList();
@@ -223,14 +226,14 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         EditFuelCommand = new Command<FuelEntry>(entry =>
         {
             if (entry == null) return;
-            _editingFuelEntry    = entry;
-            EditFuelDate         = entry.FuelDate;
-            EditFuelType         = entry.FuelType;
-            EditFuelStation      = entry.Station;
-            EditFuelLitres       = entry.LitresFilled.ToString("N1");
+            _editingFuelEntry = entry;
+            EditFuelDate = entry.FuelDate;
+            EditFuelType = entry.FuelType;
+            EditFuelStation = entry.Station;
+            EditFuelLitres = entry.LitresFilled.ToString("N1");
             EditFuelCostPerLitre = entry.CostPerLitre.ToString("N2");
-            EditFuelOdometer     = entry.OdometerReading > 0 ? entry.OdometerReading.ToString() : string.Empty;
-            EditFuelIsFullTank   = entry.IsFullTank;
+            EditFuelOdometer = entry.OdometerReading > 0 ? entry.OdometerReading.ToString() : string.Empty;
+            EditFuelIsFullTank = entry.IsFullTank;
             IsFuelSpendingPopupVisible = false;
             IsEditFuelDrawerVisible = true;
         });
@@ -240,10 +243,10 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
             if (_editingFuelEntry == null) return;
             _editingFuelEntry.FuelDate = EditFuelDate;
             _editingFuelEntry.FuelType = EditFuelType;
-            _editingFuelEntry.Station  = EditFuelStation;
-            if (double.TryParse(EditFuelLitres, out var lit))       _editingFuelEntry.LitresFilled    = lit;
-            if (double.TryParse(EditFuelCostPerLitre, out var cpl)) _editingFuelEntry.CostPerLitre    = cpl;
-            if (int.TryParse(EditFuelOdometer, out var odo))        _editingFuelEntry.OdometerReading = odo;
+            _editingFuelEntry.Station = EditFuelStation;
+            if (double.TryParse(EditFuelLitres, out var lit)) _editingFuelEntry.LitresFilled = lit;
+            if (double.TryParse(EditFuelCostPerLitre, out var cpl)) _editingFuelEntry.CostPerLitre = cpl;
+            if (int.TryParse(EditFuelOdometer, out var odo)) _editingFuelEntry.OdometerReading = odo;
             _editingFuelEntry.IsFullTank = EditFuelIsFullTank;
             // Re-sort by date and force full collection refresh
             var sorted = FuelEntries.OrderByDescending(f => f.FuelDate).ToList();
@@ -321,7 +324,7 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
 
     // ── Page header ───────────────────────────────────────────────────────────
 
-    public string PageTitle    => "Vehicle Center";
+    public string PageTitle => "Vehicle Center";
     public string PageSubtitle => "Manage your vehicle from one workspace.";
 
     private DateTime _currentMonthDisplayDate = DateTime.Today;
@@ -349,7 +352,7 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         }
     }
 
-    public string SelectedVehicleName         => SelectedVehicle?.MakeModel          ?? "—";
+    public string SelectedVehicleName => SelectedVehicle?.MakeModel ?? "—";
     public string SelectedVehicleRegistration => SelectedVehicle?.RegistrationNumber ?? "—";
 
     // ── Maintenance tab — KPI cards (dynamic) ─────────────────────────────────
@@ -363,8 +366,8 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
             if (ServiceHistory.Count == 0) return "No records";
             var latest = ServiceHistory.OrderByDescending(s => s.ServiceDate).First();
             var diff = DateTime.Today - latest.ServiceDate;
-            if (diff.TotalDays < 1)  return "Today";
-            if (diff.TotalDays < 7)  return $"{(int)diff.TotalDays} days ago";
+            if (diff.TotalDays < 1) return "Today";
+            if (diff.TotalDays < 7) return $"{(int)diff.TotalDays} days ago";
             if (diff.TotalDays < 31) return $"{(int)(diff.TotalDays / 7)} weeks ago";
             return $"{(int)(diff.TotalDays / 30)} months ago";
         }
@@ -386,7 +389,7 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         }
     }
 
-    public string NextServiceDays  => ComputeNextServiceDaysText();
+    public string NextServiceDays => ComputeNextServiceDaysText();
     public string NextServiceDetail => ComputeNextServiceDetail();
 
     private string ComputeNextServiceDaysText()
@@ -413,9 +416,9 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
 
     // ── Maintenance tab — Health Analysis ─────────────────────────────────────
 
-    public int    OverallHealthValue    => 88;
-    public string OverallHealthText     => "88%";
-    public string HealthConditionLabel  => "Vehicle is in Good Condition";
+    public int OverallHealthValue => 88;
+    public string OverallHealthText => "88%";
+    public string HealthConditionLabel => "Vehicle is in Good Condition";
     public string HealthConditionDetail =>
         "Regular maintenance is keeping your vehicle running smoothly. Address the AI insights to maintain this score.";
 
@@ -458,7 +461,7 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
     }
 
     public double ServiceLogPopupHeight => Math.Clamp(ServiceLogPopupRows.Count * 42 + 140, 280, 640);
-    public double FuelPopupHeight       => Math.Clamp(FuelPopupRows.Count * 42 + 140, 280, 640);
+    public double FuelPopupHeight => Math.Clamp(FuelPopupRows.Count * 42 + 140, 280, 640);
 
     private bool _isServiceLogPopupVisible;
     private bool _isFuelSpendingPopupVisible;
@@ -470,28 +473,28 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
 
     // Per-vehicle storage (vehicle.Id → list)
     private readonly Dictionary<int, List<ServiceRecord>> _serviceByVehicle = new();
-    private readonly Dictionary<int, List<FuelEntry>>    _fuelByVehicle    = new();
+    private readonly Dictionary<int, List<FuelEntry>> _fuelByVehicle = new();
 
     public bool HasServiceHistory => ServiceHistory.Count > 0;
-    public bool NoServiceHistory  => ServiceHistory.Count == 0;
-    public bool HasFuelEntries    => FuelEntries.Count > 0;
-    public bool NoFuelEntries     => FuelEntries.Count == 0;
+    public bool NoServiceHistory => ServiceHistory.Count == 0;
+    public bool HasFuelEntries => FuelEntries.Count > 0;
+    public bool NoFuelEntries => FuelEntries.Count == 0;
 
     // ── Maintenance tab — Expense chart ──────────────────────────────────
 
     public ObservableCollection<ExpenseDataPoint> ExpenseHistory { get; } = new();
 
     private int _expenseDurationMonths = 3;
-    public bool IsExpense3MSelected  => _expenseDurationMonths == 3;
-    public bool IsExpense6MSelected  => _expenseDurationMonths == 6;
-    public bool IsExpense1YSelected  => _expenseDurationMonths == 12;
-    public bool IsExpense3YSelected  => _expenseDurationMonths == 36;
-    public bool IsExpense5YSelected  => _expenseDurationMonths == 60;
+    public bool IsExpense3MSelected => _expenseDurationMonths == 3;
+    public bool IsExpense6MSelected => _expenseDurationMonths == 6;
+    public bool IsExpense1YSelected => _expenseDurationMonths == 12;
+    public bool IsExpense3YSelected => _expenseDurationMonths == 36;
+    public bool IsExpense5YSelected => _expenseDurationMonths == 60;
     public ICommand SelectExpenseDurationCommand { get; private set; } = default!;
     // Chart buckets are pre-filled with zero for every month in range, so use the underlying
     // service/fuel records (not ExpenseHistory.Count) to detect a true "no data" state.
     public bool HasExpenseHistory => ServiceHistory.Count > 0 || FuelEntries.Count > 0;
-    public bool NoExpenseHistory  => !HasExpenseHistory;
+    public bool NoExpenseHistory => !HasExpenseHistory;
 
     // ── Maintenance tab — Health radar chart ────────────────────────────
 
@@ -507,15 +510,15 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
     private double _userLatitude = DefaultLatitude;
     private double _userLongitude = DefaultLongitude;
     private double _userMapZoom = 13;
-    public double UserLatitude  { get => _userLatitude;  set => SetProperty(ref _userLatitude, value); }
+    public double UserLatitude { get => _userLatitude; set => SetProperty(ref _userLatitude, value); }
     public double UserLongitude { get => _userLongitude; set => SetProperty(ref _userLongitude, value); }
-    public double UserMapZoom   { get => _userMapZoom;   set => SetProperty(ref _userMapZoom, value); }
+    public double UserMapZoom { get => _userMapZoom; set => SetProperty(ref _userMapZoom, value); }
 
     public ObservableCollection<NearbyNetworkItem> NearbyNetworkItems { get; } = new();
-    public ObservableCollection<MapMarker>          MapMarkers         { get; } = new();
+    public ObservableCollection<MapMarker> MapMarkers { get; } = new();
     public bool IsServiceNetworkSelected => _nearbyMapMode == "Service";
-    public bool IsFuelNetworkSelected    => _nearbyMapMode == "Fuel";
-    public string NearbyMapTitle   => IsServiceNetworkSelected ? "Service Centers" : "Fuel Stations";
+    public bool IsFuelNetworkSelected => _nearbyMapMode == "Fuel";
+    public string NearbyMapTitle => IsServiceNetworkSelected ? "Service Centers" : "Fuel Stations";
     public string NearbyMapSummary => "Within 10 km of your current location";
 
     private bool _isNearbyEmpty;
@@ -544,7 +547,7 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         set => SetProperty(ref _isAddServiceBottomSheetVisible, value);
     }
 
-    public ICommand AddServiceCommand      { get; private set; } = default!;
+    public ICommand AddServiceCommand { get; private set; } = default!;
     public ICommand CloseAddServiceCommand { get; private set; } = default!;
 
     // ── Add Fuel drawer ──────────────────────────────────────────────────
@@ -564,7 +567,7 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         set => SetProperty(ref _isAddFuelBottomSheetVisible, value);
     }
 
-    public ICommand AddFuelCommand      { get; private set; } = default!;
+    public ICommand AddFuelCommand { get; private set; } = default!;
     public ICommand CloseAddFuelCommand { get; private set; } = default!;
 
     // ── Edit / Delete Service ─────────────────────────────────────────────────
@@ -593,12 +596,12 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
             }
         }
     }
-    public bool IsEditOilChangeSelected         => EditServiceType == "Oil Change";
-    public bool IsEditTyreRotationSelected      => EditServiceType == "Tyre Rotation";
-    public bool IsEditBrakeServiceSelected      => EditServiceType == "Brake Service";
-    public bool IsEditElectricalSelected        => EditServiceType == "Electrical";
+    public bool IsEditOilChangeSelected => EditServiceType == "Oil Change";
+    public bool IsEditTyreRotationSelected => EditServiceType == "Tyre Rotation";
+    public bool IsEditBrakeServiceSelected => EditServiceType == "Brake Service";
+    public bool IsEditElectricalSelected => EditServiceType == "Electrical";
     public bool IsEditGeneralInspectionSelected => EditServiceType == "General Inspection";
-    public bool IsEditCustomTypeSelected        => EditServiceType is not ("Oil Change" or "Tyre Rotation" or "Brake Service" or "Electrical" or "General Inspection");
+    public bool IsEditCustomTypeSelected => EditServiceType is not ("Oil Change" or "Tyre Rotation" or "Brake Service" or "Electrical" or "General Inspection");
     private string _editServiceAmount = string.Empty;
     public string EditServiceAmount { get => _editServiceAmount; set => SetProperty(ref _editServiceAmount, value); }
     private string _editServiceWorkshop = string.Empty;
@@ -629,15 +632,15 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         }
     }
     public bool IsEditStatusCompleted => EditServiceStatus == "Completed";
-    public bool IsEditStatusPending   => EditServiceStatus == "Pending";
+    public bool IsEditStatusPending => EditServiceStatus == "Pending";
     public bool IsEditStatusScheduled => EditServiceStatus == "Scheduled";
 
-    public ICommand EditServiceCommand        { get; private set; } = default!;
-    public ICommand SaveServiceCommand        { get; private set; } = default!;
-    public ICommand CancelEditServiceCommand  { get; private set; } = default!;
-    public ICommand DeleteServiceCommand      { get; private set; } = default!;
-    public ICommand SelectEditStatusCommand   { get; private set; } = default!;
-    public ICommand SelectEditTypeCommand     { get; private set; } = default!;
+    public ICommand EditServiceCommand { get; private set; } = default!;
+    public ICommand SaveServiceCommand { get; private set; } = default!;
+    public ICommand CancelEditServiceCommand { get; private set; } = default!;
+    public ICommand DeleteServiceCommand { get; private set; } = default!;
+    public ICommand SelectEditStatusCommand { get; private set; } = default!;
+    public ICommand SelectEditTypeCommand { get; private set; } = default!;
     public ICommand SelectEditFuelTypeCommand { get; private set; } = default!;
 
     // ── Edit / Delete Fuel ────────────────────────────────────────────────────
@@ -664,9 +667,9 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
             }
         }
     }
-    public bool IsEditFuelPetrolSelected   => EditFuelType == "Petrol";
-    public bool IsEditFuelDieselSelected   => EditFuelType == "Diesel";
-    public bool IsEditFuelCNGSelected      => EditFuelType == "CNG";
+    public bool IsEditFuelPetrolSelected => EditFuelType == "Petrol";
+    public bool IsEditFuelDieselSelected => EditFuelType == "Diesel";
+    public bool IsEditFuelCNGSelected => EditFuelType == "CNG";
     public bool IsEditFuelElectricSelected => EditFuelType == "Electric";
     private string _editFuelStation = string.Empty;
     public string EditFuelStation { get => _editFuelStation; set => SetProperty(ref _editFuelStation, value); }
@@ -703,10 +706,10 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
     private bool _editFuelIsFullTank = true;
     public bool EditFuelIsFullTank { get => _editFuelIsFullTank; set => SetProperty(ref _editFuelIsFullTank, value); }
 
-    public ICommand EditFuelCommand       { get; private set; } = default!;
-    public ICommand SaveFuelCommand       { get; private set; } = default!;
+    public ICommand EditFuelCommand { get; private set; } = default!;
+    public ICommand SaveFuelCommand { get; private set; } = default!;
     public ICommand CancelEditFuelCommand { get; private set; } = default!;
-    public ICommand DeleteFuelCommand     { get; private set; } = default!;
+    public ICommand DeleteFuelCommand { get; private set; } = default!;
 
     // Search
     private string _searchText = string.Empty;
@@ -733,16 +736,16 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         set => SetProperty(ref _isAddScheduleBottomSheetVisible, value);
     }
 
-    public ICommand AddScheduleCommand      { get; }   // initialized in constructor
+    public ICommand AddScheduleCommand { get; }   // initialized in constructor
     public ICommand CloseAddScheduleCommand { get; }   // initialized in constructor
 
 
     // ── Schedule tab ─────────────────────────────────────────────────────────
 
     public ObservableCollection<SchedulerAppointment> ServiceAppointments { get; } = new();
-    public ObservableCollection<UpcomingTask>          UpcomingTasks       { get; } = new();
-    public ObservableCollection<ReminderItem>          Reminders           { get; } = new();
-    public ObservableCollection<ScheduleAlert>         ScheduleAlerts      { get; } = new();
+    public ObservableCollection<UpcomingTask> UpcomingTasks { get; } = new();
+    public ObservableCollection<ReminderItem> Reminders { get; } = new();
+    public ObservableCollection<ScheduleAlert> ScheduleAlerts { get; } = new();
 
     public string PredictiveServiceDate
     {
@@ -819,12 +822,12 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         }
     }
 
-    public bool IsDayViewActive   => CurrentSchedulerView == SchedulerView.Day;
-    public bool IsWeekViewActive  => CurrentSchedulerView == SchedulerView.Week;
+    public bool IsDayViewActive => CurrentSchedulerView == SchedulerView.Day;
+    public bool IsWeekViewActive => CurrentSchedulerView == SchedulerView.Week;
     public bool IsMonthViewActive => CurrentSchedulerView == SchedulerView.Month;
 
-    public ICommand SetDayViewCommand   { get; }
-    public ICommand SetWeekViewCommand  { get; }
+    public ICommand SetDayViewCommand { get; }
+    public ICommand SetWeekViewCommand { get; }
     public ICommand SetMonthViewCommand { get; }
 
     public DateTime CalendarSelectedDate { get; } = DateTime.Today;
@@ -844,6 +847,29 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(SelectedVehicle));
                 RefreshVehicleData();
             }
+        };
+
+        // Keep local Vehicles in sync when vehicles are added/removed/cleared in VehicleDataService
+        VehicleDataService.Instance.Vehicles.CollectionChanged += (_, e) =>
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset)
+                {
+                    Vehicles.Clear();
+                    return;
+                }
+                if (e.NewItems != null)
+                    foreach (Vehicle v in e.NewItems)
+                        if (!Vehicles.Any(x => x.Id == v.Id))
+                            Vehicles.Add(v);
+                if (e.OldItems != null)
+                    foreach (Vehicle v in e.OldItems)
+                    {
+                        var toRemove = Vehicles.FirstOrDefault(x => x.Id == v.Id);
+                        if (toRemove != null) Vehicles.Remove(toRemove);
+                    }
+            });
         };
 
         // Prefer vehicles from VehicleDataService; only use demo fallback in Demo mode.
@@ -922,7 +948,7 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
 
         var odometer = vehicle.OdometerReading;
         var lastServiceDate = services.FirstOrDefault()?.ServiceDate.ToString("dd MMM yyyy") ?? "unknown";
-        var lastFuelDate    = fuels.FirstOrDefault()?.FuelDate.ToString("dd MMM yyyy")     ?? "unknown";
+        var lastFuelDate = fuels.FirstOrDefault()?.FuelDate.ToString("dd MMM yyyy") ?? "unknown";
         var avgFuelCost = fuels.Any() ? fuels.Average(f => f.CostPerLitre) : 0;
         var prompt = $"""
 Vehicle: {vehicle.Make} {vehicle.Model} {vehicle.Year}, odometer {odometer} km
@@ -978,10 +1004,10 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
 
     private void InitHealthMetrics()
     {
-        HealthMetrics.Add(new HealthMetric { Label = "Engine",       Value = 95, BarColor = Color.FromArgb("#3B5BDB") });
-        HealthMetrics.Add(new HealthMetric { Label = "Battery",      Value = 88, BarColor = Color.FromArgb("#3B5BDB") });
+        HealthMetrics.Add(new HealthMetric { Label = "Engine", Value = 95, BarColor = Color.FromArgb("#3B5BDB") });
+        HealthMetrics.Add(new HealthMetric { Label = "Battery", Value = 88, BarColor = Color.FromArgb("#3B5BDB") });
         HealthMetrics.Add(new HealthMetric { Label = "Brake System", Value = 76, BarColor = Color.FromArgb("#EF4444"), HasWarning = true });
-        HealthMetrics.Add(new HealthMetric { Label = "Cooling",      Value = 90, BarColor = Color.FromArgb("#3B5BDB") });
+        HealthMetrics.Add(new HealthMetric { Label = "Cooling", Value = 90, BarColor = Color.FromArgb("#3B5BDB") });
         HealthMetrics.Add(new HealthMetric { Label = "Transmission", Value = 92, BarColor = Color.FromArgb("#3B5BDB") });
     }
 
@@ -989,7 +1015,7 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
     {
         // ✅ Only add demo data if in demo mode. Real vehicles should have NO demo data.
         if (!VehicleDataService.Instance.IsDemoMode) return;
-        
+
         if (VehicleDataService.Instance.GetServiceRecords(1).Any()) return;
 
         VehicleDataService.Instance.AddServiceRecord(1, new ServiceRecord
@@ -1121,11 +1147,11 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
 
     private void InitHealthRadar()
     {
-        HealthRadarData.Add(new RadarDataPoint { Category = "Engine",     Value = 92 });
-        HealthRadarData.Add(new RadarDataPoint { Category = "Brakes",     Value = 76 });
-        HealthRadarData.Add(new RadarDataPoint { Category = "Fluids",     Value = 88 });
+        HealthRadarData.Add(new RadarDataPoint { Category = "Engine", Value = 92 });
+        HealthRadarData.Add(new RadarDataPoint { Category = "Brakes", Value = 76 });
+        HealthRadarData.Add(new RadarDataPoint { Category = "Fluids", Value = 88 });
         HealthRadarData.Add(new RadarDataPoint { Category = "Electrical", Value = 84 });
-        HealthRadarData.Add(new RadarDataPoint { Category = "Tyres",      Value = 90 });
+        HealthRadarData.Add(new RadarDataPoint { Category = "Tyres", Value = 90 });
     }
 
     private void InitNearbyNetwork()
@@ -1144,7 +1170,7 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
         MapMarkers.Clear();
         IsNearbyEmpty = false;
 
-        double latitude  = DefaultLatitude;
+        double latitude = DefaultLatitude;
         double longitude = DefaultLongitude;
 
         try
@@ -1159,9 +1185,9 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
                 loc ??= await Geolocation.GetLocationAsync(new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(10)));
                 if (loc != null)
                 {
-                    latitude      = loc.Latitude;
-                    longitude     = loc.Longitude;
-                    UserLatitude  = latitude;
+                    latitude = loc.Latitude;
+                    longitude = loc.Longitude;
+                    UserLatitude = latitude;
                     UserLongitude = longitude;
                 }
             }
@@ -1180,8 +1206,8 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
         // ── Primary: Overpass OSM API (real data from OpenStreetMap) ─────────────
         {
             var helper = new ServiceCenterDataHelper();
-            var data   = await helper.GetNearbyPlacesAsync(latitude, longitude, 10, 8, _nearbyMapMode);
-            items      = data?["markercollections"] as JArray;
+            var data = await helper.GetNearbyPlacesAsync(latitude, longitude, 10, 8, _nearbyMapMode);
+            items = data?["markercollections"] as JArray;
         }
 
         // ── Fallback 1: Azure OpenAI (if Overpass returned nothing) ──────────────
@@ -1215,7 +1241,7 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
     private async Task<(JArray? Items, string RawResponse)> GetNearbyPlacesFromAIAsync(double latitude, double longitude)
     {
         var isServiceMode = string.Equals(_nearbyMapMode, "Service", StringComparison.OrdinalIgnoreCase);
-        var modeLabel     = isServiceMode
+        var modeLabel = isServiceMode
             ? "auto service centers, car repair workshops, and vehicle repair shops"
             : "fuel stations, petrol pumps, and gas stations";
 
@@ -1242,7 +1268,7 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
 
         try
         {
-            var ai       = new AzureOpenAIService();
+            var ai = new AzureOpenAIService();
             var response = await ai.GetResultsFromAI(prompt,
                 "You are a location data assistant. Return only valid JSON with no markdown or explanation.");
 
@@ -1275,13 +1301,13 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
 
             // Parse — expect raw array; fall back to object with any common wrapper key
             JArray? parsed = null;
-            try   { parsed = JArray.Parse(clean); }
+            try { parsed = JArray.Parse(clean); }
             catch
             {
                 try
                 {
                     var obj = JObject.Parse(clean);
-                    parsed  = (obj["markercollections"]
+                    parsed = (obj["markercollections"]
                             ?? obj["places"] ?? obj["locations"]
                             ?? obj["results"] ?? obj["stations"]
                             ?? obj["centers"] ?? obj["data"]) as JArray;
@@ -1320,12 +1346,12 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
 
         foreach (var item in items)
         {
-            var name    = item["Name"]?.ToString()    ?? "Nearby location";
+            var name = item["Name"]?.ToString() ?? "Nearby location";
             var details = item["Details"]?.ToString() ?? string.Empty;
             var address = item["Address"]?.ToString() ?? string.Empty;
-            var type    = item["Type"]?.ToString()    ?? (isServiceMode ? "Service Center" : "Fuel Station");
+            var type = item["Type"]?.ToString() ?? (isServiceMode ? "Service Center" : "Fuel Station");
 
-            var markerLat = item["Latitude"]?.Value<double?>()  ?? userLat;
+            var markerLat = item["Latitude"]?.Value<double?>() ?? userLat;
             var markerLon = item["Longitude"]?.Value<double?>() ?? userLon;
 
             // Compute distance if not already in the item
@@ -1341,24 +1367,24 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
             // Map marker (pin on the tile layer)
             MapMarkers.Add(new CustomMarker
             {
-                Latitude  = markerLat,
+                Latitude = markerLat,
                 Longitude = markerLon,
-                Name      = name,
-                Details   = string.IsNullOrWhiteSpace(details) ? (isFuelItem ? "Fuel station" : "Service center") : details,
-                Address   = string.IsNullOrWhiteSpace(address) ? null : address,
+                Name = name,
+                Details = string.IsNullOrWhiteSpace(details) ? (isFuelItem ? "Fuel station" : "Service center") : details,
+                Address = string.IsNullOrWhiteSpace(address) ? null : address,
             });
 
             // List card below the map
             var distanceLabel = distanceKm > 0 ? $" • {distanceKm:0.0} km" : string.Empty;
-            var subLabel      = string.IsNullOrWhiteSpace(address) ? $"{type}{distanceLabel}" : $"{address}{distanceLabel}";
+            var subLabel = string.IsNullOrWhiteSpace(address) ? $"{type}{distanceLabel}" : $"{address}{distanceLabel}";
 
             NearbyNetworkItems.Add(new NearbyNetworkItem
             {
-                Name          = name,
-                TypeLabel     = subLabel,
-                OpenTime      = "🕐 " + openTime,
-                IconText      = isFuelItem ? "⛽" : "🔧",
-                IconBgColor   = Color.FromArgb("#0D2135"),
+                Name = name,
+                TypeLabel = subLabel,
+                OpenTime = "🕐 " + openTime,
+                IconText = isFuelItem ? "⛽" : "🔧",
+                IconBgColor = Color.FromArgb("#0D2135"),
                 IconTextColor = isFuelItem ? Color.FromArgb("#FCD34D") : Color.FromArgb("#8ED3FF")
             });
         }
@@ -1385,24 +1411,24 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
     {
         VehicleDataService.Instance.AddReminder(SelectedVehicle?.Id ?? 0, reminder);
         var startTime = reminder.DueDate.Add(reminder.DueTime);
-        var endTime   = startTime.AddHours(1);
+        var endTime = startTime.AddHours(1);
 
         var color = reminder.Priority switch
         {
             "Critical" => Color.FromArgb("#DC2626"),
-            "High"     => Color.FromArgb("#D97706"),
-            "Medium"   => Color.FromArgb("#3B5BDB"),
-            _          => Color.FromArgb("#22C55E"),
+            "High" => Color.FromArgb("#D97706"),
+            "Medium" => Color.FromArgb("#3B5BDB"),
+            _ => Color.FromArgb("#22C55E"),
         };
 
         ServiceAppointments.Add(new SchedulerAppointment
         {
-            StartTime  = startTime,
-            EndTime    = endTime,
-            Subject    = reminder.Title,
-            Notes      = $"{reminder.ReminderType} \u2022 {reminder.Priority} priority",
+            StartTime = startTime,
+            EndTime = endTime,
+            Subject = reminder.Title,
+            Notes = $"{reminder.ReminderType} \u2022 {reminder.Priority} priority",
             Background = new SolidColorBrush(color),
-            TextColor  = Colors.White,
+            TextColor = Colors.White,
         });
 
         // Refresh predictive fields after a new appointment is added
@@ -1444,15 +1470,15 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
 
             ScheduleAlerts.Add(new ScheduleAlert
             {
-                Badge           = badge,
-                BadgeColor      = badgeColor,
-                BadgeBgColor    = badgeBg,
+                Badge = badge,
+                BadgeColor = badgeColor,
+                BadgeBgColor = badgeBg,
                 LeftAccentColor = leftAccent,
-                Date            = startTime.ToString("MMM dd"),
-                Title           = reminder.Title,
-                Description     = $"{reminder.ReminderType} • {description}",
-                ActionText      = actionText,
-                ActionColor     = badgeColor,
+                Date = startTime.ToString("MMM dd"),
+                Title = reminder.Title,
+                Description = $"{reminder.ReminderType} • {description}",
+                ActionText = actionText,
+                ActionColor = badgeColor,
             });
 
             if (!isOverdue && startTime <= soon)
@@ -1460,13 +1486,13 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
                 var daysLeft = (int)(startTime - now).TotalDays + 1;
                 UpcomingTasks.Add(new UpcomingTask
                 {
-                    Title        = $"{reminder.Title} ({daysLeft} Days)",
-                    Badge        = isDueSoon ? "DUE" : "PLAN",
-                    BadgeColor   = badgeColor,
+                    Title = $"{reminder.Title} ({daysLeft} Days)",
+                    Badge = isDueSoon ? "DUE" : "PLAN",
+                    BadgeColor = badgeColor,
                     BadgeBgColor = badgeBg,
-                    Description  = $"{reminder.ReminderType} • {reminder.Priority} priority",
-                    IconText     = "🛠",
-                    IconBgColor  = Color.FromArgb("#EBF5FF"),
+                    Description = $"{reminder.ReminderType} • {reminder.Priority} priority",
+                    IconText = "🛠",
+                    IconBgColor = Color.FromArgb("#EBF5FF"),
                 });
             }
 
@@ -1484,7 +1510,7 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
     }
 
     public bool HasScheduleAlerts => ScheduleAlerts.Count > 0;
-    public bool NoScheduleAlerts  => ScheduleAlerts.Count == 0;
+    public bool NoScheduleAlerts => ScheduleAlerts.Count == 0;
 
     // Reloads all vehicle-specific data when the selected vehicle changes
     private void RefreshVehicleData()
@@ -1554,15 +1580,15 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
         switch (status)
         {
             case "Pending":
-                color   = Color.FromArgb("#D97706");
+                color = Color.FromArgb("#D97706");
                 bgColor = Color.FromArgb("#FEF3C7");
                 break;
             case "Scheduled":
-                color   = Color.FromArgb("#3B5BDB");
+                color = Color.FromArgb("#3B5BDB");
                 bgColor = Color.FromArgb("#EEF2FF");
                 break;
             default:
-                color   = Color.FromArgb("#16A34A");
+                color = Color.FromArgb("#16A34A");
                 bgColor = Color.FromArgb("#DCFCE7");
                 break;
         }

@@ -8,12 +8,6 @@ public class AddVehicleViewModel : INotifyPropertyChanged
 {
     #region Dropdown Sources
 
-    public List<string> YearOptions { get; } =
-        Enumerable.Range(1990, DateTime.Now.Year - 1989)
-                  .Reverse()
-                  .Select(y => y.ToString())
-                  .ToList();
-
     public List<string> VehicleTypes { get; } =
     [
         "Car",
@@ -70,34 +64,12 @@ public class AddVehicleViewModel : INotifyPropertyChanged
         }
     }
 
-    private string _year = string.Empty;
-
-    public string Year
-    {
-        get => _year;
-        set
-        {
-            if (SetProperty(ref _year, value))
-            {
-                NotifyValidation();
-            }
-        }
-    }
-
     private string _variant = string.Empty;
 
     public string Variant
     {
         get => _variant;
         set => SetProperty(ref _variant, value);
-    }
-
-    private string _color = string.Empty;
-
-    public string Color
-    {
-        get => _color;
-        set => SetProperty(ref _color, value);
     }
 
     private string _odaMeterReading = string.Empty;
@@ -108,20 +80,6 @@ public class AddVehicleViewModel : INotifyPropertyChanged
         set
         {
             if (SetProperty(ref _odaMeterReading, value))
-            {
-                NotifyValidation();
-            }
-        }
-    }
-
-    private string _purchaseYear = string.Empty;
-
-    public string PurchaseYear
-    {
-        get => _purchaseYear;
-        set
-        {
-            if (SetProperty(ref _purchaseYear, value))
             {
                 NotifyValidation();
             }
@@ -140,9 +98,7 @@ public class AddVehicleViewModel : INotifyPropertyChanged
         !string.IsNullOrWhiteSpace(SelectedVehicleType) &&
         !string.IsNullOrWhiteSpace(Make) &&
         !string.IsNullOrWhiteSpace(Model) &&
-        !string.IsNullOrWhiteSpace(Year) &&
         !string.IsNullOrWhiteSpace(OdaMeterReading) &&
-        !string.IsNullOrWhiteSpace(PurchaseYear) &&
         IsOdometerValid;
 
     private void NotifyValidation()
@@ -193,14 +149,11 @@ public class AddVehicleViewModel : INotifyPropertyChanged
 
         Make = string.Empty;
         Model = string.Empty;
-        Year = string.Empty;
 
         Variant = string.Empty;
-        Color = string.Empty;
 
         OdaMeterReading = string.Empty;
 
-        PurchaseYear = string.Empty;
     }
 
     #endregion

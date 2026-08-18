@@ -1,8 +1,11 @@
+using Microsoft.Maui.Graphics;
+using SmartVehicleCare.Models;
+using SmartVehicleCare.Services;
+using SmartVehicleCare.ViewModels;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
-using Microsoft.Maui.Graphics;
 using SmartVehicleCare.Models;
 using SmartVehicleCare.Services;
 
@@ -32,7 +35,7 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     public ICommand PromptSaveApiKeyCommand { get; }
-    public ICommand PromptSkipApiKeyCommand  { get; }
+    public ICommand PromptSkipApiKeyCommand { get; }
 
     internal async Task CheckApiKeyPromptAsync()
     {
@@ -125,23 +128,18 @@ public class MainViewModel : INotifyPropertyChanged
 
     private void HandleAddVehicle()
     {
-        // Create new vehicle from AddVehicleViewModel data
         var newVehicle = new Vehicle
         {
-            Id = Vehicles.Count + 1,  // Simple ID generation (TODO: use proper DB)
+            Id = 0, // let VehicleDataService auto-assign to avoid collisions with demo IDs
             VehicleType = GetVehicleTypeIndex(AddVehicleViewModel.SelectedVehicleType),
             Make = AddVehicleViewModel.Make,
             Model = AddVehicleViewModel.Model,
-            Year = AddVehicleViewModel.Year,
             Variant = AddVehicleViewModel.Variant,
-            Color = AddVehicleViewModel.Color,
             OdometerReading = AddVehicleViewModel.OdaMeterReading,
-            PurchaseYear = AddVehicleViewModel.PurchaseYear,
             CreatedDate = DateTime.Now,
             IsActive = true
         };
 
-        // Persist to shared service and add to local collection
         VehicleDataService.Instance.AddVehicle(newVehicle);
         Vehicles.Add(newVehicle);
 
@@ -170,11 +168,8 @@ public class MainViewModel : INotifyPropertyChanged
         IsAddVehicleBottomSheetVisible = false;
         AddVehicleViewModel.Make = string.Empty;
         AddVehicleViewModel.Model = string.Empty;
-        AddVehicleViewModel.Year = string.Empty;
         AddVehicleViewModel.Variant = string.Empty;
-        AddVehicleViewModel.Color = string.Empty;
         AddVehicleViewModel.OdaMeterReading = string.Empty;
-        AddVehicleViewModel.PurchaseYear = string.Empty;
         AddVehicleViewModel.SelectedVehicleType = string.Empty;
     }
 
@@ -342,30 +337,30 @@ public class MainViewModel : INotifyPropertyChanged
     private double _currentMonthService;
     private double _allTimeFuel;
     private double _allTimeService;
-    private int    _trackedMonths;
+    private int _trackedMonths;
     private double _allTimeCostPerKm;
 
-    private double _currentTotal   => _currentMonthFuel + _currentMonthService;
-    private double _allTimeTotal   => _allTimeFuel + _allTimeService;
-    private double _avgMonthly     => _trackedMonths > 0 ? _allTimeTotal / _trackedMonths : 0;
+    private double _currentTotal => _currentMonthFuel + _currentMonthService;
+    private double _allTimeTotal => _allTimeFuel + _allTimeService;
+    private double _avgMonthly => _trackedMonths > 0 ? _allTimeTotal / _trackedMonths : 0;
 
-    public string CurrentMonthName     => DateTime.Today.ToString("MMMM yyyy").ToUpper();
-    public string CurrentMonthTotal    => _currentTotal > 0 ? $"₹{_currentTotal:N0}" : "₹0";
-    public string CurrentMonthFuelLabel    => _currentMonthFuel > 0 ? $"₹{_currentMonthFuel:N0}" : "₹0";
+    public string CurrentMonthName => DateTime.Today.ToString("MMMM yyyy").ToUpper();
+    public string CurrentMonthTotal => _currentTotal > 0 ? $"₹{_currentTotal:N0}" : "₹0";
+    public string CurrentMonthFuelLabel => _currentMonthFuel > 0 ? $"₹{_currentMonthFuel:N0}" : "₹0";
     public string CurrentMonthServiceLabel => _currentMonthService > 0 ? $"₹{_currentMonthService:N0}" : "₹0";
-    public double CurrentFuelProgress  => _currentTotal > 0 ? Math.Round(_currentMonthFuel / _currentTotal * 100) : 0;
+    public double CurrentFuelProgress => _currentTotal > 0 ? Math.Round(_currentMonthFuel / _currentTotal * 100) : 0;
     public double CurrentServiceProgress => _currentTotal > 0 ? Math.Round(_currentMonthService / _currentTotal * 100) : 0;
-    public string CurrentFuelPercent   => $"{CurrentFuelProgress:0}%";
+    public string CurrentFuelPercent => $"{CurrentFuelProgress:0}%";
     public string CurrentServicePercent => $"{CurrentServiceProgress:0}%";
-    public string AvgMonthlyLabel      => _avgMonthly > 0 ? $"₹{_avgMonthly:N0}/mo" : "No data";
-    public string CostPerKmLabel       => _allTimeCostPerKm > 0 ? $"₹{_allTimeCostPerKm:N1}/km" : "—";
+    public string AvgMonthlyLabel => _avgMonthly > 0 ? $"₹{_avgMonthly:N0}/mo" : "No data";
+    public string CostPerKmLabel => _allTimeCostPerKm > 0 ? $"₹{_allTimeCostPerKm:N1}/km" : "—";
     public string VsAvgLabel
     {
         get
         {
             if (_avgMonthly <= 0 || _trackedMonths <= 1) return "First month";
             var diff = (_currentTotal - _avgMonthly) / _avgMonthly * 100;
-            return diff > 5  ? $"↑ {Math.Abs(diff):0}% vs avg"
+            return diff > 5 ? $"↑ {Math.Abs(diff):0}% vs avg"
                  : diff < -5 ? $"↓ {Math.Abs(diff):0}% vs avg"
                  : "On track";
         }
@@ -375,18 +370,18 @@ public class MainViewModel : INotifyPropertyChanged
                              : Color.FromArgb("#3B82F6");
 
     // Legacy aliases so other bindings don't break
-    public string ThisMonthExpense    => CurrentMonthTotal;
-    public string ExpenseTrend        => AvgMonthlyLabel;
-    public string MonthlyTotal        => CurrentMonthTotal;
-    public string MonthlyTrend        => AvgMonthlyLabel;
-    public double FuelProgress        => CurrentFuelProgress;
-    public double ServiceProgress     => CurrentServiceProgress;
-    public string FuelPercentLabel    => CurrentFuelPercent;
+    public string ThisMonthExpense => CurrentMonthTotal;
+    public string ExpenseTrend => AvgMonthlyLabel;
+    public string MonthlyTotal => CurrentMonthTotal;
+    public string MonthlyTrend => AvgMonthlyLabel;
+    public double FuelProgress => CurrentFuelProgress;
+    public double ServiceProgress => CurrentServiceProgress;
+    public string FuelPercentLabel => CurrentFuelPercent;
     public string ServicePercentLabel => CurrentServicePercent;
-    public string FuelAmountLabel     => CurrentMonthFuelLabel;
-    public string ServiceAmountLabel  => CurrentMonthServiceLabel;
+    public string FuelAmountLabel => CurrentMonthFuelLabel;
+    public string ServiceAmountLabel => CurrentMonthServiceLabel;
     // Legacy aliases kept for other bindings
-    public string TotalSpendLabel     => CurrentMonthTotal;
+    public string TotalSpendLabel => CurrentMonthTotal;
 
     // ── Analytics chart data ──────────────────────────────────────────────────
 
@@ -536,13 +531,13 @@ public class MainViewModel : INotifyPropertyChanged
 
         // Expense Intelligence — current month vs all-time for selected vehicle
         var now = DateTime.Today;
-        var allFuels    = VehicleDataService.Instance.GetFuelEntries(vid).ToList();
+        var allFuels = VehicleDataService.Instance.GetFuelEntries(vid).ToList();
         var allServices = VehicleDataService.Instance.GetServiceRecords(vid).ToList();
 
-        _currentMonthFuel    = allFuels.Where(f => f.FuelDate.Year == now.Year && f.FuelDate.Month == now.Month).Sum(f => f.TotalCost);
+        _currentMonthFuel = allFuels.Where(f => f.FuelDate.Year == now.Year && f.FuelDate.Month == now.Month).Sum(f => f.TotalCost);
         _currentMonthService = allServices.Where(s => s.ServiceDate.Year == now.Year && s.ServiceDate.Month == now.Month).Sum(s => ParseCurrency(s.Amount));
-        _allTimeFuel         = allFuels.Sum(f => f.TotalCost);
-        _allTimeService      = allServices.Sum(s => ParseCurrency(s.Amount));
+        _allTimeFuel = allFuels.Sum(f => f.TotalCost);
+        _allTimeService = allServices.Sum(s => ParseCurrency(s.Amount));
 
         var allDates = allFuels.Select(f => f.FuelDate).Concat(allServices.Select(s => s.ServiceDate)).ToList();
         _trackedMonths = allDates.Count > 0
@@ -668,7 +663,7 @@ public class MainViewModel : INotifyPropertyChanged
         {
             var lastOilChange = oilChangeServices.Max(s => s.ServiceDate);
             var daysSinceOilChange = (DateTime.Today - lastOilChange).TotalDays;
-            
+
             if (daysSinceOilChange > 180) // ~6 months
             {
                 return new AiInsightItem

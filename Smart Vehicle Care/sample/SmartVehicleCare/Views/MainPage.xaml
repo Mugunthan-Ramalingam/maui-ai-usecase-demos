@@ -297,6 +297,7 @@
                             Background="Transparent"
                             ShowBorder="False"
                             Placeholder="Select Vehicle"
+                            PlaceholderColor="{AppThemeBinding Light=#0F172A, Dark=White}"
                             SelectedDropDownItemBackground="{AppThemeBinding Light=#EBF5FF, Dark=#3D2E24}"
                             DropDownPlacement="Bottom"
                             DropDownBackground="{AppThemeBinding Light=White, Dark={StaticResource BrandDarkCard}}"

@@ -706,7 +706,7 @@
                                                    FontSize="13"
                                                    FontAttributes="Bold"
                                                    HorizontalOptions="Center"
-                                                   TextColor="{AppThemeBinding Light={StaticResource BrandTextDark}, Dark={StaticResource BrandTextOnDark}}"/>
+                                                   TextColor="{AppThemeBinding Light={StaticResource BrandMutedOnLight}, Dark={StaticResource BrandMutedOnDark}}"/>
                                             <Label Text="Sedan, SUV, Hatchback"
                                                    FontSize="11"
                                                    HorizontalOptions="Center"
@@ -749,7 +749,7 @@
                                                    FontSize="13"
                                                    FontAttributes="Bold"
                                                    HorizontalOptions="Center"
-                                                   TextColor="{AppThemeBinding Light={StaticResource BrandTextDark}, Dark={StaticResource BrandTextOnDark}}"/>
+                                                   TextColor="{AppThemeBinding Light={StaticResource BrandMutedOnLight}, Dark={StaticResource BrandMutedOnDark}}"/>
                                             <Label Text="Bike, Scooter, Cruiser"
                                                    FontSize="11"
                                                    HorizontalOptions="Center"
