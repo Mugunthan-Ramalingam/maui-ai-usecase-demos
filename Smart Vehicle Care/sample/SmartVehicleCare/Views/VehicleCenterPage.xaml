@@ -244,7 +244,7 @@
                                             </dataGrid:SfDataGrid.DefaultStyle>
                                             <dataGrid:SfDataGrid.Columns>
                                                 <dataGrid:DataGridTextColumn MappingName="Date" HeaderText="DATE" Width="140"/>
-                                                <dataGrid:DataGridTextColumn MappingName="ServiceType" HeaderText="SERVICE TYPE" Width="280" LineBreakMode="WordWrap"/>
+                                                <dataGrid:DataGridTextColumn MappingName="ServiceType" HeaderText="SERVICE TYPE" Width="180" LineBreakMode="WordWrap"/>
                                                 <dataGrid:DataGridTextColumn MappingName="Mileage" HeaderText="ODOMETER" Width="140"/>
                                                 <dataGrid:DataGridTextColumn MappingName="Amount" HeaderText="COST" Width="120"/>
                                                 <dataGrid:DataGridTemplateColumn MappingName="Status" HeaderText="STATUS" Width="140">
@@ -1690,9 +1690,8 @@
                             </dataGrid:SfDataGrid.DefaultStyle>
                             <dataGrid:SfDataGrid.Columns>
                                 <dataGrid:DataGridTextColumn MappingName="Date" HeaderText="DATE" Width="120"/>
-                                <dataGrid:DataGridTextColumn MappingName="ServiceType" HeaderText="SERVICE TYPE"/>
-                                <dataGrid:DataGridTextColumn MappingName="Workshop" HeaderText="WORKSHOP" Width="180"/>
-                                <dataGrid:DataGridTextColumn MappingName="Mileage" HeaderText="MILEAGE" Width="120"/>
+                                <dataGrid:DataGridTextColumn MappingName="ServiceType" HeaderText="SERVICE TYPE" />
+                                <dataGrid:DataGridTextColumn MappingName="Mileage" HeaderText="Odameter" Width="120"/>
                                 <dataGrid:DataGridTextColumn MappingName="Amount" HeaderText="COST" Width="100"/>
                                 <dataGrid:DataGridTemplateColumn HeaderText="" Width="72">
                                     <dataGrid:DataGridTemplateColumn.CellTemplate>
