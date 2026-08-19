@@ -437,7 +437,7 @@
                                 </Border>
 
                                 <!-- Vehicle Details -->
-                                <Grid Margin="4,12,12,0"  Grid.Column="1"
+                                <Grid Margin="{OnPlatform WinUI='4,12,12,0', MacCatalyst='4,12,12,0',Android='14,12,12,0', iOS='14,12,12,0'}" Grid.Column="1"
                                       RowDefinitions="Auto,Auto,Auto,*">
 
                                     <!-- Header -->

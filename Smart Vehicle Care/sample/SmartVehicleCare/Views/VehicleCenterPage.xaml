@@ -1668,7 +1668,10 @@
                        HeightRequest="{Binding ServiceLogPopupHeight}"
                        StaysOpen="False">
             <popup:SfPopup.PopupStyle>
-                <popup:PopupStyle HeaderBackground="White"/>
+                <popup:PopupStyle HeaderBackground="{AppThemeBinding Light=White, Dark=#2D2117}"
+                                  HeaderTextColor="{AppThemeBinding Light=#0F172A, Dark=White}"
+                                  PopupBackground="{AppThemeBinding Light=#F8FAFC, Dark=#1C1917}"
+                                  Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#3D2E24}"/>
             </popup:SfPopup.PopupStyle>
             
             <popup:SfPopup.ContentTemplate>
@@ -1741,7 +1744,10 @@
                        HeightRequest="{Binding FuelPopupHeight}"
                        StaysOpen="False">
             <popup:SfPopup.PopupStyle>
-                <popup:PopupStyle HeaderBackground="White"/>
+                <popup:PopupStyle HeaderBackground="{AppThemeBinding Light=White, Dark=#2D2117}"
+                                  HeaderTextColor="{AppThemeBinding Light=#0F172A, Dark=White}"
+                                  PopupBackground="{AppThemeBinding Light=#F8FAFC, Dark=#1C1917}"
+                                  Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#3D2E24}"/>
             </popup:SfPopup.PopupStyle>
             <popup:SfPopup.ContentTemplate>
                 <DataTemplate x:DataType="vm:VehicleCenterViewModel">

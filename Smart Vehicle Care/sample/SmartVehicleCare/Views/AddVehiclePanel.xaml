@@ -71,7 +71,13 @@
                                 BackgroundColor="Transparent"
                                 TextColor="{AppThemeBinding Light={StaticResource BrandTextDark}, Dark={StaticResource BrandTextOnDark}}"
                                 DropDownBackground="{AppThemeBinding Light=White, Dark={StaticResource BrandDarkCard}}"
-                                DropDownItemTextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+                                DropDownItemTextColor="{AppThemeBinding Light=#0F172A, Dark=White}"
+                                SelectedDropDownItemBackground="{AppThemeBinding Light=#FEF3C7, Dark=#3D2E24}"
+                                DropDownIconColor="{AppThemeBinding Light=#64748B, Dark=#9DB7D2}">
+                                <combo:SfComboBox.SelectedDropDownItemTextStyle>
+                                    <combo:DropDownTextStyle TextColor="{AppThemeBinding Light=#B45309, Dark=#F59E0B}"/>
+                                </combo:SfComboBox.SelectedDropDownItemTextStyle>
+                            </combo:SfComboBox>
 
                         </til:SfTextInputLayout>
 
