@@ -111,7 +111,7 @@
                                TextColor="{AppThemeBinding Light=#0F172A, Dark=#EDF6FF}"/>
                         <til:SfTextInputLayout
                             ContainerType="Outlined" OutlineCornerRadius="10"
-                            EnableFloating="False" Hint="Paste your Azure OpenAI API key"
+                            EnableFloating="False" Hint="{Binding ApiKeyHint}"
                             FocusedStrokeThickness="1.5" UnfocusedStrokeThickness="1.5"
                             InputViewPadding="14,0" ReserveSpaceForAssistiveLabels="False"
                             Stroke="{AppThemeBinding Light=#CBD5E1, Dark=#3D2E24}"
@@ -121,6 +121,7 @@
                             </til:SfTextInputLayout.HintLabelStyle>
                             <Entry Text="{Binding ApiKeyEntry, Mode=TwoWay}"
                                    IsPassword="True"
+                                   IsEnabled="{Binding HasApiKey, Converter={StaticResource InvertedBoolConverter}}"
                                    TextColor="{AppThemeBinding Light={StaticResource BrandTextDark}, Dark={StaticResource BrandTextOnDark}}"
                                    BackgroundColor="Transparent"/>
                         </til:SfTextInputLayout>
@@ -145,6 +146,7 @@
 
                             <Border StrokeThickness="0"
                                     Padding="14,9"
+                                    IsVisible="{Binding HasApiKey, Converter={StaticResource InvertedBoolConverter}}"
                                     BackgroundColor="{AppThemeBinding Light=#B45309, Dark=#D97706}"
                                     WidthRequest="120"
                                     HorizontalOptions="Center">

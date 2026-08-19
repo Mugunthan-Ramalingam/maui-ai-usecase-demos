@@ -24,6 +24,9 @@ public class SettingsViewModel : INotifyPropertyChanged
 
         ExitToWelcomeCommand = new Command(async () =>
         {
+            // Wipe all persisted state so the app starts clean on next launch
+            await AzureOpenAIService.SaveApiKeyToStorageAsync(string.Empty);
+            Preferences.Default.Clear();
             VehicleDataService.Instance.FullReset();
             await Shell.Current.GoToAsync("///welcome");
         });
@@ -43,6 +46,10 @@ public class SettingsViewModel : INotifyPropertyChanged
         });
 
         _ = LoadApiKeyStatusAsync();
+
+        // Sync status when the key is saved or cleared from any other screen (e.g. dashboard popup)
+        AzureOpenAIService.ApiKeyChanged += () =>
+            MainThread.BeginInvokeOnMainThread(RefreshApiKeyStatus);
 
         EditVehicleCommand = new Command<Vehicle>(v =>
         {
@@ -106,6 +113,9 @@ public class SettingsViewModel : INotifyPropertyChanged
     public string ApiKeyStatusText => AzureOpenAIService.HasApiKey
         ? "API key configured \u2014 AI features active."
         : "No API key \u2014 AI features disabled.";
+    public string ApiKeyHint => AzureOpenAIService.HasApiKey
+        ? "Key saved \u2014 remove to change"
+        : "Paste your Azure OpenAI API key";
 
     public ICommand SaveApiKeyCommand  { get; }
     public ICommand ClearApiKeyCommand { get; }
@@ -120,6 +130,7 @@ public class SettingsViewModel : INotifyPropertyChanged
     {
         OnPropertyChanged(nameof(HasApiKey));
         OnPropertyChanged(nameof(ApiKeyStatusText));
+        OnPropertyChanged(nameof(ApiKeyHint));
     }
 
     // ── Theme ─────────────────────────────────────────────────────────────────
