@@ -1197,12 +1197,6 @@
                                                     </HorizontalStackLayout>
                                                     <HorizontalStackLayout Spacing="5">
                                                         <Ellipse WidthRequest="8" HeightRequest="8"
-                                                                 Fill="#D97706" VerticalOptions="Center"/>
-                                                        <Label Text="Inspection" FontSize="11"
-                                                               TextColor="{AppThemeBinding Light=#475569, Dark=#9DB7D2}" VerticalOptions="Center"/>
-                                                    </HorizontalStackLayout>
-                                                    <HorizontalStackLayout Spacing="5">
-                                                        <Ellipse WidthRequest="8" HeightRequest="8"
                                                                  Fill="#DC2626" VerticalOptions="Center"/>
                                                         <Label Text="Overdue" FontSize="11"
                                                                TextColor="{AppThemeBinding Light=#475569, Dark=#9DB7D2}" VerticalOptions="Center"/>
@@ -1902,8 +1896,8 @@
                     <TapGestureRecognizer Command="{Binding CancelEditServiceCommand}"/>
                 </BoxView.GestureRecognizers>
             </BoxView>
-            <Border HorizontalOptions="End"
-                    WidthRequest="{OnPlatform WinUI=480, MacCatalyst=480, Default=9999}"
+            <Border HorizontalOptions="{OnPlatform WinUI=End, MacCatalyst=End, Default=Fill}"
+                    WidthRequest="{OnPlatform WinUI=480, MacCatalyst=480}"
                     BackgroundColor="{AppThemeBinding Light={StaticResource SplashBgLight}, Dark={StaticResource BrandNavy}}"
                     StrokeThickness="0">
                 <Border.StrokeShape><RoundRectangle CornerRadius="0"/></Border.StrokeShape>
@@ -2318,7 +2312,7 @@
                                           TextColor="{AppThemeBinding Light=#475569, Dark=#9DB7D2}"
                                           FontSize="14" FontAttributes="Bold" CornerRadius="10" StrokeThickness="0"
                                           Command="{Binding CancelEditServiceCommand}"/>
-                        <buttons:SfButton Grid.Column="1" Text="Save Changes ?" HeightRequest="44"
+                        <buttons:SfButton Grid.Column="1" Text="Save" HeightRequest="44"
                                           Background="{AppThemeBinding Light=#B45309, Dark=#D97706}"
                                           TextColor="White" FontSize="14" FontAttributes="Bold"
                                           CornerRadius="10" StrokeThickness="0"
@@ -2334,8 +2328,8 @@
                     <TapGestureRecognizer Command="{Binding CancelEditFuelCommand}"/>
                 </BoxView.GestureRecognizers>
             </BoxView>
-            <Border HorizontalOptions="End"
-                    WidthRequest="{OnPlatform WinUI=480, MacCatalyst=480, Default=9999}"
+            <Border HorizontalOptions="{OnPlatform WinUI=End, MacCatalyst=End, Default=Fill}"
+                    WidthRequest="{OnPlatform WinUI=480, MacCatalyst=480}"
                     BackgroundColor="{AppThemeBinding Light={StaticResource SplashBgLight}, Dark={StaticResource BrandNavy}}"
                     StrokeThickness="0">
                 <Border.StrokeShape><RoundRectangle CornerRadius="0"/></Border.StrokeShape>
@@ -2397,10 +2391,8 @@
                                                 <Setter Property="Stroke" Value="{AppThemeBinding Light=#E2E8F0, Dark=#3D2E24}"/>
                                             </DataTrigger>
                                         </Border.Triggers>
-                                        <StackLayout Spacing="4" HorizontalOptions="Center">
-                                            <Label Text="&#xE560;" FontFamily="MaterialIcons" FontSize="18" HorizontalOptions="Center"
-                                                   TextColor="{AppThemeBinding Light=#64748B, Dark=#9DB7D2}"/>
-                                            <Label Text="Petrol" FontSize="11" HorizontalOptions="Center">
+                                        <StackLayout Spacing="4" HorizontalOptions="Center" VerticalOptions="Center">
+                                            <Label Text="Petrol" FontSize="12" FontAttributes="Bold" HorizontalOptions="Center">
                                                 <Label.Triggers>
                                                     <DataTrigger TargetType="Label" Binding="{Binding IsEditFuelPetrolSelected}" Value="True">
                                                         <Setter Property="TextColor" Value="#DC2626"/><Setter Property="FontAttributes" Value="Bold"/>
@@ -2423,10 +2415,8 @@
                                                 <Setter Property="Stroke" Value="{AppThemeBinding Light=#E2E8F0, Dark=#3D2E24}"/>
                                             </DataTrigger>
                                         </Border.Triggers>
-                                        <StackLayout Spacing="4" HorizontalOptions="Center">
-                                            <Label Text="&#xEA87;" FontFamily="MaterialIcons" FontSize="18" HorizontalOptions="Center"
-                                                   TextColor="{AppThemeBinding Light=#64748B, Dark=#9DB7D2}"/>
-                                            <Label Text="Diesel" FontSize="11" HorizontalOptions="Center">
+                                        <StackLayout Spacing="4" HorizontalOptions="Center" VerticalOptions="Center">
+                                            <Label Text="Diesel" FontSize="12" FontAttributes="Bold" HorizontalOptions="Center">
                                                 <Label.Triggers>
                                                     <DataTrigger TargetType="Label" Binding="{Binding IsEditFuelDieselSelected}" Value="True">
                                                         <Setter Property="TextColor" Value="#065F46"/><Setter Property="FontAttributes" Value="Bold"/>
@@ -2449,41 +2439,13 @@
                                                 <Setter Property="Stroke" Value="{AppThemeBinding Light=#E2E8F0, Dark=#3D2E24}"/>
                                             </DataTrigger>
                                         </Border.Triggers>
-                                        <StackLayout Spacing="4" HorizontalOptions="Center">
-                                            <Label Text="&#xE90A;" FontFamily="MaterialIcons" FontSize="18" HorizontalOptions="Center"
-                                                   TextColor="{AppThemeBinding Light=#64748B, Dark=#9DB7D2}"/>
-                                            <Label Text="CNG" FontSize="11" HorizontalOptions="Center">
+                                        <StackLayout Spacing="4" HorizontalOptions="Center" VerticalOptions="Center">
+                                            <Label Text="CNG" FontSize="12" FontAttributes="Bold" HorizontalOptions="Center">
                                                 <Label.Triggers>
                                                     <DataTrigger TargetType="Label" Binding="{Binding IsEditFuelCNGSelected}" Value="True">
                                                         <Setter Property="TextColor" Value="#D97706"/><Setter Property="FontAttributes" Value="Bold"/>
                                                     </DataTrigger>
                                                     <DataTrigger TargetType="Label" Binding="{Binding IsEditFuelCNGSelected}" Value="False">
-                                                        <Setter Property="TextColor" Value="{AppThemeBinding Light=#475569, Dark=#9DB7D2}"/>
-                                                    </DataTrigger>
-                                                </Label.Triggers>
-                                            </Label>
-                                        </StackLayout>
-                                    </Border>
-                                    <Border Grid.Column="3" Padding="6,10" StrokeThickness="1.5" StrokeShape="RoundRectangle 10">
-                                        <Border.GestureRecognizers><TapGestureRecognizer Command="{Binding SelectEditFuelTypeCommand}" CommandParameter="Electric"/></Border.GestureRecognizers>
-                                        <Border.Triggers>
-                                            <DataTrigger TargetType="Border" Binding="{Binding IsEditFuelElectricSelected}" Value="True">
-                                                <Setter Property="BackgroundColor" Value="#FEF3C7"/><Setter Property="Stroke" Value="#B45309"/>
-                                            </DataTrigger>
-                                            <DataTrigger TargetType="Border" Binding="{Binding IsEditFuelElectricSelected}" Value="False">
-                                                <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#F8FAFC, Dark=#2D2117}"/>
-                                                <Setter Property="Stroke" Value="{AppThemeBinding Light=#E2E8F0, Dark=#3D2E24}"/>
-                                            </DataTrigger>
-                                        </Border.Triggers>
-                                        <StackLayout Spacing="4" HorizontalOptions="Center">
-                                            <Label Text="&#xE3E7;" FontFamily="MaterialIcons" FontSize="18" HorizontalOptions="Center"
-                                                   TextColor="{AppThemeBinding Light=#64748B, Dark=#9DB7D2}"/>
-                                            <Label Text="Electric" FontSize="11" HorizontalOptions="Center">
-                                                <Label.Triggers>
-                                                    <DataTrigger TargetType="Label" Binding="{Binding IsEditFuelElectricSelected}" Value="True">
-                                                        <Setter Property="TextColor" Value="#B45309"/><Setter Property="FontAttributes" Value="Bold"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger TargetType="Label" Binding="{Binding IsEditFuelElectricSelected}" Value="False">
                                                         <Setter Property="TextColor" Value="{AppThemeBinding Light=#475569, Dark=#9DB7D2}"/>
                                                     </DataTrigger>
                                                 </Label.Triggers>
@@ -2613,18 +2575,6 @@
                                 </til:SfTextInputLayout>
                             </StackLayout>
 
-                            <!-- Full Tank toggle -->
-                            <Grid ColumnDefinitions="*,Auto">
-                                <StackLayout Spacing="2">
-                                    <Label Text="Full tank fill-up?" FontSize="14" FontAttributes="Bold"
-                                           TextColor="{AppThemeBinding Light={StaticResource BrandTextDark}, Dark={StaticResource BrandTextOnDark}}"/>
-                                    <Label Text="Required for accurate efficiency calculation" FontSize="11"
-                                           TextColor="{AppThemeBinding Light=#64748B, Dark=#9DB7D2}"/>
-                                </StackLayout>
-                                <buttons:SfSwitch Grid.Column="1" IsOn="{Binding EditFuelIsFullTank}"
-                                                  VerticalOptions="Center"/>
-                            </Grid>
-
                         </StackLayout>
                     </ScrollView>
 
@@ -2638,7 +2588,7 @@
                                           TextColor="{AppThemeBinding Light=#475569, Dark=#9DB7D2}"
                                           FontSize="14" FontAttributes="Bold" CornerRadius="10" StrokeThickness="0"
                                           Command="{Binding CancelEditFuelCommand}"/>
-                        <buttons:SfButton Grid.Column="1" Text="Save Changes ?" HeightRequest="44"
+                        <buttons:SfButton Grid.Column="1" Text="Save" HeightRequest="44"
                                           Background="{AppThemeBinding Light=#B45309, Dark=#D97706}"
                                           TextColor="White" FontSize="14" FontAttributes="Bold"
                                           CornerRadius="10" StrokeThickness="0"

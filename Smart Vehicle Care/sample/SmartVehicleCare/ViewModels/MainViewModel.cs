@@ -543,8 +543,6 @@ public class MainViewModel : INotifyPropertyChanged
     {
         var vid = _selectedVehicle?.Id ?? 0;
 
-        _ = RefreshAiInsightsAsync(vid);
-
         // Expense Intelligence — current month vs all-time for selected vehicle
         var now = DateTime.Today;
         var allFuels = VehicleDataService.Instance.GetFuelEntries(vid).ToList();

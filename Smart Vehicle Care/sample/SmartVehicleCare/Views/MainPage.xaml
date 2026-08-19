@@ -449,11 +449,11 @@
                            FontSize="24"
                            FontAttributes="Bold"
                            LineBreakMode="TailTruncation"
-                           TextColor="{AppThemeBinding Light=#0F172A, Dark=White}"/>
+                           TextColor="{OnPlatform Default=White, WinUI={AppThemeBinding Light=#0F172A, Dark=White}, MacCatalyst={AppThemeBinding Light=#0F172A, Dark=White}}"/>
 
                                             <Label Text="{Binding VehicleModel}"
                            FontSize="13"
-                           TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}"/>
+                           TextColor="{OnPlatform Default=#CBD5E1, WinUI={AppThemeBinding Light=#64748B, Dark=#94A3B8}, MacCatalyst={AppThemeBinding Light=#64748B, Dark=#94A3B8}}"/>
 
                                         </VerticalStackLayout>
 
@@ -487,13 +487,13 @@
                                                FontFamily="MaterialIcons"
                                                FontSize="16"
                                                VerticalOptions="Center"
-                                               TextColor="#3B82F6"/>
+                                               TextColor="{OnPlatform Default=White, WinUI=#3B82F6, MacCatalyst=#3B82F6}"/>
 
                                         <Label Text="{Binding VehicleOdometer}"
                                                FontSize="14"
                                                FontAttributes="Bold"
                                                VerticalOptions="Center"
-                                               TextColor="{AppThemeBinding Light=#334155, Dark=#CBD5E1}"/>
+                                               TextColor="{OnPlatform Default=White, WinUI={AppThemeBinding Light=#334155, Dark=#CBD5E1}, MacCatalyst={AppThemeBinding Light=#334155, Dark=#CBD5E1}}"/>
 
                                     </HorizontalStackLayout>
 
@@ -532,18 +532,18 @@
                                                    FontSize="9"
                                                    FontAttributes="Bold"
                                                    CharacterSpacing="0.5"
-                                                   TextColor="{AppThemeBinding Light=#94A3B8, Dark=#4A6482}"/>
+                                                   TextColor="{OnPlatform Default=#E2E8F0, WinUI={AppThemeBinding Light=#94A3B8, Dark=#4A6482}, MacCatalyst={AppThemeBinding Light=#94A3B8, Dark=#4A6482}}"/>
                                             <HorizontalStackLayout Spacing="4">
                                                 <Label Text="&#xE8B8;"
                                                        FontFamily="MaterialIcons"
                                                        FontSize="13"
                                                        VerticalOptions="Center"
-                                                       TextColor="{AppThemeBinding Light=#3B82F6, Dark=#60A5FA}"/>
+                                                       TextColor="{OnPlatform Default=White, WinUI={AppThemeBinding Light=#3B82F6, Dark=#60A5FA}, MacCatalyst={AppThemeBinding Light=#3B82F6, Dark=#60A5FA}}"/>
                                                 <Label Text="{Binding NextServiceDueText}"
                                                        FontSize="12"
                                                        FontAttributes="Bold"
                                                        VerticalOptions="Center"
-                                                       TextColor="{AppThemeBinding Light=#1E293B, Dark=#E2E8F0}"/>
+                                                       TextColor="{OnPlatform Default=White, WinUI={AppThemeBinding Light=#1E293B, Dark=#E2E8F0}, MacCatalyst={AppThemeBinding Light=#1E293B, Dark=#E2E8F0}}"/>
                                             </HorizontalStackLayout>
                                         </StackLayout>
 
@@ -553,18 +553,18 @@
                                                    FontSize="9"
                                                    FontAttributes="Bold"
                                                    CharacterSpacing="0.5"
-                                                   TextColor="{AppThemeBinding Light=#94A3B8, Dark=#4A6482}"/>
+                                                   TextColor="{OnPlatform Default=#E2E8F0, WinUI={AppThemeBinding Light=#94A3B8, Dark=#4A6482}, MacCatalyst={AppThemeBinding Light=#94A3B8, Dark=#4A6482}}"/>
                                             <HorizontalStackLayout Spacing="4">
                                                 <Label Text="&#xE227;"
                                                        FontFamily="MaterialIcons"
                                                        FontSize="13"
                                                        VerticalOptions="Center"
-                                                       TextColor="{AppThemeBinding Light=#3B82F6, Dark=#60A5FA}"/>
+                                                       TextColor="{OnPlatform Default=White, WinUI={AppThemeBinding Light=#3B82F6, Dark=#60A5FA}, MacCatalyst={AppThemeBinding Light=#3B82F6, Dark=#60A5FA}}"/>
                                                 <Label Text="{Binding MonthlySpendText}"
                                                        FontSize="12"
                                                        FontAttributes="Bold"
                                                        VerticalOptions="Center"
-                                                       TextColor="{AppThemeBinding Light=#1E293B, Dark=#E2E8F0}"/>
+                                                       TextColor="{OnPlatform Default=White, WinUI={AppThemeBinding Light=#1E293B, Dark=#E2E8F0}, MacCatalyst={AppThemeBinding Light=#1E293B, Dark=#E2E8F0}}"/>
                                             </HorizontalStackLayout>
                                         </StackLayout>
 
@@ -682,7 +682,7 @@
                                 <!-- Header -->
                                 <Grid ColumnDefinitions="*,Auto">
                                     <HorizontalStackLayout Grid.Column="0" Spacing="8">
-                                        <Label Text="&#xEA87;" FontFamily="MaterialIcons"
+                                        <Label Text="&#xE65F;" FontFamily="MaterialIcons"
                                                TextColor="#3B82F6" FontSize="18" VerticalOptions="Center"/>
                                         <Label Text="Active Intelligence"
                                                TextColor="{AppThemeBinding Light=#0F172A, Dark=White}"
@@ -919,10 +919,10 @@
                                                             GridLineColor="{AppThemeBinding Light=#E2E8F0, Dark=#3D2E24}"/>
                                 </dataGrid:SfDataGrid.DefaultStyle>
                                 <dataGrid:SfDataGrid.Columns>
-                                    <dataGrid:DataGridTextColumn MappingName="Date" HeaderText="DATE" Width="200"/>
-                                    <dataGrid:DataGridTextColumn MappingName="Type" HeaderText="TYPE" Width="210"/>
-                                    <dataGrid:DataGridTextColumn MappingName="Detail" HeaderText="DETAIL" LineBreakMode="WordWrap"/>
-                                    <dataGrid:DataGridTemplateColumn MappingName="Status" HeaderText="STATUS" Width="160">
+                                    <dataGrid:DataGridTextColumn MappingName="Date" HeaderText="DATE" Width="{OnPlatform WinUI=200, MacCatalyst=200, Android=110, iOS=110}"/>
+                                    <dataGrid:DataGridTextColumn MappingName="Type" HeaderText="TYPE" Width="{OnPlatform WinUI=210, MacCatalyst=210, Android=110, iOS=110}"/>
+                                    <dataGrid:DataGridTextColumn MappingName="Detail" HeaderText="DETAIL" LineBreakMode="WordWrap" Width="{OnPlatform Android=130, iOS=130}"/>
+                                    <dataGrid:DataGridTemplateColumn MappingName="Status" HeaderText="STATUS" Width="{OnPlatform WinUI=160, MacCatalyst=160, Android=90, iOS=90}">
                                         <dataGrid:DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate x:DataType="models:DashboardTableRow">
                                                 <ContentView HorizontalOptions="Center" VerticalOptions="Center">
