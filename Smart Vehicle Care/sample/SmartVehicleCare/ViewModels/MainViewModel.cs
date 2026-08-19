@@ -203,6 +203,7 @@ public class MainViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(IsSettingsNavActive));
                 OnPropertyChanged(nameof(PageTitle));
                 OnPropertyChanged(nameof(IsAddVehicleButtonVisible));
+                OnPropertyChanged(nameof(IsMobileAddVehicleButtonVisible));
                 OnPropertyChanged(nameof(IsDesktopHeaderVisible));
                 OnPropertyChanged(nameof(IsMobileHeaderVisible));
             }
@@ -224,6 +225,7 @@ public class MainViewModel : INotifyPropertyChanged
         (DeviceInfo.Platform == DevicePlatform.WinUI || DeviceInfo.Platform == DevicePlatform.MacCatalyst);
     public bool IsMobileHeaderVisible =>
         (DeviceInfo.Platform == DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS);
+    public bool IsMobileAddVehicleButtonVisible => IsMobileHeaderVisible && IsDashboardVisible;
 
     // ── Vehicle selector ──────────────────────────────────────────────────────
 
@@ -528,7 +530,18 @@ public class MainViewModel : INotifyPropertyChanged
         // Rebuild dashboard when any per-vehicle data changes
         VehicleDataService.Instance.DataChanged += vid =>
         {
-            if (_selectedVehicle?.Id == vid) RebuildDashboard();
+            if (_selectedVehicle?.Id != vid) return;
+
+            var updatedVehicle = Vehicles.FirstOrDefault(v => v.Id == vid);
+            if (updatedVehicle != null)
+            {
+                _selectedVehicle = null;
+                OnPropertyChanged(nameof(SelectedVehicle));
+                _selectedVehicle = updatedVehicle;
+                OnPropertyChanged(nameof(SelectedVehicle));
+            }
+
+            RebuildDashboard();
         };
 
         if (VehicleDataService.Instance.SelectedVehicle != null)
@@ -587,6 +600,7 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(LastServiceText));
 
         // Refresh vehicle identity display properties in case vehicle details were edited externally
+        OnPropertyChanged(nameof(SelectedVehicle));       // forces SfComboBox to re-read DisplayMemberPath
         OnPropertyChanged(nameof(SelectedVehicleLabel));
         OnPropertyChanged(nameof(VehicleName));
         OnPropertyChanged(nameof(VehicleModel));

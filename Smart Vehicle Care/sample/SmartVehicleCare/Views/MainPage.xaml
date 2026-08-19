@@ -387,7 +387,7 @@
             <!-- ─── DASHBOARD SECTION ─── -->
             <ScrollView Grid.Row="1" IsVisible="{Binding IsDashboardVisible}">
                 <StackLayout Spacing="16"
-                             Padding="{OnPlatform WinUI='24,20,24,24', MacCatalyst='24,20,24,24', Default='16,16,6,20'}">
+                             Padding="{OnPlatform WinUI='24,20,24,24', MacCatalyst='24,20,24,24', Default='16,16,0,20'}">
 
                     <!-- ═ MAIN 2-COL GRID (desktop) / single col (mobile) ═ -->
                     <Grid ColumnSpacing="16" RowSpacing="0">
@@ -1013,7 +1013,23 @@
             <!-- ─── SETTINGS SECTION ─── -->
             <views:SettingsPage Grid.Row="1" IsVisible="{Binding IsSettingsVisible}"/>
 
-            <!-- FAB removed -->
+            <buttons:SfButton Grid.Row="1"
+                              IsVisible="{Binding IsMobileAddVehicleButtonVisible}"
+                              Text="&#xE145;"
+                              FontFamily="MaterialIcons"
+                              FontSize="26"
+                              Command="{Binding ShowAddVehicleCommand}"
+                              HorizontalOptions="End"
+                              VerticalOptions="End"
+                              Margin="0,0,18,18"
+                              WidthRequest="56"
+                              HeightRequest="56"
+                              Padding="0"
+                              CornerRadius="28"
+                              Background="{AppThemeBinding Light=#B45309, Dark=#D97706}"
+                              TextColor="White"
+                              ZIndex="10"
+                              Shadow="{Shadow Brush=#66000000, Offset='0,4', Radius=10, Opacity=0.4}"/>
 
         </Grid>
         <!-- end main content area -->
@@ -1113,6 +1129,7 @@
                 </StackLayout>
 
             </Grid>
+
         </Grid>
 
         <!-- ═══ RIGHT DRAWER (desktop only) ═══ -->
@@ -1138,16 +1155,17 @@
             BackgroundColor="{AppThemeBinding Light=#F0F4F8,
                                                Dark={StaticResource BrandNavy}}">
 
-                <views:AddVehiclePanel/>
+                <views:AddVehiclePanel BindingContext="{Binding AddVehicleViewModel}"/>
 
             </Border>
 
         </Grid>
 
         <!-- ═══ BOTTOM SHEET (mobile only) ═══ -->
-        <Grid
-    IsVisible="{Binding IsAddVehicleBottomSheetVisible}"
-    ZIndex="1000">
+          <Grid Grid.Column="1"
+              Grid.RowSpan="2"
+              IsVisible="{Binding IsAddVehicleBottomSheetVisible}"
+              ZIndex="1000">
 
             <!-- backdrop -->
             <BoxView BackgroundColor="#B2000000">
@@ -1165,7 +1183,7 @@
             BackgroundColor="{AppThemeBinding Light=#F0F4F8,
                                                Dark={StaticResource BrandNavy}}">
 
-                <views:AddVehiclePanel/>
+                <views:AddVehiclePanel BindingContext="{Binding AddVehicleViewModel}"/>
 
             </Border>
 
