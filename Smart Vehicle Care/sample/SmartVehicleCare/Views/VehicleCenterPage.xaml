@@ -792,15 +792,6 @@
                                     <Label Text="{Binding SpendingOptimizationSummary}"
                                            FontSize="12" LineBreakMode="WordWrap"
                                            TextColor="{AppThemeBinding Light=#075985, Dark=#9DB7D2}"/>
-                                    <Border BackgroundColor="Transparent" StrokeThickness="1"
-                                            Stroke="{AppThemeBinding Light=#BAE6FD, Dark=#3D2E24}"
-                                            Padding="14,10" StrokeShape="RoundRectangle 10">
-                                        <StackLayout Orientation="Horizontal" Spacing="8" HorizontalOptions="Center">
-                                            <Label Text="View Full Report" FontSize="12" FontAttributes="Bold"
-                                                   TextColor="{AppThemeBinding Light=#0284C7, Dark=#EDF6FF}"/>
-                                            <Label Text="&#xE5C8;" FontFamily="MaterialIcons" FontSize="12" TextColor="#0EA5E9"/>
-                                        </StackLayout>
-                                    </Border>
                                 </StackLayout>
                             </Border>
 

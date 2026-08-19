@@ -41,9 +41,6 @@
                             <Label Text="App Theme"
                                    FontSize="14" FontAttributes="Bold"
                                    TextColor="{AppThemeBinding Light=#0F172A, Dark=#EDF6FF}"/>
-                            <Label Text="Choose how the app looks"
-                                   FontSize="12"
-                                   TextColor="{AppThemeBinding Light=#64748B, Dark=#9DB7D2}"/>
                         </StackLayout>
 
                         <!-- Syncfusion ComboBox � matches header vehicle-selector pill style -->

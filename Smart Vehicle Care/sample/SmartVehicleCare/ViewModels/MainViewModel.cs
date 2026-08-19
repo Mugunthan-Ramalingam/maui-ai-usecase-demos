@@ -535,8 +535,8 @@ public class MainViewModel : INotifyPropertyChanged
             SelectedVehicle = VehicleDataService.Instance.SelectedVehicle;
         else if (Vehicles.Count > 0)
             SelectedVehicle = Vehicles[0];
-
-        RebuildDashboard();
+        else
+            RebuildDashboard(); // no vehicle selected — still populate empty-state dashboard
     }
 
     private void RebuildDashboard()

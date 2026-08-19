@@ -865,6 +865,7 @@
                     <Border BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#2D2117}"
                             Stroke="{AppThemeBinding Light=#E8ECF0, Dark=Transparent}"
                             HeightRequest="186"
+                            Margin="{OnPlatform Android='0,0,14,0'}"
                             StrokeThickness="1" Padding="0">
                         <Border.StrokeShape>
                             <RoundRectangle CornerRadius="14"/>
@@ -921,7 +922,7 @@
                                 <dataGrid:SfDataGrid.Columns>
                                     <dataGrid:DataGridTextColumn MappingName="Date" HeaderText="DATE" Width="{OnPlatform WinUI=200, MacCatalyst=200, Android=110, iOS=110}"/>
                                     <dataGrid:DataGridTextColumn MappingName="Type" HeaderText="TYPE" Width="{OnPlatform WinUI=210, MacCatalyst=210, Android=110, iOS=110}"/>
-                                    <dataGrid:DataGridTextColumn MappingName="Detail" HeaderText="DETAIL" LineBreakMode="WordWrap" Width="{OnPlatform Android=130, iOS=130}"/>
+                                    <dataGrid:DataGridTextColumn MappingName="Detail" HeaderText="DETAIL" LineBreakMode="WordWrap" Width="{OnPlatform Android=140, iOS=140}"/>
                                     <dataGrid:DataGridTemplateColumn MappingName="Status" HeaderText="STATUS" Width="{OnPlatform WinUI=160, MacCatalyst=160, Android=90, iOS=90}">
                                         <dataGrid:DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate x:DataType="models:DashboardTableRow">
