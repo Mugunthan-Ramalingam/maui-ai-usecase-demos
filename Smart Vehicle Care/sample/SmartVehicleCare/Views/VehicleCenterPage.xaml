@@ -862,7 +862,7 @@
                                         <maps:SfMaps Grid.Row="1">
                                             <maps:SfMaps.Layer>
                                                 <maps:MapTileLayer x:Name="DesktopMapLayer"
-                                                                   UrlTemplate="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
+                                                                   UrlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
                                                                    CanCacheTiles="True"
                                                                    ShowMarkerTooltip="True"
                                                                    MarkerTemplate="{StaticResource NearbyMarkerTemplate}"
@@ -879,6 +879,21 @@
                                                 </maps:MapTileLayer>
                                             </maps:SfMaps.Layer>
                                         </maps:SfMaps>
+                                        <!-- Loading overlay while nearby data is being fetched -->
+                                        <Grid Grid.Row="1" IsVisible="{Binding IsNearbyLoading}"
+                                              BackgroundColor="{AppThemeBinding Light=#B3FFFFFF, Dark=#B3111009}"
+                                              HorizontalOptions="Fill" VerticalOptions="Fill">
+                                            <StackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="10">
+                                                <ActivityIndicator IsRunning="{Binding IsNearbyLoading}"
+                                                                   Color="{AppThemeBinding Light={StaticResource BrandBlue}, Dark={StaticResource BrandBlueBright}}"
+                                                                   HeightRequest="40" WidthRequest="40"
+                                                                   HorizontalOptions="Center"/>
+                                                <Label Text="Loading nearby places…"
+                                                       FontSize="12"
+                                                       TextColor="{AppThemeBinding Light=#475569, Dark=#9DB7D2}"
+                                                       HorizontalOptions="Center"/>
+                                            </StackLayout>
+                                        </Grid>
                                     </Grid>
                                 </Border>
 
@@ -900,12 +915,30 @@
                                         <StackLayout Grid.Row="1" IsVisible="{Binding IsNearbyEmpty}"
                                                      Spacing="8" Padding="0,20" HorizontalOptions="Center">
                                             <Label Text="📍" FontSize="28" HorizontalOptions="Center"/>
-                                            <Label Text="No places found nearby" FontSize="13" FontAttributes="Bold"
+                                            <Label FontSize="13" FontAttributes="Bold"
                                                    HorizontalOptions="Center"
-                                                   TextColor="{AppThemeBinding Light=#475569, Dark=#9DB7D2}"/>
-                                            <Label Text="Pull to refresh or check your location" FontSize="11"
+                                                   TextColor="{AppThemeBinding Light=#475569, Dark=#9DB7D2}">
+                                                <Label.Triggers>
+                                                    <DataTrigger TargetType="Label" Binding="{Binding IsApiKeyMissing}" Value="True">
+                                                        <Setter Property="Text" Value="API key not configured"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger TargetType="Label" Binding="{Binding IsApiKeyMissing}" Value="False">
+                                                        <Setter Property="Text" Value="No places found nearby"/>
+                                                    </DataTrigger>
+                                                </Label.Triggers>
+                                            </Label>
+                                            <Label FontSize="11"
                                                    HorizontalOptions="Center"
-                                                   TextColor="{AppThemeBinding Light=#94A3B8, Dark=#64748B}"/>
+                                                   TextColor="{AppThemeBinding Light=#94A3B8, Dark=#64748B}">
+                                                <Label.Triggers>
+                                                    <DataTrigger TargetType="Label" Binding="{Binding IsApiKeyMissing}" Value="True">
+                                                        <Setter Property="Text" Value="Add your Azure OpenAI key in Settings to enable nearby search"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger TargetType="Label" Binding="{Binding IsApiKeyMissing}" Value="False">
+                                                        <Setter Property="Text" Value="Pull to refresh or check your location"/>
+                                                    </DataTrigger>
+                                                </Label.Triggers>
+                                            </Label>
                                         </StackLayout>
                                         <ScrollView Grid.Row="2" IsVisible="{Binding IsNearbyEmpty, Converter={StaticResource InvertedBoolConverter}}">
                                             <StackLayout BindableLayout.ItemsSource="{Binding NearbyNetworkItems}" Spacing="10">
@@ -994,7 +1027,7 @@
                                     <maps:SfMaps Grid.Row="1">
                                         <maps:SfMaps.Layer>
                                             <maps:MapTileLayer x:Name="MobileMapLayer"
-                                                               UrlTemplate="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
+                                                               UrlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
                                                                CanCacheTiles="True"
                                                                ShowMarkerTooltip="True"
                                                                MarkerTemplate="{StaticResource NearbyMarkerTemplate}"
@@ -1011,6 +1044,21 @@
                                             </maps:MapTileLayer>
                                         </maps:SfMaps.Layer>
                                     </maps:SfMaps>
+                                    <!-- Loading overlay while nearby data is being fetched -->
+                                    <Grid Grid.Row="1" IsVisible="{Binding IsNearbyLoading}"
+                                          BackgroundColor="{AppThemeBinding Light=#B3FFFFFF, Dark=#B3111009}"
+                                          HorizontalOptions="Fill" VerticalOptions="Fill">
+                                        <StackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="10">
+                                            <ActivityIndicator IsRunning="{Binding IsNearbyLoading}"
+                                                               Color="{AppThemeBinding Light={StaticResource BrandBlue}, Dark={StaticResource BrandBlueBright}}"
+                                                               HeightRequest="36" WidthRequest="36"
+                                                               HorizontalOptions="Center"/>
+                                            <Label Text="Loading nearby places…"
+                                                   FontSize="11"
+                                                   TextColor="{AppThemeBinding Light=#475569, Dark=#9DB7D2}"
+                                                   HorizontalOptions="Center"/>
+                                        </StackLayout>
+                                    </Grid>
                                 </Grid>
                             </Border>
 
@@ -1028,12 +1076,30 @@
                                     <StackLayout IsVisible="{Binding IsNearbyEmpty}"
                                                  Spacing="8" Padding="0,20" HorizontalOptions="Center">
                                         <Label Text="📍" FontSize="28" HorizontalOptions="Center"/>
-                                        <Label Text="No places found nearby" FontSize="13" FontAttributes="Bold"
+                                        <Label FontSize="13" FontAttributes="Bold"
                                                HorizontalOptions="Center"
-                                               TextColor="{AppThemeBinding Light=#475569, Dark=#9DB7D2}"/>
-                                        <Label Text="Pull to refresh or check your location" FontSize="11"
+                                               TextColor="{AppThemeBinding Light=#475569, Dark=#9DB7D2}">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsApiKeyMissing}" Value="True">
+                                                    <Setter Property="Text" Value="API key not configured"/>
+                                                </DataTrigger>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsApiKeyMissing}" Value="False">
+                                                    <Setter Property="Text" Value="No places found nearby"/>
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
+                                        <Label FontSize="11"
                                                HorizontalOptions="Center"
-                                               TextColor="{AppThemeBinding Light=#94A3B8, Dark=#64748B}"/>
+                                               TextColor="{AppThemeBinding Light=#94A3B8, Dark=#64748B}">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsApiKeyMissing}" Value="True">
+                                                    <Setter Property="Text" Value="Add your Azure OpenAI key in Settings to enable nearby search"/>
+                                                </DataTrigger>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsApiKeyMissing}" Value="False">
+                                                    <Setter Property="Text" Value="Pull to refresh or check your location"/>
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
                                     </StackLayout>
                                     <ScrollView MaximumHeightRequest="280" HorizontalScrollBarVisibility="Never"
                                                 IsVisible="{Binding IsNearbyEmpty, Converter={StaticResource InvertedBoolConverter}}">

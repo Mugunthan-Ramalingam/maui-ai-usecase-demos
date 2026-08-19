@@ -84,6 +84,15 @@ public class MainViewModel : INotifyPropertyChanged
         AddVehicleViewModel.OnAddVehicleRequested += HandleAddVehicle;
         AddVehicleViewModel.OnCloseRequested += HandleCloseAddVehicle;
 
+        // Re-run AI features when the API key is saved or cleared in Settings
+        AzureOpenAIService.ApiKeyChanged += () =>
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                var vid = _selectedVehicle?.Id ?? 0;
+                _ = RefreshAiInsightsAsync(vid);
+                _ = RefreshAiHealthSummaryAsync(vid);
+            });
+
         // ✅ Subscribe to demo mode changes
         VehicleDataService.Instance.ModeChanged += OnDataModeChanged;
 
@@ -393,6 +402,13 @@ public class MainViewModel : INotifyPropertyChanged
     public ObservableCollection<AiInsightItem> AiInsights { get; } = new();
     public bool HasAiInsights => AiInsights.Count > 0;
 
+    private bool _isAiInsightsLoading;
+    public bool IsAiInsightsLoading
+    {
+        get => _isAiInsightsLoading;
+        private set { _isAiInsightsLoading = value; OnPropertyChanged(); }
+    }
+
     // ── Quick Actions ─────────────────────────────────────────────────────────
 
     public ObservableCollection<QuickActionItem> QuickActions { get; } = new();
@@ -527,7 +543,7 @@ public class MainViewModel : INotifyPropertyChanged
     {
         var vid = _selectedVehicle?.Id ?? 0;
 
-        RebuildActiveIntelligence(vid);
+        _ = RefreshAiInsightsAsync(vid);
 
         // Expense Intelligence — current month vs all-time for selected vehicle
         var now = DateTime.Today;
@@ -583,13 +599,20 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(NextServiceDueText));
         OnPropertyChanged(nameof(MonthlySpendText));
 
+        _ = RefreshAiInsightsAsync(vid);
         RebuildRecentActivities(vid);
         RebuildHealthScore(vid);
     }
 
-    private void RebuildActiveIntelligence(int vehicleId)
+    private async Task RefreshAiInsightsAsync(int vehicleId)
     {
         AiInsights.Clear();
+        IsAiInsightsLoading = true;
+        OnPropertyChanged(nameof(HasAiInsights));
+
+        // Ensure key is loaded from storage before checking
+        if (!AzureOpenAIService.HasApiKey)
+            await AzureOpenAIService.LoadApiKeyFromStorageAsync();
 
         var services = VehicleDataService.Instance.GetServiceRecords(vehicleId)
             .OrderByDescending(s => s.ServiceDate)
@@ -619,140 +642,211 @@ public class MainViewModel : INotifyPropertyChanged
                 ActionBgColor = Color.FromArgb("#451A03"),
                 ActionTextColor = Color.FromArgb("#FCD34D")
             });
+            IsAiInsightsLoading = false;
+            OnPropertyChanged(nameof(HasAiInsights));
             return;
         }
 
-        // 1. Service Maintenance Insight
-        if (services.Any())
+        if (!AzureOpenAIService.HasApiKey)
         {
-            AiInsights.Add(BuildServiceInsight(services));
+            // No API key — surface the limitation
+            AiInsights.Add(new AiInsightItem
+            {
+                AccentColor = Color.FromArgb("#94A3B8"),
+                Title = "API key not configured",
+                Subtitle = "Add your Azure OpenAI key in Settings to get AI-powered maintenance insights.",
+                ActionLabel = "Settings",
+                ActionBgColor = Color.FromArgb("#1E293B"),
+                ActionTextColor = Color.FromArgb("#94A3B8")
+            });
+            IsAiInsightsLoading = false;
+            OnPropertyChanged(nameof(HasAiInsights));
+            return;
         }
 
-        // 2. Fuel & Efficiency Insight
-        if (fuels.Any())
+        // ── AI-powered insights ──────────────────────────────────────────────────
+        var vehicle = _selectedVehicle;
+        var lastService = services.FirstOrDefault();
+        var lastFuel = fuels.FirstOrDefault();
+        var daysSinceService = lastService != null ? (int)(DateTime.Today - lastService.ServiceDate).TotalDays : -1;
+        var daysSinceFuel = lastFuel != null ? (int)(DateTime.Today - lastFuel.FuelDate).TotalDays : -1;
+        var avgFuelSpend = fuels.Any() ? fuels.Average(f => f.TotalCost) : 0;
+        var upcomingReminder = reminders
+            .Where(r => r.DueDate >= DateTime.Today && r.DueDate <= DateTime.Today.AddDays(60))
+            .OrderBy(r => r.DueDate).FirstOrDefault();
+
+        var prompt = $"""
+ Vehicle: {vehicle?.Make} {vehicle?.Model} {vehicle?.Year}
+ Service records: {services.Count}, last service {daysSinceService} days ago ({lastService?.ServiceType ?? "N/A"})
+ Fuel entries: {fuels.Count}, last refuel {daysSinceFuel} days ago, avg ₹{avgFuelSpend:N0}/fill
+ Upcoming reminder: {(upcomingReminder != null ? $"{upcomingReminder.Title} due in {(upcomingReminder.DueDate - DateTime.Today).Days} days" : "None")}
+
+ Generate 3 concise, actionable vehicle maintenance insights from the data above.
+ For each insight, respond in exactly this format (no extra text):
+ TITLE: <alert title, max 7 words>
+ SUBTITLE: <one realistic sentence with specific numbers, max 20 words>
+ SEVERITY: low|medium|high
+
+ Separate each insight with a blank line.
+ """;
+
+        var aiResponse = await new AzureOpenAIService().GetResultsFromAI(
+            prompt,
+            "You are a concise vehicle maintenance advisor. Generate exactly 3 insights using the exact format specified. Use only the supplied vehicle data.");
+
+        var parsed = ParseAiInsightItems(aiResponse);
+        if (parsed.Count > 0)
         {
-            AiInsights.Add(BuildFuelInsight(fuels));
+            foreach (var item in parsed)
+                AiInsights.Add(item);
+        }
+        else
+        {
+            // AI returned nothing useful — fall back to rule-based items
+            BuildRuleBasedInsights(services, fuels, reminders);
         }
 
-        // 3. Specific Maintenance Type Alert (Oil Change, Tire Rotation, etc.)
-        var maintenanceTypeInsight = BuildMaintenanceTypeInsight(services);
-        if (maintenanceTypeInsight != null)
-        {
-            AiInsights.Add(maintenanceTypeInsight);
-        }
-
-        // 4. Warranty/Insurance/Registration Reminder
-        var reminderInsight = BuildReminderInsight(reminders);
-        if (reminderInsight != null)
-        {
-            AiInsights.Add(reminderInsight);
-        }
-
+        IsAiInsightsLoading = false;
         OnPropertyChanged(nameof(HasAiInsights));
+    }
+
+    private static List<AiInsightItem> ParseAiInsightItems(string aiResponse)
+    {
+        var result = new List<AiInsightItem>();
+        if (string.IsNullOrWhiteSpace(aiResponse)) return result;
+
+        var blocks = aiResponse.Split(new[] { "\n\n", "\r\n\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+        foreach (var block in blocks)
+        {
+            var lines = block.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            string title = string.Empty, subtitle = string.Empty, severity = "low";
+            foreach (var line in lines)
+            {
+                if (line.StartsWith("TITLE:", StringComparison.OrdinalIgnoreCase))
+                    title = line[6..].Trim();
+                else if (line.StartsWith("SUBTITLE:", StringComparison.OrdinalIgnoreCase))
+                    subtitle = line[9..].Trim();
+                else if (line.StartsWith("SEVERITY:", StringComparison.OrdinalIgnoreCase))
+                    severity = line[9..].Trim().ToLowerInvariant();
+            }
+            if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(subtitle)) continue;
+
+            var (accent, actionBg, actionText) = severity switch
+            {
+                "high"   => (Color.FromArgb("#EF4444"), Color.FromArgb("#3F0E0E"), Color.FromArgb("#FCA5A5")),
+                "medium" => (Color.FromArgb("#F59E0B"), Color.FromArgb("#451A03"), Color.FromArgb("#FCD34D")),
+                _        => (Color.FromArgb("#3B82F6"), Color.FromArgb("#1E3A5F"), Color.FromArgb("#93C5FD")),
+            };
+            result.Add(new AiInsightItem
+            {
+                AccentColor     = accent,
+                Title           = title,
+                Subtitle        = subtitle,
+                ActionLabel     = severity == "high" ? "Review" : severity == "medium" ? "Check" : "OK",
+                ActionBgColor   = actionBg,
+                ActionTextColor = actionText
+            });
+        }
+        return result;
+    }
+
+    private void BuildRuleBasedInsights(List<ServiceRecord> services, List<FuelEntry> fuels, List<ScheduleReminder> reminders)
+    {
+        if (!services.Any() && !fuels.Any() && !reminders.Any()) return;
+
+        if (services.Any()) AiInsights.Add(BuildServiceInsight(services));
+        if (fuels.Any())    AiInsights.Add(BuildFuelInsight(fuels));
+
+        var typeInsight = BuildMaintenanceTypeInsight(services);
+        if (typeInsight != null) AiInsights.Add(typeInsight);
+
+        var reminderInsight = BuildReminderInsight(reminders);
+        if (reminderInsight != null) AiInsights.Add(reminderInsight);
     }
 
     private AiInsightItem? BuildMaintenanceTypeInsight(List<ServiceRecord> services)
     {
-        // Check for specific maintenance needs based on service history
         var oilChangeServices = services.Where(s => s.ServiceType?.Contains("Oil", StringComparison.OrdinalIgnoreCase) ?? false).ToList();
-        var tireServices = services.Where(s => s.ServiceType?.Contains("Tire", StringComparison.OrdinalIgnoreCase) ?? false).ToList();
-        var brakeServices = services.Where(s => s.ServiceType?.Contains("Brake", StringComparison.OrdinalIgnoreCase) ?? false).ToList();
+        var tireServices      = services.Where(s => s.ServiceType?.Contains("Tire", StringComparison.OrdinalIgnoreCase) ?? false).ToList();
+        var brakeServices     = services.Where(s => s.ServiceType?.Contains("Brake", StringComparison.OrdinalIgnoreCase) ?? false).ToList();
 
-        // Oil Change Alert (typically every 5,000-10,000 km or 6 months)
         if (oilChangeServices.Any())
         {
-            var lastOilChange = oilChangeServices.Max(s => s.ServiceDate);
-            var daysSinceOilChange = (DateTime.Today - lastOilChange).TotalDays;
-
-            if (daysSinceOilChange > 180) // ~6 months
-            {
+            var daysSince = (DateTime.Today - oilChangeServices.Max(s => s.ServiceDate)).TotalDays;
+            if (daysSince > 180)
                 return new AiInsightItem
                 {
                     AccentColor = Color.FromArgb("#EF4444"),
                     Title = "Oil change may be due",
-                    Subtitle = $"Last oil change was {Math.Round(daysSinceOilChange / 30, 0)} months ago. Check your odometer and schedule if needed.",
+                    Subtitle = $"Last oil change was {Math.Round(daysSince / 30, 0)} months ago. Check your odometer and schedule if needed.",
                     ActionLabel = "Schedule",
                     ActionBgColor = Color.FromArgb("#3F0E0E"),
                     ActionTextColor = Color.FromArgb("#FCA5A5")
                 };
-            }
         }
 
-        // Tire Rotation Alert (typically every 10,000 km or 6 months)
         if (tireServices.Any())
         {
-            var lastTireService = tireServices.Max(s => s.ServiceDate);
-            var daysSinceTire = (DateTime.Today - lastTireService).TotalDays;
-
-            if (daysSinceTire > 180)
-            {
+            var daysSince = (DateTime.Today - tireServices.Max(s => s.ServiceDate)).TotalDays;
+            if (daysSince > 180)
                 return new AiInsightItem
                 {
                     AccentColor = Color.FromArgb("#F59E0B"),
                     Title = "Tire rotation recommended",
-                    Subtitle = $"Tires should be rotated every 6 months for even wear. Last rotation was {Math.Round(daysSinceTire / 30, 0)} months ago.",
+                    Subtitle = $"Tires should be rotated every 6 months for even wear. Last rotation was {Math.Round(daysSince / 30, 0)} months ago.",
                     ActionLabel = "Book",
                     ActionBgColor = Color.FromArgb("#451A03"),
                     ActionTextColor = Color.FromArgb("#FCD34D")
                 };
-            }
         }
 
-        // Brake Service Alert
         if (brakeServices.Any())
         {
-            var lastBrakeService = brakeServices.Max(s => s.ServiceDate);
-            var daysSinceBrake = (DateTime.Today - lastBrakeService).TotalDays;
-
-            if (daysSinceBrake > 365) // ~12 months
-            {
+            var daysSince = (DateTime.Today - brakeServices.Max(s => s.ServiceDate)).TotalDays;
+            if (daysSince > 365)
                 return new AiInsightItem
                 {
                     AccentColor = Color.FromArgb("#EC4899"),
                     Title = "Brake inspection overdue",
-                    Subtitle = $"Brake pads and fluid should be checked annually. Last inspection was {Math.Round(daysSinceBrake / 30, 0)} months ago.",
+                    Subtitle = $"Brake pads and fluid should be checked annually. Last inspection was {Math.Round(daysSince / 30, 0)} months ago.",
                     ActionLabel = "Inspect",
                     ActionBgColor = Color.FromArgb("#501425"),
                     ActionTextColor = Color.FromArgb("#F472B6")
                 };
-            }
         }
 
         return null;
     }
 
-    private AiInsightItem? BuildReminderInsight(List<ScheduleReminder> reminders)
+    private static AiInsightItem? BuildReminderInsight(List<ScheduleReminder> reminders)
     {
-        // Check for upcoming warranty, insurance, or registration expiry
-        var upcomingReminders = reminders
+        var upcoming = reminders
             .Where(r => r.DueDate >= DateTime.Today && r.DueDate <= DateTime.Today.AddDays(30))
             .OrderBy(r => r.DueDate)
-            .ToList();
+            .FirstOrDefault();
 
-        if (upcomingReminders.Any())
+        if (upcoming == null) return null;
+
+        var daysLeft = (upcoming.DueDate - DateTime.Today).Days;
+        var (accent, actionBg) = upcoming.Priority switch
         {
-            var urgent = upcomingReminders.First();
-            var daysLeft = (urgent.DueDate - DateTime.Today).Days;
+            "High"   => (Color.FromArgb("#EF4444"), Color.FromArgb("#3F0E0E")),
+            "Medium" => (Color.FromArgb("#F59E0B"), Color.FromArgb("#451A03")),
+            _        => (Color.FromArgb("#3B82F6"), Color.FromArgb("#1E3A5F")),
+        };
+        var actionText = upcoming.Priority == "High" ? Color.FromArgb("#FCA5A5")
+                       : upcoming.Priority == "Medium" ? Color.FromArgb("#FCD34D")
+                       : Color.FromArgb("#93C5FD");
 
-            var (accentColor, icon, actionBg) = urgent.Priority switch
-            {
-                "High" => (Color.FromArgb("#EF4444"), "🔴", Color.FromArgb("#3F0E0E")),
-                "Medium" => (Color.FromArgb("#F59E0B"), "🟡", Color.FromArgb("#451A03")),
-                _ => (Color.FromArgb("#3B82F6"), "🔵", Color.FromArgb("#1E3A5F")),
-            };
-
-            return new AiInsightItem
-            {
-                AccentColor = accentColor,
-                Title = $"{urgent.ReminderType} expiring soon",
-                Subtitle = $"{urgent.Title} is due in {daysLeft} days. Renew or schedule before expiry.",
-                ActionLabel = daysLeft <= 7 ? "Renew Now" : "Review",
-                ActionBgColor = actionBg,
-                ActionTextColor = accentColor == Color.FromArgb("#EF4444") ? Color.FromArgb("#FCA5A5") : accentColor == Color.FromArgb("#F59E0B") ? Color.FromArgb("#FCD34D") : Color.FromArgb("#93C5FD")
-            };
-        }
-
-        return null;
+        return new AiInsightItem
+        {
+            AccentColor     = accent,
+            Title           = $"{upcoming.ReminderType} expiring soon",
+            Subtitle        = $"{upcoming.Title} is due in {daysLeft} days. Renew or schedule before expiry.",
+            ActionLabel     = daysLeft <= 7 ? "Renew Now" : "Review",
+            ActionBgColor   = actionBg,
+            ActionTextColor = actionText
+        };
     }
 
     private static AiInsightItem BuildServiceInsight(List<ServiceRecord> services)
@@ -1204,27 +1298,52 @@ public class MainViewModel : INotifyPropertyChanged
             return;
         }
 
-        _isAiHealthLoading = true;
+        // Ensure key is loaded before checking
+        if (!AzureOpenAIService.HasApiKey)
+            await AzureOpenAIService.LoadApiKeyFromStorageAsync();
+
+        if (!AzureOpenAIService.HasApiKey)
+        {
+            _isAiHealthLoading = false;
+            _aiHealthSummary = "Configure your Azure OpenAI API key in Settings to get AI-powered health analysis.";
+            OnPropertyChanged(nameof(AiHealthSummary));
+            OnPropertyChanged(nameof(IsAiHealthLoading));
+            return;
+        }
         _aiHealthSummary = string.Empty;
         OnPropertyChanged(nameof(IsAiHealthLoading));
         OnPropertyChanged(nameof(AiHealthSummary));
 
-        var issues = HealthIssueItems.Where(i => i.IsWarning).Select(i => $"- {i.Text}").ToList();
+        var issues    = HealthIssueItems.Where(i =>  i.IsWarning).Select(i => $"- {i.Text}").ToList();
         var positives = HealthIssueItems.Where(i => !i.IsWarning).Select(i => $"- {i.Text}").ToList();
+
+        // Tone of the response depends on the health score so the message feels appropriate
+        var tone = _healthScore >= 85
+            ? "The vehicle is in excellent shape. Acknowledge what is working well, then give one specific proactive tip to keep it that way."
+            : _healthScore >= 70
+            ? "The vehicle is generally healthy but has a minor item to watch. Briefly say what is going well, then clearly state the one thing the owner should act on next."
+            : "The vehicle needs attention. Lead with the most important issue the owner must fix, explain why it matters, and give a clear next step.";        
+
         var prompt = $"""
 Vehicle: {vehicle.Make} {vehicle.Model} ({vehicle.Year})
 Health score: {_healthScore}/100 ({_healthLabel})
-Issues:
+What is working well:
+{(positives.Any() ? string.Join(Environment.NewLine, positives) : "- No positives recorded yet")}
+Items that need attention:
 {(issues.Any() ? string.Join(Environment.NewLine, issues) : "- None")}
-Positives:
-{(positives.Any() ? string.Join(Environment.NewLine, positives) : "- None")}
-Recommendation: {(_scoreBoostHint.Length > 0 ? _scoreBoostHint : "Keep your service schedule current and log fuel regularly.")}
-Write a 2-3 sentence AI vehicle health summary. Keep it under 180 characters. Action-oriented, mention the biggest risk first, and stay grounded in the actual data only. Do not add ellipsis or truncate mid-sentence.
+Next recommended action: {(_scoreBoostHint.Length > 0 ? _scoreBoostHint : "Keep the service schedule current and log fuel entries regularly.")}
+
+Write exactly 2 complete sentences in plain, friendly English for a vehicle owner.
+{tone}
+Use the owner's vehicle name ({vehicle.Make} {vehicle.Model}) naturally.
+Do not use bullet points, headers, bold text, or markdown. Do not start with words like "Biggest risk" or "Summary".
 """;
 
-        var result = await new AzureOpenAIService().GetResultsFromAI(prompt, "You are a concise vehicle health analyst. Give a clear, actionable summary without jargon. Base it only on the supplied vehicle data. Keep responses under 180 characters.");
+        var result = await new AzureOpenAIService().GetResultsFromAI(
+            prompt,
+            "You are a friendly vehicle health advisor writing a short summary for a car owner. Use plain English, complete sentences, and only the data provided. Never use markdown or bullet points.");
         var summary = string.IsNullOrWhiteSpace(result)
-            ? $"Your {vehicle.Make} {vehicle.Model} is in {_healthLabel.ToLower()} condition with a score of {_healthScore}/100."
+            ? $"Your {vehicle.Make} {vehicle.Model} is in {_healthLabel.ToLower()} condition (score {_healthScore}/100). {(_scoreBoostHint.Length > 0 ? _scoreBoostHint : "Keep your service schedule current and log fuel entries regularly.")}"
             : result;
 
         _aiHealthSummary = SimplifyAiHealthSummary(summary);
@@ -1239,43 +1358,10 @@ Write a 2-3 sentence AI vehicle health summary. Keep it under 180 characters. Ac
         if (string.IsNullOrWhiteSpace(text))
             return "Vehicle health is being updated.";
 
-        var cleaned = text
-            .Replace("\r\n", " ")
-            .Replace("\n", " ")
-            .Replace("  ", " ")
+        // Collapse line breaks and extra spaces left by the model
+        return System.Text.RegularExpressions.Regex
+            .Replace(text.Replace("\r\n", " ").Replace("\n", " "), @" {2,}", " ")
             .Trim();
-
-        var sentences = cleaned
-            .Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Where(s => !string.IsNullOrWhiteSpace(s))
-            .Select(s => s.Trim())
-            .ToList();
-
-        if (sentences.Count == 0)
-            return cleaned;
-
-        var compact = new List<string>();
-        foreach (var sentence in sentences)
-        {
-            if (compact.Count >= 2) break;
-
-            var plain = sentence
-                .Replace("Vehicle:", "")
-                .Replace("Health score:", "Score:")
-                .Replace("Recommendation:", "Action:")
-                .Replace("The vehicle", "It")
-                .Replace("Your vehicle", "It")
-                .Replace("This vehicle", "It")
-                .Replace("Issue:", "Issue:")
-                .Replace("Issues:", "Issues:")
-                .Trim();
-
-            if (!string.IsNullOrWhiteSpace(plain))
-                compact.Add(plain);
-        }
-
-        var finalText = string.Join("  ", compact);
-        return finalText;
     }
 
     private static double ParseCurrency(string? value)

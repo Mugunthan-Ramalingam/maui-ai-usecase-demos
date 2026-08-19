@@ -687,6 +687,10 @@
                                         <Label Text="Active Intelligence"
                                                TextColor="{AppThemeBinding Light=#0F172A, Dark=White}"
                                                FontSize="16" FontAttributes="Bold" VerticalOptions="Center"/>
+                                        <ActivityIndicator IsRunning="{Binding IsAiInsightsLoading}"
+                                                           IsVisible="{Binding IsAiInsightsLoading}"
+                                                           Color="#3B82F6" WidthRequest="14" HeightRequest="14"
+                                                           VerticalOptions="Center"/>
                                     </HorizontalStackLayout>
                                     <Border Grid.Column="1"
                                             BackgroundColor="{AppThemeBinding Light=#FEF3C7, Dark=#3D2E24}"

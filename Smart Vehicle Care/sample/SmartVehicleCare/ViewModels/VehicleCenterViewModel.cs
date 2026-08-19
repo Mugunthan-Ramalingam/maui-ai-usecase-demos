@@ -68,7 +68,11 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
 
         // Auto-refresh whenever the user saves/clears the API key in Settings
         AzureOpenAIService.ApiKeyChanged += () =>
-            MainThread.BeginInvokeOnMainThread(() => _ = RefreshNearbyNetworkAsync());
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                _ = RefreshNearbyNetworkAsync();
+                _ = RefreshSpendingOptimizationAsync();
+            });
 
 
         // Add Service
@@ -528,6 +532,15 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         set => SetProperty(ref _isNearbyEmpty, value);
     }
 
+    private bool _isNearbyLoading;
+    public bool IsNearbyLoading
+    {
+        get => _isNearbyLoading;
+        set => SetProperty(ref _isNearbyLoading, value);
+    }
+
+    public bool IsApiKeyMissing => !AzureOpenAIService.HasApiKey;
+
     public ICommand ToggleNearbyMapTypeCommand { get; }
 
     // ── Add Service drawer ───────────────────────────────────────────────
@@ -919,6 +932,17 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
             return;
         }
 
+        // Ensure key is loaded from storage before checking
+        if (!AzureOpenAIService.HasApiKey)
+            await AzureOpenAIService.LoadApiKeyFromStorageAsync();
+
+        if (!AzureOpenAIService.HasApiKey)
+        {
+            SpendingOptimizationSummary = "Configure your Azure OpenAI API key in Settings to get AI-powered spending insights.";
+            OnPropertyChanged(nameof(SpendingOptimizationSummary));
+            return;
+        }
+
         var serviceSpend = services.Sum(s => ParseCurrency(s.Amount));
         var fuelSpend = fuels.Sum(f => f.TotalCost);
         var currentWindowStart = DateTime.Today.AddDays(-90);
@@ -1169,6 +1193,8 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
         NearbyNetworkItems.Clear();
         MapMarkers.Clear();
         IsNearbyEmpty = false;
+        IsNearbyLoading = true;
+        OnPropertyChanged(nameof(IsApiKeyMissing));
 
         double latitude = DefaultLatitude;
         double longitude = DefaultLongitude;
@@ -1197,11 +1223,20 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
             System.Diagnostics.Debug.WriteLine($"[NearbyNetwork] GPS error: {ex.Message}");
         }
 
-        JArray? items = null;
-
         // Ensure the API key is loaded (guards against the App startup race condition)
         if (!AzureOpenAIService.HasApiKey)
             await AzureOpenAIService.LoadApiKeyFromStorageAsync();
+
+        // No API key — surface the "not configured" state and stop
+        if (!AzureOpenAIService.HasApiKey)
+        {
+            IsNearbyEmpty = true;
+            IsNearbyLoading = false;
+            OnPropertyChanged(nameof(IsApiKeyMissing));
+            return;
+        }
+
+        JArray? items = null;
 
         // ── Primary: Overpass OSM API (real data from OpenStreetMap) ─────────────
         {
@@ -1230,10 +1265,14 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
         if (items == null || items.Count == 0)
         {
             IsNearbyEmpty = true;
+            IsNearbyLoading = false;
+            OnPropertyChanged(nameof(IsApiKeyMissing));
             return;
         }
 
         PopulateNearbyFromResults(items, latitude, longitude);
+        IsNearbyLoading = false;
+        OnPropertyChanged(nameof(IsApiKeyMissing));
     }
 
     // Builds a prompt following the blog pattern and calls Azure OpenAI.
