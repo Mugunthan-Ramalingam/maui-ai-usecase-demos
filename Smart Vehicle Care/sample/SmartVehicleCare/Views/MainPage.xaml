@@ -89,7 +89,7 @@
                         </Grid.Triggers>
                         <Label Grid.Column="0" Text="&#xE871;" FontFamily="MaterialIcons"
                                FontSize="18" HorizontalOptions="Center" VerticalOptions="Center"
-                               TextColor="#64748B">
+                               TextColor="{StaticResource BrandMutedOnDark}">
                             <Label.Triggers>
                                 <DataTrigger TargetType="Label" Binding="{Binding IsDashNavActive}" Value="True">
                                     <Setter Property="TextColor" Value="#F59E0B"/>
@@ -97,7 +97,7 @@
                             </Label.Triggers>
                         </Label>
                         <Label Grid.Column="1" Text="Dashboard" FontSize="14"
-                               VerticalOptions="Center" TextColor="#64748B">
+                               VerticalOptions="Center" TextColor="{StaticResource BrandMutedOnDark}">
                             <Label.Triggers>
                                 <DataTrigger TargetType="Label" Binding="{Binding IsDashNavActive}" Value="True">
                                     <Setter Property="TextColor" Value="White"/>
@@ -127,7 +127,7 @@
                         </Grid.Triggers>
                         <Label Grid.Column="0" Text="&#xE531;" FontFamily="MaterialIcons"
                                FontSize="18" HorizontalOptions="Center" VerticalOptions="Center"
-                               TextColor="#64748B">
+                               TextColor="{StaticResource BrandMutedOnDark}">
                             <Label.Triggers>
                                 <DataTrigger TargetType="Label" Binding="{Binding IsVehicleNavActive}" Value="True">
                                     <Setter Property="TextColor" Value="#F59E0B"/>
@@ -135,7 +135,7 @@
                             </Label.Triggers>
                         </Label>
                         <Label Grid.Column="1" Text="Vehicle Center" FontSize="14"
-                               VerticalOptions="Center" TextColor="#64748B">
+                               VerticalOptions="Center" TextColor="{StaticResource BrandMutedOnDark}">
                             <Label.Triggers>
                                 <DataTrigger TargetType="Label" Binding="{Binding IsVehicleNavActive}" Value="True">
                                     <Setter Property="TextColor" Value="White"/>
@@ -165,7 +165,7 @@
                         </Grid.Triggers>
                         <Label Grid.Column="0" Text="&#xE65F;" FontFamily="MaterialIcons"
                                FontSize="18" HorizontalOptions="Center" VerticalOptions="Center"
-                               TextColor="#64748B">
+                               TextColor="{StaticResource BrandMutedOnDark}">
                             <Label.Triggers>
                                 <DataTrigger TargetType="Label" Binding="{Binding IsAINavActive}" Value="True">
                                     <Setter Property="TextColor" Value="#F59E0B"/>
@@ -173,7 +173,7 @@
                             </Label.Triggers>
                         </Label>
                         <Label Grid.Column="1" Text="AI Assist" FontSize="14"
-                               VerticalOptions="Center" TextColor="#64748B">
+                               VerticalOptions="Center" TextColor="{StaticResource BrandMutedOnDark}">
                             <Label.Triggers>
                                 <DataTrigger TargetType="Label" Binding="{Binding IsAINavActive}" Value="True">
                                     <Setter Property="TextColor" Value="White"/>
@@ -208,7 +208,7 @@
                             </Grid.Triggers>
                             <Label Grid.Column="0" Text="&#xE8B8;" FontFamily="MaterialIcons"
                                    FontSize="18" HorizontalOptions="Center" VerticalOptions="Center"
-                                   TextColor="#64748B">
+                                   TextColor="{StaticResource BrandMutedOnDark}">
                                 <Label.Triggers>
                                     <DataTrigger TargetType="Label" Binding="{Binding IsSettingsNavActive}" Value="True">
                                         <Setter Property="TextColor" Value="#F59E0B"/>
@@ -216,7 +216,7 @@
                                 </Label.Triggers>
                             </Label>
                             <Label Grid.Column="1" Text="Settings" FontSize="14"
-                                   VerticalOptions="Center" TextColor="#64748B">
+                                   VerticalOptions="Center" TextColor="{StaticResource BrandMutedOnDark}">
                                 <Label.Triggers>
                                     <DataTrigger TargetType="Label" Binding="{Binding IsSettingsNavActive}" Value="True">
                                         <Setter Property="TextColor" Value="White"/>
@@ -263,15 +263,25 @@
                 <!-- Add Vehicle Button (Desktop) -->
                 <buttons:SfButton Grid.Column="1" 
                     IsVisible="{Binding IsAddVehicleButtonVisible}"
-                    Text="+ Add Vehicle" 
+                    WidthRequest="132"
                     FontSize="13" 
                     CornerRadius="8"
                     HeightRequest="40"
+                    Padding="10,0"
                     Background="{AppThemeBinding Light=#B45309, Dark=#D97706}"
                     TextColor="White"
                     Command="{Binding ShowAddVehicleCommand}"
                     Margin="0,0,12,0" 
-                    VerticalOptions="Center"/>
+                    VerticalOptions="Center">
+                    <buttons:SfButton.Content>
+                        <DataTemplate>
+                            <HorizontalStackLayout Spacing="6" HorizontalOptions="Center" VerticalOptions="Center">
+                            <Label Text="+" FontSize="18" FontAttributes="Bold" TextColor="White" VerticalOptions="Center"/>
+                            <Label Text="Add Vehicle" FontSize="13" FontAttributes="Bold" TextColor="White" VerticalOptions="Center"/>
+                            </HorizontalStackLayout>
+                        </DataTemplate>
+                    </buttons:SfButton.Content>
+                </buttons:SfButton>
                 <!-- Vehicle Switcher Pill -->
                 <Border Grid.Column="2" Margin="0,0,24,0"
                         BackgroundColor="{AppThemeBinding Light=#FAF9F5, Dark=#2D2117}"
@@ -460,7 +470,7 @@
                                         <!-- Health Badge -->
                                         <Border Grid.Column="1"
                                                 Padding="10,6"
-                                                BackgroundColor="{AppThemeBinding Light=#DCFCE7, Dark=#14532D}"
+                                                BackgroundColor="{Binding ConditionBackgroundColor}"
                                                 StrokeThickness="0"
                                                 HorizontalOptions="End"
                                                 VerticalOptions="Start">
@@ -469,11 +479,11 @@
                                                 <RoundRectangle CornerRadius="8"/>
                                             </Border.StrokeShape>
 
-                                            <Label Text="● GOOD"
+                                              <Label Text="{Binding ConditionText}"
                                                    FontSize="11"
                                                    FontAttributes="Bold"
                                                    FontFamily="OpenSansSemibold"
-                                                   TextColor="{AppThemeBinding Light=#16A34A, Dark=#4ADE80}"/>
+                                                  TextColor="{Binding ConditionTextColor}"/>
                                         </Border>
 
                                     </Grid>
@@ -528,8 +538,8 @@
 
                                         <!-- Next Service -->
                                         <StackLayout Grid.Column="0" Spacing="2">
-                                            <Label Text="NEXT SERVICE"
-                                                   FontSize="9"
+                                            <Label Text="Next service"
+                                                   FontSize="10"
                                                    FontAttributes="Bold"
                                                    CharacterSpacing="0.5"
                                                    TextColor="{OnPlatform Default=#E2E8F0, WinUI={AppThemeBinding Light=#94A3B8, Dark=#4A6482}, MacCatalyst={AppThemeBinding Light=#94A3B8, Dark=#4A6482}}"/>
@@ -549,14 +559,14 @@
 
                                         <!-- Monthly Spend -->
                                         <StackLayout Grid.Column="2" Spacing="2">
-                                            <Label Text="THIS MONTH"
-                                                   FontSize="9"
+                                            <Label Text="This Month"
+                                                   FontSize="10"
                                                    FontAttributes="Bold"
                                                    CharacterSpacing="0.5"
                                                    TextColor="{OnPlatform Default=#E2E8F0, WinUI={AppThemeBinding Light=#94A3B8, Dark=#4A6482}, MacCatalyst={AppThemeBinding Light=#94A3B8, Dark=#4A6482}}"/>
                                             <HorizontalStackLayout Spacing="4">
-                                                <Label Text="&#xE227;"
-                                                       FontFamily="MaterialIcons"
+                                                      <Label Text="&#x20B9;"
+                                                          FontFamily="OpenSansRegular"
                                                        FontSize="13"
                                                        VerticalOptions="Center"
                                                        TextColor="{OnPlatform Default=White, WinUI={AppThemeBinding Light=#3B82F6, Dark=#60A5FA}, MacCatalyst={AppThemeBinding Light=#3B82F6, Dark=#60A5FA}}"/>
@@ -599,19 +609,11 @@
                                         <Border.StrokeShape>
                                             <RoundRectangle CornerRadius="8"/>
                                         </Border.StrokeShape>
-                                        <HorizontalStackLayout Spacing="4">
-                                            <Label Text="{Binding HealthScore, StringFormat='{0:0}/100'}"
-                                                   FontSize="11" FontAttributes="Bold"
+                                             <Label Text="{Binding HealthScore, StringFormat='{0:0}/100'}"
+                                                 FontSize="11" FontAttributes="Bold"
                                                    FontFamily="OpenSansSemibold"
                                                    VerticalOptions="Center"
-                                                   TextColor="{AppThemeBinding Light=#B45309, Dark=#F59E0B}"/>
-                                            <Label Text="·" FontSize="11" VerticalOptions="Center"
-                                                   TextColor="{AppThemeBinding Light=#92400E, Dark=#F59E0B}"/>
-                                            <Label Text="{Binding HealthLabel}" FontSize="11" FontAttributes="Bold"
-                                                   FontFamily="OpenSansSemibold"
-                                                   VerticalOptions="Center"
-                                                   TextColor="{AppThemeBinding Light=#B45309, Dark=#F59E0B}"/>
-                                        </HorizontalStackLayout>
+                                                 TextColor="{AppThemeBinding Light=#B45309, Dark=#F59E0B}"/>
                                     </Border>
                                 </Grid>
 
@@ -751,22 +753,31 @@
                                 <!-- Header: title + current month name -->
                                 <Grid ColumnDefinitions="*,Auto">
                                     <HorizontalStackLayout Spacing="8">
-                                        <Label Text="&#xE8A1;" FontFamily="MaterialIcons"
+                                        <Label Text="&#xE8B0;" FontFamily="MaterialIcons"
                                                TextColor="#3B82F6" FontSize="18" VerticalOptions="Center"/>
                                         <Label Text="Monthly Expense"
                                                TextColor="{AppThemeBinding Light=#0F172A, Dark=White}"
                                                FontSize="16" FontAttributes="Bold" VerticalOptions="Center"/>
                                     </HorizontalStackLayout>
-                                    <Border Grid.Column="1" Padding="10,5" StrokeThickness="0"
+                                    <Border Grid.Column="1" Padding="6,2" StrokeThickness="0"
                                             BackgroundColor="{AppThemeBinding Light=#F1F5F9, Dark=#2D2117}"
-                                            VerticalOptions="Center">
+                                            VerticalOptions="Center"
+                                            WidthRequest="150">
                                         <Border.StrokeShape>
                                             <RoundRectangle CornerRadius="8"/>
                                         </Border.StrokeShape>
-                                        <Label Text="{Binding CurrentMonthName}"
-                                               FontSize="11" FontAttributes="Bold"
-                                               FontFamily="OpenSansSemibold"
-                                               TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}"/>
+                                        <editors:SfComboBox ItemsSource="{Binding ExpenseMonths}"
+                                                            SelectedItem="{Binding SelectedExpenseMonth, Mode=TwoWay}"
+                                                            IsClearButtonVisible="False"
+                                                            IsEditable="False"
+                                                            Background="Transparent"
+                                                            ShowBorder="False"
+                                                            DropDownPlacement="Bottom"
+                                                            DropDownBackground="{AppThemeBinding Light=White, Dark={StaticResource BrandDarkCard}}"
+                                                            DropDownItemTextColor="{AppThemeBinding Light=#0F172A, Dark=White}"
+                                                            TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}"
+                                                            DropDownIconColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}"
+                                                            FontSize="11"/>
                                     </Border>
                                 </Grid>
 
@@ -797,7 +808,7 @@
                                     
                                 </Grid>
 
-                                <Label Text="THIS MONTH BREAKDOWN"
+                                <Label Text="{Binding ExpenseBreakdownTitle}"
                                        TextColor="{AppThemeBinding Light=#94A3B8, Dark=#4A6482}"
                                        FontSize="9" FontAttributes="Bold" CharacterSpacing="1"/>
 
@@ -920,10 +931,10 @@
                                                             GridLineColor="{AppThemeBinding Light=#E2E8F0, Dark=#3D2E24}"/>
                                 </dataGrid:SfDataGrid.DefaultStyle>
                                 <dataGrid:SfDataGrid.Columns>
-                                    <dataGrid:DataGridTextColumn MappingName="Date" HeaderText="DATE" Width="{OnPlatform WinUI=200, MacCatalyst=200, Android=110, iOS=110}"/>
-                                    <dataGrid:DataGridTextColumn MappingName="Type" HeaderText="TYPE" Width="{OnPlatform WinUI=210, MacCatalyst=210, Android=110, iOS=110}"/>
-                                    <dataGrid:DataGridTextColumn MappingName="Detail" HeaderText="DETAIL" LineBreakMode="WordWrap" Width="{OnPlatform Android=140, iOS=140}"/>
-                                    <dataGrid:DataGridTemplateColumn MappingName="Status" HeaderText="STATUS" Width="{OnPlatform WinUI=160, MacCatalyst=160, Android=90, iOS=90}">
+                                    <dataGrid:DataGridTextColumn MappingName="Date" HeaderText="Date" Width="{OnPlatform WinUI=200, MacCatalyst=200, Android=110, iOS=110}"/>
+                                    <dataGrid:DataGridTextColumn MappingName="Type" HeaderText="type" Width="{OnPlatform WinUI=210, MacCatalyst=210, Android=110, iOS=110}"/>
+                                    <dataGrid:DataGridTextColumn MappingName="Detail" HeaderText="Details" LineBreakMode="WordWrap" Width="{OnPlatform Android=140, iOS=140}"/>
+                                    <dataGrid:DataGridTemplateColumn MappingName="Status" HeaderText="Summary" Width="{OnPlatform WinUI=160, MacCatalyst=160, Android=90, iOS=90}">
                                         <dataGrid:DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate x:DataType="models:DashboardTableRow">
                                                 <ContentView HorizontalOptions="Center" VerticalOptions="Center">
@@ -953,11 +964,15 @@
                            ShowHeader="True"
                            ShowFooter="False"
                            ShowCloseButton="True"
-                           WidthRequest="760"
+                           MaximumWidthRequest="760"
                            HeightRequest="{Binding AllRecordsPopupHeight}"
                            StaysOpen="False">
                 <popup:SfPopup.PopupStyle>
-                    <popup:PopupStyle HeaderBackground="White"/>
+                    <popup:PopupStyle HeaderBackground="{AppThemeBinding Light=White, Dark=#2D2117}"
+                                      HeaderTextColor="{AppThemeBinding Light=#0F172A, Dark=#FAF6F0}"
+                                      PopupBackground="{AppThemeBinding Light=#F8FAFC, Dark=#1C1917}"
+                                      Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#3D2E24}"
+                                      OverlayColor="{AppThemeBinding Light=#66000000, Dark=#99000000}"/>
                 </popup:SfPopup.PopupStyle>
                 <popup:SfPopup.ContentTemplate>
                     <DataTemplate x:DataType="vm:MainViewModel">
@@ -983,10 +998,10 @@
                                                             GridLineColor="{AppThemeBinding Light=#E2E8F0, Dark=#3D2E24}"/>
                                 </dataGrid:SfDataGrid.DefaultStyle>
                                 <dataGrid:SfDataGrid.Columns>
-                                    <dataGrid:DataGridTextColumn MappingName="Date" HeaderText="DATE" Width="120"/>
-                                    <dataGrid:DataGridTextColumn MappingName="Type" HeaderText="TYPE" Width="140"/>
-                                    <dataGrid:DataGridTextColumn MappingName="Detail" HeaderText="DETAIL" LineBreakMode="WordWrap"/>
-                                    <dataGrid:DataGridTemplateColumn MappingName="Status" HeaderText="STATUS" Width="130">
+                                    <dataGrid:DataGridTextColumn MappingName="Date" HeaderText="Date" Width="120"/>
+                                    <dataGrid:DataGridTextColumn MappingName="Type" HeaderText="Type" Width="140"/>
+                                    <dataGrid:DataGridTextColumn MappingName="Detail" HeaderText="Details" LineBreakMode="WordWrap"/>
+                                    <dataGrid:DataGridTemplateColumn MappingName="Status" HeaderText="Summary" Width="130">
                                         <dataGrid:DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate x:DataType="models:DashboardTableRow">
                                                 <ContentView HorizontalOptions="Center" VerticalOptions="Center">
@@ -1046,14 +1061,14 @@
                         <TapGestureRecognizer Tapped="OnNavDashboardTapped"/>
                     </StackLayout.GestureRecognizers>
                     <Label Text="&#xE871;" FontFamily="MaterialIcons" FontSize="22"
-                           HorizontalOptions="Center" TextColor="#64748B">
+                           HorizontalOptions="Center" TextColor="{StaticResource BrandMutedOnDark}">
                         <Label.Triggers>
                             <DataTrigger TargetType="Label" Binding="{Binding IsDashNavActive}" Value="True">
                                 <Setter Property="TextColor" Value="#F59E0B"/>
                             </DataTrigger>
                         </Label.Triggers>
                     </Label>
-                    <Label Text="Dashboard" FontSize="10" HorizontalOptions="Center" TextColor="#64748B">
+                    <Label Text="Dashboard" FontSize="10" HorizontalOptions="Center" TextColor="{StaticResource BrandMutedOnDark}">
                         <Label.Triggers>
                             <DataTrigger TargetType="Label" Binding="{Binding IsDashNavActive}" Value="True">
                                 <Setter Property="TextColor" Value="#F59E0B"/>
@@ -1068,14 +1083,14 @@
                         <TapGestureRecognizer Tapped="OnNavVehicleCenterTapped"/>
                     </StackLayout.GestureRecognizers>
                     <Label Text="&#xE531;" FontFamily="MaterialIcons" FontSize="22"
-                           HorizontalOptions="Center" TextColor="#64748B">
+                           HorizontalOptions="Center" TextColor="{StaticResource BrandMutedOnDark}">
                         <Label.Triggers>
                             <DataTrigger TargetType="Label" Binding="{Binding IsVehicleNavActive}" Value="True">
                                 <Setter Property="TextColor" Value="#F59E0B"/>
                             </DataTrigger>
                         </Label.Triggers>
                     </Label>
-                    <Label Text="Vehicle" FontSize="10" HorizontalOptions="Center" TextColor="#64748B">
+                    <Label Text="Vehicle" FontSize="10" HorizontalOptions="Center" TextColor="{StaticResource BrandMutedOnDark}">
                         <Label.Triggers>
                             <DataTrigger TargetType="Label" Binding="{Binding IsVehicleNavActive}" Value="True">
                                 <Setter Property="TextColor" Value="#F59E0B"/>
@@ -1090,14 +1105,14 @@
                         <TapGestureRecognizer Tapped="OnNavAIAssistTapped"/>
                     </StackLayout.GestureRecognizers>
                     <Label Text="&#xE65F;" FontFamily="MaterialIcons" FontSize="22"
-                           HorizontalOptions="Center" TextColor="#64748B">
+                           HorizontalOptions="Center" TextColor="{StaticResource BrandMutedOnDark}">
                         <Label.Triggers>
                             <DataTrigger TargetType="Label" Binding="{Binding IsAINavActive}" Value="True">
                                 <Setter Property="TextColor" Value="#F59E0B"/>
                             </DataTrigger>
                         </Label.Triggers>
                     </Label>
-                    <Label Text="AI Assist" FontSize="10" HorizontalOptions="Center" TextColor="#64748B">
+                    <Label Text="AI Assist" FontSize="10" HorizontalOptions="Center" TextColor="{StaticResource BrandMutedOnDark}">
                         <Label.Triggers>
                             <DataTrigger TargetType="Label" Binding="{Binding IsAINavActive}" Value="True">
                                 <Setter Property="TextColor" Value="#F59E0B"/>
@@ -1112,14 +1127,14 @@
                         <TapGestureRecognizer Tapped="OnNavSettingsTapped"/>
                     </StackLayout.GestureRecognizers>
                     <Label Text="&#xE8B8;" FontFamily="MaterialIcons" FontSize="22"
-                           HorizontalOptions="Center" TextColor="#64748B">
+                           HorizontalOptions="Center" TextColor="{StaticResource BrandMutedOnDark}">
                         <Label.Triggers>
                             <DataTrigger TargetType="Label" Binding="{Binding IsSettingsNavActive}" Value="True">
                                 <Setter Property="TextColor" Value="#F59E0B"/>
                             </DataTrigger>
                         </Label.Triggers>
                     </Label>
-                    <Label Text="Settings" FontSize="10" HorizontalOptions="Center" TextColor="#64748B">
+                    <Label Text="Settings" FontSize="10" HorizontalOptions="Center" TextColor="{StaticResource BrandMutedOnDark}">
                         <Label.Triggers>
                             <DataTrigger TargetType="Label" Binding="{Binding IsSettingsNavActive}" Value="True">
                                 <Setter Property="TextColor" Value="#F59E0B"/>

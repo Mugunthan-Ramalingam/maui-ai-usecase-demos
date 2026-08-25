@@ -144,7 +144,7 @@ internal class ServiceCenterDataHelper
 
                 var openingHoursRaw = tags["opening_hours"]?.ToString();
                 var openTime = string.IsNullOrWhiteSpace(openingHoursRaw)
-                    ? (normalizedType == "Fuel Station" ? "Open 24 Hrs" : "Mon–Sat: 8:00 AM – 7:00 PM")
+                    ? "Hours unavailable"
                     : openingHoursRaw;
 
                 var detail = normalizedType == "Fuel Station"

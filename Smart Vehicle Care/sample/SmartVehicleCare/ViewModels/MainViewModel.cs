@@ -95,6 +95,7 @@ public class MainViewModel : INotifyPropertyChanged
 
         // ✅ Subscribe to demo mode changes
         VehicleDataService.Instance.ModeChanged += OnDataModeChanged;
+        VehicleDataService.Instance.DataReloaded += SynchronizeAfterDataReload;
 
         InitializeData();
     }
@@ -108,6 +109,31 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(DemoBadgeVisibility));
         OnPropertyChanged(nameof(DemoBadgeText));
         System.Diagnostics.Debug.WriteLine($"[MainViewModel] Data mode changed to: {newMode}");
+    }
+
+    private void SynchronizeAfterDataReload()
+    {
+        void Synchronize()
+        {
+            var selected = VehicleDataService.Instance.SelectedVehicle;
+            Vehicles.Clear();
+            foreach (var vehicle in VehicleDataService.Instance.Vehicles)
+                Vehicles.Add(vehicle);
+
+            _selectedVehicle = selected != null
+                ? Vehicles.FirstOrDefault(v => v.Id == selected.Id)
+                : null;
+            OnPropertyChanged(nameof(SelectedVehicle));
+            OnPropertyChanged(nameof(SelectedVehicleLabel));
+            OnPropertyChanged(nameof(VehicleName));
+            OnPropertyChanged(nameof(VehicleModel));
+            RebuildDashboard();
+        }
+
+        if (MainThread.IsMainThread)
+            Synchronize();
+        else
+            MainThread.BeginInvokeOnMainThread(Synchronize);
     }
 
     /// <summary>
@@ -301,7 +327,28 @@ public class MainViewModel : INotifyPropertyChanged
             return $"Last service: {(int)(diff.TotalDays / 30)} months ago";
         }
     }
-    public string ConditionText => HasVehicles ? (_healthLabel == "EXCELLENT" ? "● EXCELLENT CONDITION" : $"● {_healthLabel}") : "—";
+    public string ConditionText => HasVehicles ? _healthLabel switch
+    {
+        "EXCELLENT" => "EXCELLENT",
+        "GOOD" => "GOOD",
+        _ => "NEEDS ATTENTION"
+    } : "NO DATA";
+
+    public Color ConditionBackgroundColor => ConditionText switch
+    {
+        "EXCELLENT" => Color.FromArgb("#DCFCE7"),
+        "GOOD" => Color.FromArgb("#DCFCE7"),
+        "NO DATA" => Color.FromArgb("#F1F5F9"),
+        _ => Color.FromArgb("#FEF3C7")
+    };
+
+    public Color ConditionTextColor => ConditionText switch
+    {
+        "EXCELLENT" => Color.FromArgb("#15803D"),
+        "GOOD" => Color.FromArgb("#16A34A"),
+        "NO DATA" => Color.FromArgb("#64748B"),
+        _ => Color.FromArgb("#B45309")
+    };
 
     public string NextServiceDueText
     {
@@ -328,7 +375,22 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    public string MonthlySpendText => _currentTotal > 0 ? $"₹{_currentTotal:N0}" : "No spend";
+    public string MonthlySpendText
+    {
+        get
+        {
+            var month = DateTime.Today;
+            var vehicleId = _selectedVehicle?.Id ?? 0;
+            var fuel = VehicleDataService.Instance.GetFuelEntries(vehicleId)
+                .Where(f => f.FuelDate.Year == month.Year && f.FuelDate.Month == month.Month)
+                .Sum(f => f.TotalCost);
+            var service = VehicleDataService.Instance.GetServiceRecords(vehicleId)
+                .Where(s => s.ServiceDate.Year == month.Year && s.ServiceDate.Month == month.Month)
+                .Sum(s => ParseCurrency(s.Amount));
+            var total = fuel + service;
+            return total > 0 ? $"{total:N0}" : "No spend";
+        }
+    }
 
     // ── Overall Health (computed from real data) ──────────────────────────────
 
@@ -350,12 +412,27 @@ public class MainViewModel : INotifyPropertyChanged
     private double _allTimeService;
     private int _trackedMonths;
     private double _allTimeCostPerKm;
+    private string _selectedExpenseMonth = string.Empty;
+    private int _expenseVehicleId = -1;
+
+    public ObservableCollection<string> ExpenseMonths { get; } = new();
+
+    public string SelectedExpenseMonth
+    {
+        get => _selectedExpenseMonth;
+        set
+        {
+            if (SetProperty(ref _selectedExpenseMonth, value) && DateTime.TryParse(value, out _))
+                RebuildSelectedMonthExpense();
+        }
+    }
 
     private double _currentTotal => _currentMonthFuel + _currentMonthService;
     private double _allTimeTotal => _allTimeFuel + _allTimeService;
     private double _avgMonthly => _trackedMonths > 0 ? _allTimeTotal / _trackedMonths : 0;
 
-    public string CurrentMonthName => DateTime.Today.ToString("MMMM yyyy").ToUpper();
+    public string CurrentMonthName => GetSelectedExpenseDate().ToString("MMMM yyyy").ToUpper();
+    public string ExpenseBreakdownTitle => $"{CurrentMonthName} BREAKDOWN";
     public string CurrentMonthTotal => _currentTotal > 0 ? $"₹{_currentTotal:N0}" : "₹0";
     public string CurrentMonthFuelLabel => _currentMonthFuel > 0 ? $"₹{_currentMonthFuel:N0}" : "₹0";
     public string CurrentMonthServiceLabel => _currentMonthService > 0 ? $"₹{_currentMonthService:N0}" : "₹0";
@@ -379,6 +456,13 @@ public class MainViewModel : INotifyPropertyChanged
     public Color VsAvgColor => VsAvgLabel.StartsWith("↑") ? Color.FromArgb("#EF4444")
                              : VsAvgLabel.StartsWith("↓") ? Color.FromArgb("#22C55E")
                              : Color.FromArgb("#3B82F6");
+
+    private DateTime GetSelectedExpenseDate()
+        => DateTime.TryParse(_selectedExpenseMonth, out var selectedMonth)
+            ? new DateTime(selectedMonth.Year, selectedMonth.Month, 1)
+            : new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+
+    private void RebuildSelectedMonthExpense() => RebuildDashboard();
 
     // Legacy aliases so other bindings don't break
     public string ThisMonthExpense => CurrentMonthTotal;
@@ -502,6 +586,48 @@ public class MainViewModel : INotifyPropertyChanged
         foreach (var v in VehicleDataService.Instance.Vehicles)
             if (!Vehicles.Contains(v)) Vehicles.Add(v);
 
+        VehicleDataService.Instance.Vehicles.CollectionChanged += (_, e) =>
+        {
+            void SynchronizeVehicles()
+            {
+                if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset)
+                {
+                    Vehicles.Clear();
+                }
+                else if (e.NewItems != null)
+                    foreach (Vehicle vehicle in e.NewItems)
+                        if (!Vehicles.Any(v => v.Id == vehicle.Id))
+                            Vehicles.Add(vehicle);
+
+                if (e.Action != System.Collections.Specialized.NotifyCollectionChangedAction.Reset && e.OldItems != null)
+                    foreach (Vehicle vehicle in e.OldItems)
+                    {
+                        var existing = Vehicles.FirstOrDefault(v => v.Id == vehicle.Id);
+                        if (existing != null) Vehicles.Remove(existing);
+                    }
+
+                var selected = VehicleDataService.Instance.SelectedVehicle;
+                if (selected != null && Vehicles.Any(v => v.Id == selected.Id))
+                {
+                    _selectedVehicle = selected;
+                    OnPropertyChanged(nameof(SelectedVehicle));
+                    OnPropertyChanged(nameof(SelectedVehicleLabel));
+                    OnPropertyChanged(nameof(VehicleName));
+                    OnPropertyChanged(nameof(VehicleModel));
+                }
+                else if (selected == null)
+                {
+                    _selectedVehicle = null;
+                    OnPropertyChanged(nameof(SelectedVehicle));
+                }
+            }
+
+            if (MainThread.IsMainThread)
+                SynchronizeVehicles();
+            else
+                MainThread.BeginInvokeOnMainThread(SynchronizeVehicles);
+        };
+
         Vehicles.CollectionChanged += (s, e) =>
         {
             OnPropertyChanged(nameof(HasVehicles));
@@ -511,7 +637,7 @@ public class MainViewModel : INotifyPropertyChanged
         // Sync vehicle selection from VehicleCenterViewModel changes
         VehicleDataService.Instance.SelectedVehicleChanged += v =>
         {
-            if (v != null && v != _selectedVehicle)
+            if (v != _selectedVehicle)
             {
                 _selectedVehicle = v;
                 OnPropertyChanged(nameof(SelectedVehicle));
@@ -556,19 +682,43 @@ public class MainViewModel : INotifyPropertyChanged
     {
         var vid = _selectedVehicle?.Id ?? 0;
 
-        // Expense Intelligence — current month vs all-time for selected vehicle
-        var now = DateTime.Today;
         var allFuels = VehicleDataService.Instance.GetFuelEntries(vid).ToList();
         var allServices = VehicleDataService.Instance.GetServiceRecords(vid).ToList();
 
-        _currentMonthFuel = allFuels.Where(f => f.FuelDate.Year == now.Year && f.FuelDate.Month == now.Month).Sum(f => f.TotalCost);
-        _currentMonthService = allServices.Where(s => s.ServiceDate.Year == now.Year && s.ServiceDate.Month == now.Month).Sum(s => ParseCurrency(s.Amount));
         _allTimeFuel = allFuels.Sum(f => f.TotalCost);
         _allTimeService = allServices.Sum(s => ParseCurrency(s.Amount));
 
         var allDates = allFuels.Select(f => f.FuelDate).Concat(allServices.Select(s => s.ServiceDate)).ToList();
+        var currentMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        var firstMonth = allDates.Count > 0
+            ? new DateTime(allDates.Min().Year, allDates.Min().Month, 1)
+            : currentMonth;
+
+        if (_expenseVehicleId != vid)
+        {
+            _expenseVehicleId = vid;
+            _selectedExpenseMonth = currentMonth.ToString("MMMM yyyy");
+        }
+
+        ExpenseMonths.Clear();
+        for (var month = firstMonth; month <= currentMonth; month = month.AddMonths(1))
+            ExpenseMonths.Add(month.ToString("MMMM yyyy"));
+
+        var selectedMonth = DateTime.TryParse(_selectedExpenseMonth, out var parsedMonth)
+            ? new DateTime(parsedMonth.Year, parsedMonth.Month, 1)
+            : currentMonth;
+        if (selectedMonth < firstMonth || selectedMonth > currentMonth)
+            selectedMonth = currentMonth;
+
+        var selectedMonthName = selectedMonth.ToString("MMMM yyyy");
+        if (_selectedExpenseMonth != selectedMonthName)
+            _selectedExpenseMonth = selectedMonthName;
+
+        _currentMonthFuel = allFuels.Where(f => f.FuelDate.Year == selectedMonth.Year && f.FuelDate.Month == selectedMonth.Month).Sum(f => f.TotalCost);
+        _currentMonthService = allServices.Where(s => s.ServiceDate.Year == selectedMonth.Year && s.ServiceDate.Month == selectedMonth.Month).Sum(s => ParseCurrency(s.Amount));
+
         _trackedMonths = allDates.Count > 0
-            ? Math.Max(1, (now.Year - allDates.Min().Year) * 12 + now.Month - allDates.Min().Month + 1)
+            ? Math.Max(1, (currentMonth.Year - firstMonth.Year) * 12 + currentMonth.Month - firstMonth.Month + 1)
             : 0;
 
         if (double.TryParse(_selectedVehicle?.OdometerReading, out var odo) && odo > 0 && _allTimeTotal > 0)
@@ -577,6 +727,8 @@ public class MainViewModel : INotifyPropertyChanged
             _allTimeCostPerKm = 0;
 
         OnPropertyChanged(nameof(CurrentMonthName));
+        OnPropertyChanged(nameof(SelectedExpenseMonth));
+        OnPropertyChanged(nameof(ExpenseBreakdownTitle));
         OnPropertyChanged(nameof(CurrentMonthTotal));
         OnPropertyChanged(nameof(CurrentMonthFuelLabel));
         OnPropertyChanged(nameof(CurrentMonthServiceLabel));
@@ -1099,6 +1251,8 @@ public class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(HealthTrend));
             OnPropertyChanged(nameof(HealthDescription));
             OnPropertyChanged(nameof(ConditionText));
+            OnPropertyChanged(nameof(ConditionBackgroundColor));
+            OnPropertyChanged(nameof(ConditionTextColor));
             OnPropertyChanged(nameof(ScoreBoostHint));
             OnPropertyChanged(nameof(HasScoreBoostHint));
 
@@ -1286,6 +1440,8 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(HealthTrend));
         OnPropertyChanged(nameof(HealthDescription));
         OnPropertyChanged(nameof(ConditionText));
+        OnPropertyChanged(nameof(ConditionBackgroundColor));
+        OnPropertyChanged(nameof(ConditionTextColor));
         OnPropertyChanged(nameof(ScoreBoostHint));
         OnPropertyChanged(nameof(HasScoreBoostHint));
 

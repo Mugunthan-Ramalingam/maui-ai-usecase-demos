@@ -30,15 +30,14 @@ public class AddScheduleViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(IsTyreRotationSelected));
                 OnPropertyChanged(nameof(IsGeneralServiceSelected));
                 OnPropertyChanged(nameof(IsCustomSelected));
-                if (string.IsNullOrWhiteSpace(Title))
-                    Title = value;
+                Title = value == "Custom" ? string.Empty : value;
                 NotifyValidation();
             }
         }
     }
 
-    public bool IsOilChangeSelected      => SelectedType == "Oil Change";
-    public bool IsTyreRotationSelected   => SelectedType == "Tyre Rotation";
+    public bool IsOilChangeSelected      => SelectedType == "Oil & Filter Change";
+    public bool IsTyreRotationSelected   => SelectedType == "Tyre & Wheel Service";
     public bool IsGeneralServiceSelected => SelectedType == "General Service";
     public bool IsCustomSelected         => SelectedType == "Custom";
 

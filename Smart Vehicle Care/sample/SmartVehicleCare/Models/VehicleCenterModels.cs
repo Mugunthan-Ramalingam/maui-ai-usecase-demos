@@ -162,6 +162,7 @@ public class NearbyNetworkItem
     public string IconText      { get; set; } = "🔧";
     public Color  IconBgColor   { get; set; } = Color.FromArgb("#1A3A5C");
     public Color  IconTextColor { get; set; } = Color.FromArgb("#8ED3FF");
+    public CustomMarker? Marker   { get; set; }
 }
 
 // ── Schedule tab ─────────────────────────────────────────────────────────────
@@ -206,6 +207,7 @@ public class ScheduleAlert
     public string Description { get; set; } = string.Empty;
     public string ActionText { get; set; } = string.Empty;
     public Color ActionColor { get; set; } = Color.FromArgb("#3B5BDB");
+    public ScheduleReminder? Reminder { get; set; }
 }
 
 public class ScheduleReminder

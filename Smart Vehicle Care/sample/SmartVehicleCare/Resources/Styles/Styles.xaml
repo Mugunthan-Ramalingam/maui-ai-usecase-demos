@@ -3,7 +3,15 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:til="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core"
-    xmlns:combo="clr-namespace:Syncfusion.Maui.Inputs;assembly=Syncfusion.Maui.Inputs">
+    xmlns:combo="clr-namespace:Syncfusion.Maui.Inputs;assembly=Syncfusion.Maui.Inputs"
+    xmlns:picker="clr-namespace:Syncfusion.Maui.Picker;assembly=Syncfusion.Maui.Picker">
+
+    <picker:PickerTextStyle x:Key="PickerHeaderTextStyle"
+                            TextColor="{AppThemeBinding Light={StaticResource BrandTextDark}, Dark={StaticResource BrandTextOnDark}}"
+                            FontAttributes="Bold"/>
+    <picker:PickerTextStyle x:Key="PickerFooterTextStyle"
+                            TextColor="{AppThemeBinding Light={StaticResource BrandBlue}, Dark={StaticResource BrandBlueBright}}"
+                            FontAttributes="Bold"/>
 
     <Style TargetType="ActivityIndicator">
         <Setter Property="Color" Value="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource White}}" />
@@ -577,6 +585,18 @@
         <Setter Property="TextColor"              Value="{AppThemeBinding Light={StaticResource BrandTextDark}, Dark={StaticResource BrandTextOnDark}}"/>
         <Setter Property="DropDownBackground"     Value="{AppThemeBinding Light=White, Dark={StaticResource BrandDarkCard}}"/>
         <Setter Property="DropDownItemTextColor" Value="{AppThemeBinding Light=Black, Dark=White}"/>
+    </Style>
+
+    <Style TargetType="picker:PickerHeaderView">
+        <Setter Property="Background" Value="{AppThemeBinding Light=White, Dark={StaticResource BrandNavyLight}}"/>
+        <Setter Property="DividerColor" Value="{AppThemeBinding Light={StaticResource BrandBorderLight}, Dark={StaticResource BrandNavyLight}}"/>
+        <Setter Property="TextStyle" Value="{StaticResource PickerHeaderTextStyle}"/>
+    </Style>
+
+    <Style TargetType="picker:PickerFooterView">
+        <Setter Property="Background" Value="{AppThemeBinding Light=White, Dark={StaticResource BrandNavyLight}}"/>
+        <Setter Property="DividerColor" Value="{AppThemeBinding Light={StaticResource BrandBorderLight}, Dark={StaticResource BrandNavyLight}}"/>
+        <Setter Property="TextStyle" Value="{StaticResource PickerFooterTextStyle}"/>
     </Style>
 
 </ResourceDictionary>

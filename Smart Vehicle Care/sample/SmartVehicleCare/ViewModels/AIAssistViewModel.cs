@@ -35,6 +35,7 @@ public class AIAssistViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(VehicleDisplayName));
                 OnPropertyChanged(nameof(VehicleVin));
                 OnPropertyChanged(nameof(VehicleOdometer));
+                OnPropertyChanged(nameof(VehicleIconGlyph));
                 OnPropertyChanged(nameof(VehicleHealthLabel));
                 OnPropertyChanged(nameof(VehicleHealthBadgeColor));
                 RebuildRecentInsights();
@@ -47,6 +48,11 @@ public class AIAssistViewModel : INotifyPropertyChanged
         ? SelectedVehicle.RegistrationNumber : "—";
     public string VehicleOdometer    => !string.IsNullOrEmpty(SelectedVehicle?.OdometerReading)
         ? $"{SelectedVehicle.OdometerReading} km" : "—";
+    public string VehicleIconGlyph => SelectedVehicle?.VehicleType switch
+    {
+        1 => "\uE52F", // Motorcycle / bicycle icon
+        _ => "\uE531"  // Car
+    };
     public string VehicleHealthLabel => _vehicleHealthLabel;
     public Color VehicleHealthBadgeColor => _vehicleHealthLabel switch
     {
@@ -85,13 +91,63 @@ public class AIAssistViewModel : INotifyPropertyChanged
         RequestCommand = new Command<object>(ExecuteRequest);
         SuggestionTappedCommand = new Command<object>(ExecuteSuggestionRequest);
         InitializeVehicles();
+
+        VehicleDataService.Instance.Vehicles.CollectionChanged += (_, e) =>
+        {
+            void SynchronizeVehicles()
+            {
+                if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset)
+                {
+                    Vehicles.Clear();
+                    SelectedVehicle = null!;
+                }
+                else if (e.NewItems != null)
+                    foreach (Vehicle vehicle in e.NewItems)
+                        if (!Vehicles.Any(v => v.Id == vehicle.Id))
+                            Vehicles.Add(vehicle);
+
+                if (e.Action != System.Collections.Specialized.NotifyCollectionChangedAction.Reset && e.OldItems != null)
+                    foreach (Vehicle vehicle in e.OldItems)
+                    {
+                        var existing = Vehicles.FirstOrDefault(v => v.Id == vehicle.Id);
+                        if (existing != null) Vehicles.Remove(existing);
+                    }
+
+                var selected = VehicleDataService.Instance.SelectedVehicle;
+                if (selected != null && Vehicles.Any(v => v.Id == selected.Id))
+                    SelectedVehicle = selected;
+            }
+
+            if (MainThread.IsMainThread)
+                SynchronizeVehicles();
+            else
+                MainThread.BeginInvokeOnMainThread(SynchronizeVehicles);
+        };
+
+        VehicleDataService.Instance.DataReloaded += () =>
+        {
+            void Synchronize()
+            {
+                Vehicles.Clear();
+                foreach (var vehicle in VehicleDataService.Instance.Vehicles)
+                    Vehicles.Add(vehicle);
+
+                var selected = VehicleDataService.Instance.SelectedVehicle;
+                SelectedVehicle = selected!;
+            }
+
+            if (MainThread.IsMainThread)
+                Synchronize();
+            else
+                MainThread.BeginInvokeOnMainThread(Synchronize);
+        };
         
         // Subscribe to vehicle selection changes - clear chat when vehicle changes
         VehicleDataService.Instance.SelectedVehicleChanged += v =>
         {
-            if (v != null && v != _selectedVehicle)
+            if (v != _selectedVehicle)
             {
-                SelectedVehicle = v;
+                SelectedVehicle = v!;
                 ClearChat();
             }
         };

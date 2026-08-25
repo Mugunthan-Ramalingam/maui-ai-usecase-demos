@@ -294,6 +294,10 @@ public partial class WelcomePage : ContentPage
             DueDate = DateTime.Today.AddDays(24),
             Priority = "Medium"
         });
+
+        // Publish one final state after the complete sample dataset is loaded.
+        VehicleDataService.Instance.SelectedVehicle = car;
+        VehicleDataService.Instance.NotifyDataReloaded();
     }
 
 

@@ -38,6 +38,8 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
             AddScheduleViewModel.Reset();
         });
 
+        DeleteScheduleCommand = new Command<ScheduleAlert>(DeleteSchedule);
+
         AddScheduleViewModel.OnScheduleSaved += reminder =>
         {
             AddAppointmentFromReminder(reminder);
@@ -50,6 +52,8 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
             IsAddScheduleDrawerVisible = false;
             IsAddScheduleBottomSheetVisible = false;
         };
+
+        AddForecastReminderCommand = new Command(AddForecastReminder);
 
         ToggleNearbyMapTypeCommand = new Command<string>(mode =>
         {
@@ -65,6 +69,8 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(NearbyMapSummary));
             _ = RefreshNearbyNetworkAsync();
         });
+
+        SelectNearbyNetworkCommand = new Command<NearbyNetworkItem>(SelectNearbyNetwork);
 
         // Auto-refresh whenever the user saves/clears the API key in Settings
         AzureOpenAIService.ApiKeyChanged += () =>
@@ -311,16 +317,7 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(NoExpenseHistory));
         };
 
-        SelectExpenseDurationCommand = new Command<string>(months =>
-        {
-            if (int.TryParse(months, out var m)) _expenseDurationMonths = m;
-            OnPropertyChanged(nameof(IsExpense3MSelected));
-            OnPropertyChanged(nameof(IsExpense6MSelected));
-            OnPropertyChanged(nameof(IsExpense1YSelected));
-            OnPropertyChanged(nameof(IsExpense3YSelected));
-            OnPropertyChanged(nameof(IsExpense5YSelected));
-            RebuildExpenseHistory();
-        });
+        SelectExpenseDurationCommand = new Command<string>(SelectExpenseFilter);
 
 
         InitializeData();
@@ -335,8 +332,22 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
     public DateTime CurrentMonthDisplayDate
     {
         get => _currentMonthDisplayDate;
-        set => SetProperty(ref _currentMonthDisplayDate, value);
+        set
+        {
+            if (SetProperty(ref _currentMonthDisplayDate, value))
+                OnPropertyChanged(nameof(SchedulePeriodTitle));
+        }
     }
+
+    public string SchedulePeriodTitle => CurrentSchedulerView switch
+    {
+        SchedulerView.Day => CurrentMonthDisplayDate.ToString("dd MMMM yyyy"),
+        SchedulerView.Week => $"{StartOfScheduleWeek(CurrentMonthDisplayDate):dd MMM} - {StartOfScheduleWeek(CurrentMonthDisplayDate).AddDays(6):dd MMM yyyy}",
+        _ => CurrentMonthDisplayDate.ToString("MMMM yyyy")
+    };
+
+    private static DateTime StartOfScheduleWeek(DateTime date)
+        => date.Date.AddDays(-(int)date.DayOfWeek);
 
     // ── Vehicle selector (mirrors MainViewModel; share via service in future) ─
 
@@ -417,6 +428,9 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
 
     public string SpendingOptimizationTitle => "Spending Optimization";
     public string SpendingOptimizationSummary { get; private set; } = "Add service or fuel records to generate spending insights.";
+    public string SpendingTrendText { get; private set; } = "Fuel spending trend unavailable";
+    public string SpendingTrendDetail { get; private set; } = "Add fuel records to compare recent and previous spending.";
+    public string SpendingRecommendation { get; private set; } = "Keep tyres at the manufacturer's recommended pressure and check them before longer trips.";
 
     // ── Maintenance tab — Health Analysis ─────────────────────────────────────
 
@@ -488,12 +502,45 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
 
     public ObservableCollection<ExpenseDataPoint> ExpenseHistory { get; } = new();
 
-    private int _expenseDurationMonths = 3;
-    public bool IsExpense3MSelected => _expenseDurationMonths == 3;
-    public bool IsExpense6MSelected => _expenseDurationMonths == 6;
-    public bool IsExpense1YSelected => _expenseDurationMonths == 12;
-    public bool IsExpense3YSelected => _expenseDurationMonths == 36;
-    public bool IsExpense5YSelected => _expenseDurationMonths == 60;
+    public ObservableCollection<string> ExpenseFilterOptions { get; } = new()
+    {
+        "Day", "Week", "Month", "Custom"
+    };
+
+    private string _selectedExpenseFilter = "Month";
+    public string SelectedExpenseFilter
+    {
+        get => _selectedExpenseFilter;
+        set
+        {
+            if (SetProperty(ref _selectedExpenseFilter, value))
+                RebuildExpenseHistory();
+        }
+    }
+
+    private DateTime _customExpenseStartDate = DateTime.Today.AddMonths(-3);
+    public DateTime CustomExpenseStartDate
+    {
+        get => _customExpenseStartDate;
+        set
+        {
+            if (SetProperty(ref _customExpenseStartDate, value.Date))
+                RebuildExpenseHistory();
+        }
+    }
+
+    private DateTime _customExpenseEndDate = DateTime.Today;
+    public DateTime CustomExpenseEndDate
+    {
+        get => _customExpenseEndDate;
+        set
+        {
+            if (SetProperty(ref _customExpenseEndDate, value.Date))
+                RebuildExpenseHistory();
+        }
+    }
+
+    public bool IsCustomExpenseRangeVisible => SelectedExpenseFilter == "Custom";
     public ICommand SelectExpenseDurationCommand { get; private set; } = default!;
     // Chart buckets are pre-filled with zero for every month in range, so use the underlying
     // service/fuel records (not ExpenseHistory.Count) to detect a true "no data" state.
@@ -542,6 +589,7 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
     public bool IsApiKeyMissing => !AzureOpenAIService.HasApiKey;
 
     public ICommand ToggleNearbyMapTypeCommand { get; }
+    public ICommand SelectNearbyNetworkCommand { get; }
 
     // ── Add Service drawer ───────────────────────────────────────────────
     public AddServiceViewModel AddServiceViewModel { get; } = new();
@@ -609,10 +657,10 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
             }
         }
     }
-    public bool IsEditOilChangeSelected => EditServiceType == "Oil Change";
-    public bool IsEditTyreRotationSelected => EditServiceType == "Tyre Rotation";
-    public bool IsEditBrakeServiceSelected => EditServiceType == "Brake Service";
-    public bool IsEditElectricalSelected => EditServiceType == "Electrical";
+    public bool IsEditOilChangeSelected => EditServiceType is "Oil & Filter Change" or "Oil Change";
+    public bool IsEditTyreRotationSelected => EditServiceType is "Tyre & Wheel Service" or "Tyre Rotation";
+    public bool IsEditBrakeServiceSelected => EditServiceType is "Brake Inspection & Repair" or "Brake Service";
+    public bool IsEditElectricalSelected => EditServiceType is "Battery & Electrical" or "Electrical";
     public bool IsEditGeneralInspectionSelected => EditServiceType == "General Inspection";
     public bool IsEditCustomTypeSelected => EditServiceType is not ("Oil Change" or "Tyre Rotation" or "Brake Service" or "Electrical" or "General Inspection");
     private string _editServiceAmount = string.Empty;
@@ -751,6 +799,7 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
 
     public ICommand AddScheduleCommand { get; }   // initialized in constructor
     public ICommand CloseAddScheduleCommand { get; }   // initialized in constructor
+    public ICommand DeleteScheduleCommand { get; }
 
 
     // ── Schedule tab ─────────────────────────────────────────────────────────
@@ -774,10 +823,36 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
     {
         get
         {
-            var next = ComputeNextServiceDate(out _);
+            var next = ComputeNextServiceDate(out string source);
             return next != DateTime.MinValue
-                ? $"Next service estimated by {next:MMMM dd, yyyy}. Add a reminder to the schedule to track it."
-                : "Add a service record or schedule reminder to see predictions here.";
+                ? source.StartsWith("Scheduled:", StringComparison.Ordinal)
+                    ? "This service is already added to your schedule."
+                    : source.StartsWith("Vehicle setup:", StringComparison.Ordinal)
+                        || source.StartsWith("Vehicle profile:", StringComparison.Ordinal)
+                        ? $"Planned from your vehicle profile for {next:dd MMMM yyyy}."
+                        : $"Estimated from your maintenance interval for {next:dd MMMM yyyy}."
+                : "Add a vehicle to see its first service forecast.";
+        }
+    }
+
+    public bool IsForecastAlreadyScheduled
+    {
+        get
+        {
+            var next = ComputeNextServiceDate(out string source);
+            return next != DateTime.MinValue && source.StartsWith("Scheduled:", StringComparison.Ordinal);
+        }
+    }
+
+    public bool HasForecast => ComputeNextServiceDate(out _) != DateTime.MinValue;
+    public bool ShowForecast => HasForecast;
+    public ICommand AddForecastReminderCommand { get; private set; } = default!;
+    public string PredictiveServiceMileage
+    {
+        get
+        {
+            var next = ComputeNextServiceMileage(out _);
+            return next > 0 ? $"{next:N0} km" : "Not set";
         }
     }
     public string PredictiveMileage
@@ -790,7 +865,8 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         }
     }
 
-    // Returns next service date + how it was derived (scheduled / estimated / MinValue = none)
+    // Uses the earliest known service trigger: scheduled date, explicit due date,
+    // service history interval, or a new vehicle's setup profile.
     private DateTime ComputeNextServiceDate(out string source)
     {
         // 1. Any future scheduled appointment
@@ -804,18 +880,111 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
             return nextAppt.StartTime;
         }
 
-        // 2. Estimate from latest service record (+90 days standard interval)
+        var vehicle = SelectedVehicle;
+        if (vehicle == null)
+        {
+            source = string.Empty;
+            return DateTime.MinValue;
+        }
+
+        var interval = GetServiceInterval(vehicle);
+
+        // An explicitly stored due date takes precedence for vehicles without history.
+        if (vehicle.NextServiceDueDate > DateTime.MinValue)
+        {
+            source = "Vehicle profile:";
+            return vehicle.NextServiceDueDate;
+        }
+
+        // Estimate from the latest service record using the vehicle's interval.
         var lastService = ServiceHistory
             .OrderByDescending(r => r.ServiceDate)
             .FirstOrDefault();
         if (lastService != null)
         {
             source = $"Est. from {lastService.ServiceType}";
-            return lastService.ServiceDate.AddDays(90);
+            return lastService.ServiceDate.AddDays(interval.Days);
+        }
+
+        // New vehicles still receive a first-service forecast from setup date.
+        source = "Vehicle setup:";
+        return vehicle.CreatedDate == default
+            ? DateTime.Today.AddDays(interval.Days)
+            : vehicle.CreatedDate.Date.AddDays(interval.Days);
+    }
+
+    private int ComputeNextServiceMileage(out string source)
+    {
+        var vehicle = SelectedVehicle;
+        if (vehicle == null)
+        {
+            source = string.Empty;
+            return 0;
+        }
+
+        var interval = GetServiceInterval(vehicle);
+        var lastService = ServiceHistory
+            .OrderByDescending(r => r.ServiceDate)
+            .FirstOrDefault();
+        if (lastService != null && TryParseMileage(lastService.Mileage, out var serviceMileage))
+        {
+            source = $"Est. from {lastService.ServiceType}";
+            return serviceMileage + interval.Kilometres;
+        }
+
+        if (int.TryParse(vehicle.OdometerReading, out var currentMileage) && currentMileage >= 0)
+        {
+            source = "Vehicle setup:";
+            return currentMileage + interval.Kilometres;
         }
 
         source = string.Empty;
-        return DateTime.MinValue;
+        return 0;
+    }
+
+    private (int Days, int Kilometres) GetServiceInterval(Vehicle vehicle)
+    {
+        return vehicle.ServiceInterval switch
+        {
+            "3 months / 3,000 km" => (90, 3000),
+            "6 months / 5,000 km" => (180, 5000),
+            "1 year / 10,000 km" => (365, 10000),
+            "Every 10,000 km" => (180, 10000),
+            "Every 5,000 km" => (180, 5000),
+            _ when vehicle.VehicleType == 1 => (180, 5000),
+            _ => (180, 10000),
+        };
+    }
+
+    private static bool TryParseMileage(string? mileage, out int value)
+    {
+        var digits = new string((mileage ?? string.Empty).Where(char.IsDigit).ToArray());
+        return int.TryParse(digits, out value);
+    }
+
+    private void AddForecastReminder()
+    {
+        var next = ComputeNextServiceDate(out string source);
+        if (next == DateTime.MinValue || source.StartsWith("Scheduled:", StringComparison.Ordinal))
+            return;
+
+        AddAppointmentFromReminder(new ScheduleReminder
+        {
+            Title = "Scheduled Vehicle Service",
+            ReminderType = "Service",
+            DueDate = next.Date,
+            DueTime = new TimeSpan(10, 0, 0),
+            Priority = "High",
+            RemindBeforeDays = 7,
+        });
+
+        RebuildScheduleAlerts();
+        OnPropertyChanged(nameof(PredictiveServiceDate));
+        OnPropertyChanged(nameof(PredictiveServiceDescription));
+        OnPropertyChanged(nameof(PredictiveServiceMileage));
+        OnPropertyChanged(nameof(IsForecastAlreadyScheduled));
+        OnPropertyChanged(nameof(HasForecast));
+        OnPropertyChanged(nameof(ShowForecast));
     }
 
     public ICommand BookServiceSlotCommand { get; } = new Command(() => { /* TODO */ });
@@ -831,6 +1000,7 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(IsDayViewActive));
                 OnPropertyChanged(nameof(IsWeekViewActive));
                 OnPropertyChanged(nameof(IsMonthViewActive));
+                OnPropertyChanged(nameof(SchedulePeriodTitle));
             }
         }
     }
@@ -852,7 +1022,14 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         // Sync selected vehicle when changed externally (e.g., from MainViewModel)
         VehicleDataService.Instance.SelectedVehicleChanged += v =>
         {
-            if (v == null) return;
+            if (v == null)
+            {
+                _selectedVehicle = null!;
+                OnPropertyChanged(nameof(SelectedVehicle));
+                RefreshVehicleData();
+                return;
+            }
+
             var match = Vehicles.FirstOrDefault(x => x.Id == v.Id);
             if (match != null && match != _selectedVehicle)
             {
@@ -865,24 +1042,59 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         // Keep local Vehicles in sync when vehicles are added/removed/cleared in VehicleDataService
         VehicleDataService.Instance.Vehicles.CollectionChanged += (_, e) =>
         {
-            MainThread.BeginInvokeOnMainThread(() =>
+            void SynchronizeVehicles()
             {
                 if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset)
                 {
                     Vehicles.Clear();
-                    return;
                 }
-                if (e.NewItems != null)
+                else if (e.NewItems != null)
                     foreach (Vehicle v in e.NewItems)
                         if (!Vehicles.Any(x => x.Id == v.Id))
                             Vehicles.Add(v);
-                if (e.OldItems != null)
+                if (e.Action != System.Collections.Specialized.NotifyCollectionChangedAction.Reset && e.OldItems != null)
                     foreach (Vehicle v in e.OldItems)
                     {
                         var toRemove = Vehicles.FirstOrDefault(x => x.Id == v.Id);
                         if (toRemove != null) Vehicles.Remove(toRemove);
                     }
-            });
+
+                var selected = VehicleDataService.Instance.SelectedVehicle;
+                var match = selected == null ? null : Vehicles.FirstOrDefault(x => x.Id == selected.Id);
+                if (match != null && match != _selectedVehicle)
+                {
+                    _selectedVehicle = match;
+                    OnPropertyChanged(nameof(SelectedVehicle));
+                    RefreshVehicleData();
+                }
+            }
+
+            if (MainThread.IsMainThread)
+                SynchronizeVehicles();
+            else
+                MainThread.BeginInvokeOnMainThread(SynchronizeVehicles);
+        };
+
+        VehicleDataService.Instance.DataReloaded += () =>
+        {
+            void Synchronize()
+            {
+                Vehicles.Clear();
+                foreach (var vehicle in VehicleDataService.Instance.Vehicles)
+                    Vehicles.Add(vehicle);
+
+                var selected = VehicleDataService.Instance.SelectedVehicle;
+                _selectedVehicle = selected == null
+                    ? null!
+                    : Vehicles.FirstOrDefault(v => v.Id == selected.Id)!;
+                OnPropertyChanged(nameof(SelectedVehicle));
+                RefreshVehicleData();
+            }
+
+            if (MainThread.IsMainThread)
+                Synchronize();
+            else
+                MainThread.BeginInvokeOnMainThread(Synchronize);
         };
 
         // Prefer vehicles from VehicleDataService; only use demo fallback in Demo mode.
@@ -918,8 +1130,10 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         var vehicle = SelectedVehicle ?? VehicleDataService.Instance.SelectedVehicle;
         if (vehicle == null)
         {
-            SpendingOptimizationSummary = "Add a vehicle and log service or fuel records to generate spending insights.";
-            OnPropertyChanged(nameof(SpendingOptimizationSummary));
+            SetSpendingInsight(
+                "Add a vehicle to unlock spending insights",
+                "Log fuel or service records to compare your recent costs.",
+                "Start by recording your next fuel fill-up with litres, price, and odometer reading.");
             return;
         }
 
@@ -927,8 +1141,10 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         var fuels = FuelEntries.OrderByDescending(f => f.FuelDate).ToList();
         if (!services.Any() && !fuels.Any())
         {
-            SpendingOptimizationSummary = "No spending data available yet. Add service or fuel records to get AI insights.";
-            OnPropertyChanged(nameof(SpendingOptimizationSummary));
+            SetSpendingInsight(
+                "No spending data yet",
+                "Add fuel or service records to compare your recent costs.",
+                "Record your next fill-up with litres, price, and odometer reading.");
             return;
         }
 
@@ -938,8 +1154,10 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
 
         if (!AzureOpenAIService.HasApiKey)
         {
-            SpendingOptimizationSummary = "Configure your Azure OpenAI API key in Settings to get AI-powered spending insights.";
-            OnPropertyChanged(nameof(SpendingOptimizationSummary));
+            SetSpendingInsight(
+                "AI insights are not configured",
+                "Add your Azure OpenAI API key in Settings to analyze spending patterns.",
+                "You can still use the expense chart to review logged costs.");
             return;
         }
 
@@ -968,8 +1186,14 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
             ? $"To improve fuel consumption, keep tyre pressure correct, avoid unnecessary short trips during peak traffic, and service the air filter/engine on schedule to save roughly ₹{fuelSaving:N0} over the next 90 days."
             : $"Keep tyre pressure in check and avoid stop-start driving patterns to maintain fuel efficiency and protect your maintenance budget over the next 90 days.";
 
-        var summaryText = $"{spendContext} {recommendation}";
-
+        var trendText = recentFuelSpend > previousFuelSpend
+            ? "Fuel spending is rising"
+            : recentFuelSpend < previousFuelSpend
+                ? "Fuel spending is falling"
+                : "Fuel spending is stable";
+        var trendDetail = previousTotal > 0
+            ? $"Fuel: ₹{recentFuelSpend:N0} in the last 90 days vs ₹{previousFuelSpend:N0} previously. Total spend changed {spendChange:+0.0;-0.0;0}% ({deltaText})."
+            : $"Fuel spend in the last 90 days: ₹{recentFuelSpend:N0}. There is not enough previous data for a comparison.";
         var odometer = vehicle.OdometerReading;
         var lastServiceDate = services.FirstOrDefault()?.ServiceDate.ToString("dd MMM yyyy") ?? "unknown";
         var lastFuelDate = fuels.FirstOrDefault()?.FuelDate.ToString("dd MMM yyyy") ?? "unknown";
@@ -981,22 +1205,58 @@ Last 90-day maintenance spend: ₹{recentServiceSpend:N0}; previous 90-day maint
 Total spends: ₹{recentTotal:N0} in last 90 days vs ₹{previousTotal:N0} in previous 90 days
 Average fuel cost per litre: ₹{avgFuelCost:N2}; average fuel spend per fill-up: ₹{avgFuelCostPerFill:N0}; last service: {lastServiceDate}; last refuel: {lastFuelDate}
 
-Write exactly 2 sentences in plain English:
-1. State whether fuel consumption or fuel cost is rising or falling using the actual numbers above, and explain the trend in a realistic way for an Indian vehicle owner.
-2. Give one specific, practical recommendation to improve fuel economy for this vehicle, such as tyre pressure, route planning, short-trip reduction, or maintenance timing. Focus on everyday fuel-saving actions that are realistic and easy to follow.
-Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, or markdown.
+Return exactly these three lines and nothing else:
+TREND: one short headline, such as "Fuel spending is rising"
+DETAIL: one sentence using the actual rupee amounts and percentage above
+ACTION: one specific, practical fuel-saving action for this vehicle
+Keep each line under 140 characters. Use the Indian Rupee symbol ₹. Do not use markdown, bullets, greetings, or extra explanation.
 """;
 
         var aiResponse = await new AzureOpenAIService().GetResultsFromAI(
             prompt,
-            "You are a practical automotive fuel-efficiency advisor for Indian vehicle owners. Use only the exact numbers provided. Explain the fuel trend clearly and give one realistic, daily-driving fuel-saving recommendation. Write 2 plain-English sentences only with no markdown, no bullets, no placeholders.");
+            "You are a concise automotive spending advisor for Indian vehicle owners. Use only the exact numbers provided. Return exactly TREND, DETAIL, and ACTION lines as requested, with no markdown or extra text.");
 
-        var finalText = string.IsNullOrWhiteSpace(aiResponse)
-            ? summaryText
-            : aiResponse;
+        if (!TryApplyStructuredInsight(aiResponse))
+            SetSpendingInsight(trendText, trendDetail, recommendation);
+    }
 
-        SpendingOptimizationSummary = NormalizeInsightLines(finalText);
+    private void SetSpendingInsight(string trend, string detail, string recommendation)
+    {
+        SpendingTrendText = trend;
+        SpendingTrendDetail = detail;
+        SpendingRecommendation = recommendation;
+        SpendingOptimizationSummary = $"{trend}. {detail} {recommendation}";
+        OnPropertyChanged(nameof(SpendingTrendText));
+        OnPropertyChanged(nameof(SpendingTrendDetail));
+        OnPropertyChanged(nameof(SpendingRecommendation));
         OnPropertyChanged(nameof(SpendingOptimizationSummary));
+    }
+
+    private bool TryApplyStructuredInsight(string? response)
+    {
+        if (string.IsNullOrWhiteSpace(response)) return false;
+
+        var values = response
+            .Replace("```", string.Empty)
+            .Replace("\r\n", "\n")
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(line => line.Trim())
+            .Where(line => line.Contains(':'))
+            .ToDictionary(
+                line => line[..line.IndexOf(':')].Trim().ToUpperInvariant(),
+                line => line[(line.IndexOf(':') + 1)..].Trim(),
+                StringComparer.OrdinalIgnoreCase);
+
+        if (!values.TryGetValue("TREND", out var trend)
+            || !values.TryGetValue("DETAIL", out var detail)
+            || !values.TryGetValue("ACTION", out var action)
+            || string.IsNullOrWhiteSpace(trend)
+            || string.IsNullOrWhiteSpace(detail)
+            || string.IsNullOrWhiteSpace(action))
+            return false;
+
+        SetSpendingInsight(trend, detail, action);
+        return true;
     }
 
     private static string NormalizeInsightLines(string text)
@@ -1127,47 +1387,99 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
             FuelPopupRows.Add(record);
     }
 
+    private void SelectExpenseFilter(string? filter)
+    {
+        if (string.IsNullOrWhiteSpace(filter)) return;
+
+        SelectedExpenseFilter = filter;
+        OnPropertyChanged(nameof(IsCustomExpenseRangeVisible));
+    }
+
     private void RebuildExpenseHistory()
     {
         ExpenseHistory.Clear();
 
-        var firstDayOfCurrentMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
-        var firstMonthInRange = firstDayOfCurrentMonth.AddMonths(-(_expenseDurationMonths - 1));
-
-        var monthly = new Dictionary<(int Year, int Month), double>();
-        var monthCursor = new DateTime(firstMonthInRange.Year, firstMonthInRange.Month, 1);
-        var finalMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
-
-        while (monthCursor <= finalMonth)
+        var today = DateTime.Today;
+        var start = SelectedExpenseFilter switch
         {
-            monthly[(monthCursor.Year, monthCursor.Month)] = 0;
-            monthCursor = monthCursor.AddMonths(1);
+            "Day" => today.AddDays(-13),
+            "Week" => today.AddDays(-83),
+            "Month" => today.AddMonths(-11),
+            "Custom" => CustomExpenseStartDate.Date,
+            _ => today.AddMonths(-11)
+        };
+        var end = SelectedExpenseFilter == "Custom" ? CustomExpenseEndDate.Date : today;
+        if (end < start) (start, end) = (end, start);
+
+        var bucket = SelectedExpenseFilter switch
+        {
+            "Day" => ExpenseBucket.Day,
+            "Week" => ExpenseBucket.Week,
+            "Month" => ExpenseBucket.Month,
+            "Custom" when (end - start).TotalDays <= 31 => ExpenseBucket.Day,
+            "Custom" when (end - start).TotalDays <= 90 => ExpenseBucket.Week,
+            _ => ExpenseBucket.Month
+        };
+
+        var amounts = new Dictionary<DateTime, double>();
+        for (var date = start; date <= end; date = NextExpenseBucket(date, bucket))
+            amounts[ExpenseBucketStart(date, bucket)] = 0;
+
+        foreach (var service in ServiceHistory.Where(s => s.ServiceDate.Date >= start && s.ServiceDate.Date <= end))
+        {
+            var key = ExpenseBucketStart(service.ServiceDate.Date, bucket);
+            if (amounts.ContainsKey(key)) amounts[key] += ParseCurrency(service.Amount);
         }
 
-        foreach (var s in ServiceHistory.Where(s => s.ServiceDate >= firstMonthInRange && s.ServiceDate <= finalMonth.AddMonths(1).AddDays(-1)))
+        foreach (var fuel in FuelEntries.Where(f => f.FuelDate.Date >= start && f.FuelDate.Date <= end))
         {
-            var raw = s.Amount.Replace("₹", "").Replace(",", "").Trim();
-            if (double.TryParse(raw, out var v))
+            var key = ExpenseBucketStart(fuel.FuelDate.Date, bucket);
+            if (amounts.ContainsKey(key)) amounts[key] += fuel.TotalCost;
+        }
+
+        foreach (var item in amounts.OrderBy(item => item.Key))
+        {
+            var label = bucket switch
             {
-                var k = (s.ServiceDate.Year, s.ServiceDate.Month);
-                if (monthly.ContainsKey(k))
-                    monthly[k] += v;
-            }
-        }
-
-        foreach (var f in FuelEntries.Where(f => f.FuelDate >= firstMonthInRange && f.FuelDate <= finalMonth.AddMonths(1).AddDays(-1)))
-        {
-            var k = (f.FuelDate.Year, f.FuelDate.Month);
-            if (monthly.ContainsKey(k))
-                monthly[k] += f.TotalCost;
-        }
-
-        foreach (var kv in monthly.OrderBy(k => k.Key.Year).ThenBy(k => k.Key.Month))
-        {
-            var label = new DateTime(kv.Key.Year, kv.Key.Month, 1).ToString("MMM yy");
-            ExpenseHistory.Add(new ExpenseDataPoint { Month = label, Amount = Math.Round(kv.Value) });
+                ExpenseBucket.Day => item.Key.ToString("dd MMM"),
+                ExpenseBucket.Week => item.Key.ToString("dd MMM"),
+                _ => item.Key.ToString("MMM yy")
+            };
+            var rangeLabel = bucket == ExpenseBucket.Week
+                ? $"{item.Key:dd MMM yyyy} - {item.Key.AddDays(6):dd MMM yyyy}"
+                : label;
+            ExpenseHistory.Add(new ExpenseDataPoint
+            {
+                Month = label,
+                RangeLabel = rangeLabel,
+                Amount = Math.Round(item.Value)
+            });
         }
     }
+
+    private enum ExpenseBucket { Day, Week, Month }
+
+    private static DateTime ExpenseBucketStart(DateTime date, ExpenseBucket bucket)
+        => bucket switch
+        {
+            ExpenseBucket.Day => date.Date,
+            ExpenseBucket.Week => StartOfWeek(date.Date),
+            _ => new DateTime(date.Year, date.Month, 1)
+        };
+
+    private static DateTime StartOfWeek(DateTime date)
+    {
+        var daysSinceMonday = ((int)date.DayOfWeek + 6) % 7;
+        return date.AddDays(-daysSinceMonday);
+    }
+
+    private static DateTime NextExpenseBucket(DateTime date, ExpenseBucket bucket)
+        => bucket switch
+        {
+            ExpenseBucket.Day => date.AddDays(1),
+            ExpenseBucket.Week => date.AddDays(7),
+            _ => date.AddMonths(1)
+        };
 
     private void InitHealthRadar()
     {
@@ -1253,13 +1565,6 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
                 var (aiItems, _) = await GetNearbyPlacesFromAIAsync(latitude, longitude);
                 items = aiItems;
             }
-        }
-
-        // ── Fallback 2: Static sample data (when both Overpass and AI unavailable) ─
-        if (items == null || items.Count == 0)
-        {
-            var staticData = ServiceCenterDataHelper.GetStaticFallback(latitude, longitude, _nearbyMapMode, 8);
-            items = staticData["markercollections"] as JArray;
         }
 
         if (items == null || items.Count == 0)
@@ -1386,6 +1691,7 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
         foreach (var item in items)
         {
             var name = item["Name"]?.ToString() ?? "Nearby location";
+            var displayName = ShortPlaceName(name);
             var details = item["Details"]?.ToString() ?? string.Empty;
             var address = item["Address"]?.ToString() ?? string.Empty;
             var type = item["Type"]?.ToString() ?? (isServiceMode ? "Service Center" : "Fuel Station");
@@ -1400,33 +1706,68 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
             var isFuelItem = string.Equals(type, "Fuel Station", StringComparison.OrdinalIgnoreCase)
                           || string.Equals(type, "fuel", StringComparison.OrdinalIgnoreCase);
 
-            var openTime = item["OpenTime"]?.ToString()
-                        ?? (isFuelItem ? "Open 24 Hrs" : "Mon–Sat: 8:00 AM – 7:00 PM");
+            var openTime = item["OpenTime"]?.ToString();
+            if (string.IsNullOrWhiteSpace(openTime))
+                openTime = "Hours unavailable";
 
-            // Map marker (pin on the tile layer)
-            MapMarkers.Add(new CustomMarker
+            var marker = new CustomMarker
             {
                 Latitude = markerLat,
                 Longitude = markerLon,
                 Name = name,
                 Details = string.IsNullOrWhiteSpace(details) ? (isFuelItem ? "Fuel station" : "Service center") : details,
                 Address = string.IsNullOrWhiteSpace(address) ? null : address,
-            });
+            };
+
+            // Map marker (pin on the tile layer)
+            MapMarkers.Add(marker);
 
             // List card below the map
-            var distanceLabel = distanceKm > 0 ? $" • {distanceKm:0.0} km" : string.Empty;
-            var subLabel = string.IsNullOrWhiteSpace(address) ? $"{type}{distanceLabel}" : $"{address}{distanceLabel}";
+            var areaLabel = AreaName(address);
 
             NearbyNetworkItems.Add(new NearbyNetworkItem
             {
-                Name = name,
-                TypeLabel = subLabel,
-                OpenTime = "🕐 " + openTime,
+                Name = displayName,
+                TypeLabel = areaLabel,
+                OpenTime = openTime,
                 IconText = isFuelItem ? "⛽" : "🔧",
                 IconBgColor = Color.FromArgb("#0D2135"),
-                IconTextColor = isFuelItem ? Color.FromArgb("#FCD34D") : Color.FromArgb("#8ED3FF")
+                IconTextColor = isFuelItem ? Color.FromArgb("#FCD34D") : Color.FromArgb("#8ED3FF"),
+                Marker = marker,
             });
         }
+    }
+
+    private void SelectNearbyNetwork(NearbyNetworkItem? item)
+    {
+        if (item?.Marker == null) return;
+
+        foreach (var marker in MapMarkers.OfType<CustomMarker>())
+            marker.IsSelected = ReferenceEquals(marker, item.Marker);
+    }
+
+    private static string ShortPlaceName(string name)
+    {
+        var separator = name.IndexOf(" - ", StringComparison.Ordinal);
+        if (separator < 0) separator = name.IndexOf(" – ", StringComparison.Ordinal);
+        if (separator < 0) separator = name.IndexOf(" — ", StringComparison.Ordinal);
+        var shortName = separator > 0 ? name[..separator].Trim() : name.Trim();
+
+        if (shortName.StartsWith("IndianOil", StringComparison.OrdinalIgnoreCase)
+            || shortName.StartsWith("Indian Oil", StringComparison.OrdinalIgnoreCase))
+            return "Indian Oil";
+        if (shortName.StartsWith("BPCL", StringComparison.OrdinalIgnoreCase)
+            || shortName.StartsWith("Bharat Petroleum", StringComparison.OrdinalIgnoreCase))
+            return "Bharat Petroleum";
+
+        return shortName;
+    }
+
+    private static string AreaName(string address)
+    {
+        if (string.IsNullOrWhiteSpace(address)) return "Area unavailable";
+        var area = address.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+        return string.IsNullOrWhiteSpace(area) ? "Area unavailable" : area;
     }
 
     private static double HaversineKm(double lat1, double lon1, double lat2, double lon2)
@@ -1473,7 +1814,11 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
         // Refresh predictive fields after a new appointment is added
         OnPropertyChanged(nameof(PredictiveServiceDate));
         OnPropertyChanged(nameof(PredictiveServiceDescription));
+        OnPropertyChanged(nameof(PredictiveServiceMileage));
         OnPropertyChanged(nameof(PredictiveMileage));
+        OnPropertyChanged(nameof(IsForecastAlreadyScheduled));
+        OnPropertyChanged(nameof(HasForecast));
+        OnPropertyChanged(nameof(ShowForecast));
     }
 
     private void RebuildScheduleAlerts()
@@ -1518,6 +1863,7 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
                 Description = $"{reminder.ReminderType} • {description}",
                 ActionText = actionText,
                 ActionColor = badgeColor,
+                Reminder = reminder,
             });
 
             if (!isOverdue && startTime <= soon)
@@ -1550,6 +1896,28 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
 
     public bool HasScheduleAlerts => ScheduleAlerts.Count > 0;
     public bool NoScheduleAlerts => ScheduleAlerts.Count == 0;
+
+    private void DeleteSchedule(ScheduleAlert? alert)
+    {
+        var reminder = alert?.Reminder;
+        if (reminder == null) return;
+
+        var vehicleId = SelectedVehicle?.Id ?? 0;
+        VehicleDataService.Instance.RemoveReminder(vehicleId, reminder);
+        var appointment = ServiceAppointments.FirstOrDefault(a =>
+            a.Subject == reminder.Title
+            && a.StartTime == reminder.DueDate.Add(reminder.DueTime));
+        if (appointment != null)
+            ServiceAppointments.Remove(appointment);
+
+        RebuildScheduleAlerts();
+        OnPropertyChanged(nameof(PredictiveServiceDate));
+        OnPropertyChanged(nameof(PredictiveServiceDescription));
+        OnPropertyChanged(nameof(PredictiveServiceMileage));
+        OnPropertyChanged(nameof(IsForecastAlreadyScheduled));
+        OnPropertyChanged(nameof(HasForecast));
+        OnPropertyChanged(nameof(ShowForecast));
+    }
 
     // Reloads all vehicle-specific data when the selected vehicle changes
     private void RefreshVehicleData()
@@ -1607,7 +1975,11 @@ Use Indian Rupee symbol ₹ for all amounts. Do not add bullet points, headers, 
         OnPropertyChanged(nameof(NextServiceDetail));
         OnPropertyChanged(nameof(PredictiveServiceDate));
         OnPropertyChanged(nameof(PredictiveServiceDescription));
+        OnPropertyChanged(nameof(PredictiveServiceMileage));
         OnPropertyChanged(nameof(PredictiveMileage));
+        OnPropertyChanged(nameof(IsForecastAlreadyScheduled));
+        OnPropertyChanged(nameof(HasForecast));
+        OnPropertyChanged(nameof(ShowForecast));
 
         _ = RefreshSpendingOptimizationAsync();
     }

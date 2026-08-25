@@ -190,7 +190,7 @@
                                  Spacing="0">
                         <BindableLayout.ItemTemplate>
                             <DataTemplate x:DataType="models:Vehicle">
-                                <Grid ColumnDefinitions="Auto,*,Auto" Padding="20,14" ColumnSpacing="14">
+                                <Grid ColumnDefinitions="Auto,*,Auto,Auto" Padding="20,14" ColumnSpacing="10">
                                     <Border Grid.Column="0" WidthRequest="42" HeightRequest="42"
                                             StrokeThickness="0"
                                             BackgroundColor="{AppThemeBinding Light=#EBF5FF, Dark=#2D2117}">
@@ -220,6 +220,25 @@
                                                    VerticalOptions="Center"/>
                                             <Label Text="Edit" FontSize="12" FontAttributes="Bold"
                                                    TextColor="{AppThemeBinding Light={StaticResource BrandBlue}, Dark={StaticResource BrandBlueBright}}"
+                                                   VerticalOptions="Center"/>
+                                        </HorizontalStackLayout>
+                                    </Border>
+                                    <Border Grid.Column="3" StrokeThickness="1"
+                                            Stroke="{AppThemeBinding Light=#FCA5A5, Dark=#7F1D1D}"
+                                            BackgroundColor="Transparent"
+                                            Padding="10,6" VerticalOptions="Center">
+                                        <Border.StrokeShape><RoundRectangle CornerRadius="8"/></Border.StrokeShape>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:SettingsViewModel}}, Path=DeleteVehicleCommand}"
+                                                CommandParameter="{Binding .}"/>
+                                        </Border.GestureRecognizers>
+                                        <HorizontalStackLayout Spacing="5">
+                                            <Label Text="&#xE872;" FontFamily="MaterialIcons" FontSize="14"
+                                                   TextColor="{AppThemeBinding Light=#DC2626, Dark=#F87171}"
+                                                   VerticalOptions="Center"/>
+                                            <Label Text="Delete" FontSize="12" FontAttributes="Bold"
+                                                   TextColor="{AppThemeBinding Light=#DC2626, Dark=#F87171}"
                                                    VerticalOptions="Center"/>
                                         </HorizontalStackLayout>
                                     </Border>

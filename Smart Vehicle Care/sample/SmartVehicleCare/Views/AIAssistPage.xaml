@@ -200,7 +200,7 @@
                                     <Border.StrokeShape>
                                         <RoundRectangle CornerRadius="8"/>
                                     </Border.StrokeShape>
-                                    <Label Text="&#xE531;" FontFamily="MaterialIcons" FontSize="17" TextColor="{AppThemeBinding Light={StaticResource BrandCyan}, Dark={StaticResource BrandCyanBright}}"
+                                    <Label Text="{Binding VehicleIconGlyph}" FontFamily="MaterialIcons" FontSize="17" TextColor="{AppThemeBinding Light={StaticResource BrandCyan}, Dark={StaticResource BrandCyanBright}}"
                                            HorizontalOptions="Center" VerticalOptions="Center"/>
                                 </Border>
 
@@ -244,26 +244,26 @@
                                    TextColor="{AppThemeBinding Light=#1A2332, Dark=#EDF6FF}"/>
 
                             <StackLayout Spacing="10">
-                                <HorizontalStackLayout Spacing="10">
-                                    <Label Text="&#xE8D0;" FontFamily="MaterialIcons" FontSize="14" TextColor="{AppThemeBinding Light={StaticResource BrandCyan}, Dark={StaticResource BrandCyanBright}}" VerticalOptions="Center"/>
+                                <HorizontalStackLayout Spacing="5">
+                                    <Label Text="&#xE8D0;" FontFamily="MaterialIcons" FontSize="14" Margin="0,2,0,0" TextColor="{AppThemeBinding Light={StaticResource BrandCyan}, Dark={StaticResource BrandCyanBright}}" VerticalOptions="Center"/>
                                     <Label Text="Service &amp; Maintenance history" FontSize="12"
                                            TextColor="{AppThemeBinding Light=#475569, Dark=#9DB7D2}"
                                            VerticalOptions="Center"/>
                                 </HorizontalStackLayout>
-                                <HorizontalStackLayout Spacing="10">
-                                    <Label Text="&#xE9E4;" FontFamily="MaterialIcons" FontSize="14" TextColor="{AppThemeBinding Light={StaticResource BrandCyan}, Dark={StaticResource BrandCyanBright}}" VerticalOptions="Center"/>
+                                <HorizontalStackLayout Spacing="5">
+                                    <Label Text="&#xE9E4;" FontFamily="MaterialIcons" FontSize="14" Margin="0,2,0,0" TextColor="{AppThemeBinding Light={StaticResource BrandCyan}, Dark={StaticResource BrandCyanBright}}" VerticalOptions="Center"/>
                                     <Label Text="Fuel efficiency &amp; cost analysis" FontSize="12"
                                            TextColor="{AppThemeBinding Light=#475569, Dark=#9DB7D2}"
                                            VerticalOptions="Center"/>
                                 </HorizontalStackLayout>
-                                <HorizontalStackLayout Spacing="10">
-                                    <Label Text="&#xE8A1;" FontFamily="MaterialIcons" FontSize="14" TextColor="{AppThemeBinding Light={StaticResource BrandCyan}, Dark={StaticResource BrandCyanBright}}" VerticalOptions="Center"/>
+                                <HorizontalStackLayout Spacing="5">
+                                    <Label Text="&#xE8A1;" FontFamily="MaterialIcons" FontSize="14" Margin="0,2,0,0" TextColor="{AppThemeBinding Light={StaticResource BrandCyan}, Dark={StaticResource BrandCyanBright}}" VerticalOptions="Center"/>
                                     <Label Text="Expense insights &amp; trends" FontSize="12"
                                            TextColor="{AppThemeBinding Light=#475569, Dark=#9DB7D2}"
                                            VerticalOptions="Center"/>
                                 </HorizontalStackLayout>
-                                <HorizontalStackLayout Spacing="10">
-                                    <Label Text="&#xE87D;" FontFamily="MaterialIcons" FontSize="14" TextColor="#EF4444" VerticalOptions="Center"/>
+                                <HorizontalStackLayout Spacing="5">
+                                    <Label Text="&#xE87D;" FontFamily="MaterialIcons" FontSize="14" Margin="0,2,0,0" TextColor="#EF4444" VerticalOptions="Center"/>
                                     <Label Text="Vehicle health breakdown" FontSize="12"
                                            TextColor="{AppThemeBinding Light=#475569, Dark=#9DB7D2}"
                                            VerticalOptions="Center"/>
@@ -318,8 +318,8 @@
                                                         Opacity="0.10"/>
                                             </Border.Shadow>
                                             <Grid ColumnDefinitions="*,Auto">
-                                                <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
-                                                    <Label Text="&#xEA87;" FontFamily="MaterialIcons" FontSize="12"
+                                                <HorizontalStackLayout Spacing="6" VerticalOptions="Center">
+                                                    <Label Text="&#xE65F;" FontFamily="MaterialIcons" Margin="0,3,0,0" FontSize="12"
                                                            TextColor="{AppThemeBinding Light=#0EA5E9, Dark=#5EE7FF}"
                                                            VerticalOptions="Center"/>
                                                     <Label Text="{Binding Text}"

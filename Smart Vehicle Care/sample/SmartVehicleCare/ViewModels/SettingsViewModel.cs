@@ -94,6 +94,30 @@ public class SettingsViewModel : INotifyPropertyChanged
             IsEditVehiclePanelVisible = false;
             EditingVehicle = null;
         });
+
+        DeleteVehicleCommand = new Command<Vehicle>(async vehicle =>
+        {
+            if (vehicle == null) return;
+
+            var confirmed = await Shell.Current.DisplayAlertAsync(
+                "Delete vehicle",
+                $"Delete {vehicle.MakeModel} and all of its service, fuel, and schedule data?",
+                "Delete",
+                "Cancel");
+            if (!confirmed) return;
+
+            VehicleDataService.Instance.DeleteVehicle(vehicle);
+            IsEditVehiclePanelVisible = false;
+            EditingVehicle = null;
+            OnPropertyChanged(nameof(HasVehicles));
+            OnPropertyChanged(nameof(NoVehicles));
+        });
+
+        Vehicles.CollectionChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(HasVehicles));
+            OnPropertyChanged(nameof(NoVehicles));
+        };
     }
 
     // ── Exit ──────────────────────────────────────────────────────────────────
@@ -179,6 +203,7 @@ public class SettingsViewModel : INotifyPropertyChanged
     public ICommand EditVehicleCommand { get; }
     public ICommand SaveVehicleCommand { get; }
     public ICommand CancelEditCommand  { get; }
+    public ICommand DeleteVehicleCommand { get; }
 
     private bool _isEditVehiclePanelVisible;
     public bool IsEditVehiclePanelVisible

@@ -1,5 +1,6 @@
 using Syncfusion.Maui.DataGrid;
 using Syncfusion.Maui.Maps;
+using Syncfusion.Maui.Scheduler;
 using Syncfusion.Maui.TreeView;
 using SmartVehicleCare.Models;
 using SmartVehicleCare.ViewModels;
@@ -105,6 +106,58 @@ public partial class VehicleCenterPage : ContentView
         });
     }
 
+    private void OnExpenseFilterDropDownClosed(object sender, EventArgs e)
+    {
+        if (_vm?.SelectedExpenseFilter == "Custom")
+            MainThread.BeginInvokeOnMainThread(() => ExpenseStartDatePicker.IsOpen = true);
+    }
+
+    private void OnExpenseStartDateTapped(object sender, Microsoft.Maui.Controls.TappedEventArgs e)
+        => ExpenseStartDatePicker.IsOpen = true;
+
+    private void OnExpenseEndDateTapped(object sender, Microsoft.Maui.Controls.TappedEventArgs e)
+        => ExpenseEndDatePicker.IsOpen = true;
+
+    private void OnExpenseStartDateOkClicked(object sender, EventArgs e)
+    {
+        if (_vm != null && ExpenseStartDatePicker.SelectedDate != default)
+            _vm.CustomExpenseStartDate = ExpenseStartDatePicker.SelectedDate!.Value;
+
+        ExpenseEndDatePicker.IsOpen = true;
+    }
+
+    private void OnExpenseEndDateOkClicked(object sender, EventArgs e)
+    {
+        if (_vm != null && ExpenseEndDatePicker.SelectedDate != default)
+            _vm.CustomExpenseEndDate = ExpenseEndDatePicker.SelectedDate!.Value;
+    }
+
+    private void OnScheduleViewChanged(object sender, SchedulerViewChangedEventArgs e)
+    {
+        var visibleDates = e.NewVisibleDates?.ToList();
+        if (visibleDates is not { Count: > 0 }) return;
+
+        DateTime displayDate;
+        if (e.NewView == SchedulerView.Month)
+        {
+            // Month view includes leading/trailing days from adjacent months.
+            var month = visibleDates
+                .GroupBy(date => new { date.Year, date.Month })
+                .OrderByDescending(group => group.Count())
+                .ThenBy(group => group.Key.Year)
+                .ThenBy(group => group.Key.Month)
+                .First()
+                .Key;
+            displayDate = new DateTime(month.Year, month.Month, 1);
+        }
+        else
+        {
+            displayDate = visibleDates[0];
+        }
+        if (RootGrid?.BindingContext is VehicleCenterViewModel vm)
+            vm.CurrentMonthDisplayDate = displayDate;
+    }
+
     protected override void OnPropertyChanged(string? propertyName = null)
     {
         base.OnPropertyChanged(propertyName);
@@ -143,25 +196,26 @@ public partial class VehicleCenterPage : ContentView
             vm.EditFuelDate = EditFuelDatePicker.SelectedDate.Value;
     }
 
-    private void OnPreviousMonthTapped(object sender, Microsoft.Maui.Controls.TappedEventArgs e)
+    private void OnPreviousSchedulePeriodTapped(object sender, Microsoft.Maui.Controls.TappedEventArgs e)
+        => NavigateSchedulePeriod(-1);
+
+    private void OnNextSchedulePeriodTapped(object sender, Microsoft.Maui.Controls.TappedEventArgs e)
+        => NavigateSchedulePeriod(1);
+
+    private void NavigateSchedulePeriod(int direction)
     {
-        if (ScheduleCalendar == null) return;
+        if (ScheduleCalendar == null || RootGrid?.BindingContext is not VehicleCenterViewModel vm)
+            return;
+
         var current = ScheduleCalendar.DisplayDate;
-        var newDate = current.AddMonths(-1);
+        var newDate = vm.CurrentSchedulerView switch
+        {
+            SchedulerView.Day => current.AddDays(direction),
+            SchedulerView.Week => current.AddDays(7 * direction),
+            _ => current.AddMonths(direction),
+        };
+
         ScheduleCalendar.DisplayDate = newDate;
-
-        if (BindingContext is VehicleCenterViewModel vm)
-            vm.CurrentMonthDisplayDate = newDate;
-    }
-
-    private void OnNextMonthTapped(object sender, Microsoft.Maui.Controls.TappedEventArgs e)
-    {
-        if (ScheduleCalendar == null) return;
-        var current = ScheduleCalendar.DisplayDate;
-        var newDate = current.AddMonths(1);
-        ScheduleCalendar.DisplayDate = newDate;
-
-        if (BindingContext is VehicleCenterViewModel vm)
-            vm.CurrentMonthDisplayDate = newDate;
+        vm.CurrentMonthDisplayDate = newDate;
     }
 }

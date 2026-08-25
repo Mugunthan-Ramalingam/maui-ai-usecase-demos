@@ -5,6 +5,7 @@ namespace SmartVehicleCare.Models;
 public class ExpenseDataPoint
 {
     public string Month { get; set; } = string.Empty;
+    public string RangeLabel { get; set; } = string.Empty;
     public double Amount { get; set; }
 }
 

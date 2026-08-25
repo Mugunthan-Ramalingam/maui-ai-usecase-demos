@@ -31,17 +31,32 @@ public class AddServiceViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(IsElectricalSelected));
                 OnPropertyChanged(nameof(IsGeneralInspectionSelected));
                 OnPropertyChanged(nameof(IsCustomSelected));
+                if (value != "Custom")
+                    ServiceTypeInput = value;
+                else
+                    ServiceTypeInput = string.Empty;
                 NotifyValidation();
             }
         }
     }
 
-    public bool IsOilChangeSelected       => SelectedType == "Oil Change";
-    public bool IsTyreRotationSelected    => SelectedType == "Tyre Rotation";
-    public bool IsBrakeServiceSelected    => SelectedType == "Brake Service";
-    public bool IsElectricalSelected      => SelectedType == "Electrical";
-    public bool IsGeneralInspectionSelected => SelectedType == "General Inspection";
+    public bool IsOilChangeSelected       => SelectedType == "Oil & Filter Change";
+    public bool IsTyreRotationSelected    => SelectedType == "Tyre & Wheel Service";
+    public bool IsBrakeServiceSelected    => SelectedType == "Brake Inspection & Repair";
+    public bool IsElectricalSelected      => SelectedType == "Battery & Electrical";
+    public bool IsGeneralInspectionSelected => SelectedType == "General Service";
     public bool IsCustomSelected          => SelectedType == "Custom";
+
+    private string _serviceTypeInput = string.Empty;
+    public string ServiceTypeInput
+    {
+        get => _serviceTypeInput;
+        set
+        {
+            if (SetProperty(ref _serviceTypeInput, value))
+                NotifyValidation();
+        }
+    }
 
     public ICommand SelectTypeCommand { get; }
     #endregion
@@ -123,7 +138,7 @@ public class AddServiceViewModel : INotifyPropertyChanged
     #endregion
 
     #region CanSave
-    public bool CanSave => !string.IsNullOrWhiteSpace(SelectedType) && _isServiceDateSet;
+    public bool CanSave => !string.IsNullOrWhiteSpace(ServiceTypeInput) && _isServiceDateSet;
 
     private void NotifyValidation()
     {
@@ -169,7 +184,7 @@ public class AddServiceViewModel : INotifyPropertyChanged
         var record = new ServiceRecord
         {
             ServiceDate     = ServiceDate,
-            ServiceType     = SelectedType,
+            ServiceType     = ServiceTypeInput.Trim(),
             Workshop        = ServiceProvider,
             Amount          = costStr,
             Mileage         = mileageStr,
@@ -194,6 +209,7 @@ public class AddServiceViewModel : INotifyPropertyChanged
     public void Reset()
     {
         _selectedType      = string.Empty;
+        _serviceTypeInput  = string.Empty;
         _isServiceDateSet  = false;
         _serviceDate       = DateTime.Today;
         _mileage           = string.Empty;
@@ -203,6 +219,7 @@ public class AddServiceViewModel : INotifyPropertyChanged
         _notes             = string.Empty;
 
         OnPropertyChanged(nameof(SelectedType));
+        OnPropertyChanged(nameof(ServiceTypeInput));
         OnPropertyChanged(nameof(IsOilChangeSelected));
         OnPropertyChanged(nameof(IsTyreRotationSelected));
         OnPropertyChanged(nameof(IsBrakeServiceSelected));

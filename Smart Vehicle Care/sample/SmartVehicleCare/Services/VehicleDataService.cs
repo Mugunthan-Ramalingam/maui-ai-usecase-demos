@@ -59,14 +59,20 @@ public class VehicleDataService
 
     public event Action<Vehicle?>? SelectedVehicleChanged;
     public event Action<DataMode>? ModeChanged;
+    public event Action? DataReloaded;
     // Fired when any per-vehicle data changes (service/fuel/doc/reminder added)
     public event Action<int>? DataChanged;
     public void NotifyDataChanged(int vehicleId) => DataChanged?.Invoke(vehicleId);
+    public void NotifyDataReloaded() => DataReloaded?.Invoke();
 
     public void ClearAllData()
     {
         Vehicles.Clear();
-        _selectedVehicle = null;
+        if (_selectedVehicle != null)
+        {
+            _selectedVehicle = null;
+            SelectedVehicleChanged?.Invoke(null);
+        }
         _vehicleServices.Clear();
         _vehicleFuel.Clear();
         _vehicleReminders.Clear();
@@ -151,6 +157,21 @@ public class VehicleDataService
         DataChanged?.Invoke(vehicle.Id);
     }
 
+    public void DeleteVehicle(Vehicle vehicle)
+    {
+        if (vehicle == null || !Vehicles.Contains(vehicle)) return;
+
+        var wasSelected = ReferenceEquals(SelectedVehicle, vehicle);
+        Vehicles.Remove(vehicle);
+        _vehicleServices.Remove(vehicle.Id);
+        _vehicleFuel.Remove(vehicle.Id);
+        _vehicleReminders.Remove(vehicle.Id);
+        DataChanged?.Invoke(vehicle.Id);
+
+        if (wasSelected)
+            SelectedVehicle = Vehicles.LastOrDefault();
+    }
+
     // ── Per-vehicle service records ───────────────────────────────────────────
 
     private readonly Dictionary<int, List<ServiceRecord>> _vehicleServices = new();
@@ -206,4 +227,11 @@ public class VehicleDataService
 
     public IReadOnlyList<ScheduleReminder> GetReminders(int vehicleId)
         => _vehicleReminders.TryGetValue(vehicleId, out var r) ? r.AsReadOnly() : Array.Empty<ScheduleReminder>();
+
+    public void RemoveReminder(int vehicleId, ScheduleReminder reminder)
+    {
+        if (_vehicleReminders.TryGetValue(vehicleId, out var list))
+            list.Remove(reminder);
+        DataChanged?.Invoke(vehicleId);
+    }
 }

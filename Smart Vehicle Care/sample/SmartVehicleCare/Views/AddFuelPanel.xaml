@@ -15,7 +15,21 @@
         <picker:SfDatePicker x:Name="FuelDatePicker" Mode="Dialog"
                              Grid.RowSpan="3"
                              SelectedDate="{Binding FuelDate}"
+                             ColumnDividerColor="{AppThemeBinding Light=#E5E0D8, Dark=#3D2E24}"
                              OkButtonClicked="OnFuelDateOkClicked">
+            <picker:SfDatePicker.SelectionView>
+                <picker:PickerSelectionView CornerRadius="20" Background="{AppThemeBinding Light=#B45309, Dark=#D97706}"/>
+            </picker:SfDatePicker.SelectionView>
+            <picker:SfDatePicker.SelectedTextStyle>
+                <picker:PickerTextStyle TextColor="White" FontAttributes="Bold"/>
+            </picker:SfDatePicker.SelectedTextStyle>
+            <picker:SfDatePicker.ColumnHeaderView>
+                <picker:DatePickerColumnHeaderView Height="50" Background="{AppThemeBinding Light=#FAF9F5, Dark=#2D2117}" DividerColor="{AppThemeBinding Light=#E5E0D8, Dark=#3D2E24}">
+                    <picker:DatePickerColumnHeaderView.TextStyle>
+                        <picker:PickerTextStyle TextColor="{AppThemeBinding Light=#6B5E55, Dark=#B0A39A}" FontAttributes="Bold"/>
+                    </picker:DatePickerColumnHeaderView.TextStyle>
+                </picker:DatePickerColumnHeaderView>
+            </picker:SfDatePicker.ColumnHeaderView>
             <picker:SfDatePicker.HeaderView>
                 <picker:PickerHeaderView Text="Select Fuel Date" Height="40"/>
             </picker:SfDatePicker.HeaderView>
@@ -27,9 +41,7 @@
         <!-- Header -->
         <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Padding="24,16"
               BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource BrandNavyLight}}">
-            <StackLayout Spacing="2">
-                <Label Text="Fuel Log" FontSize="11"
-                       TextColor="{AppThemeBinding Light={StaticResource BrandMutedOnLight}, Dark={StaticResource BrandMutedOnDark}}"/>
+                 <StackLayout Spacing="2">
                 <Label Text="Add Fuel Log" FontSize="18" FontAttributes="Bold"
                        TextColor="{AppThemeBinding Light={StaticResource BrandTextDark}, Dark={StaticResource BrandTextOnDark}}"/>
                 <Border BackgroundColor="{AppThemeBinding Light=#FEF3C7, Dark=#152840}"
@@ -41,17 +53,25 @@
                            TextColor="{AppThemeBinding Light=#B45309, Dark=#8ED3FF}"/>
                 </Border>
             </StackLayout>
-            <Border Grid.Column="1" WidthRequest="32" HeightRequest="32"
-                    BackgroundColor="{AppThemeBinding Light=#FAF9F5, Dark=#2D2117}"
-                    StrokeThickness="0" VerticalOptions="Start">
-                <Border.StrokeShape><Ellipse/></Border.StrokeShape>
-                <Border.GestureRecognizers>
-                    <TapGestureRecognizer Command="{Binding CloseCommand}"/>
-                </Border.GestureRecognizers>
-                <Label Text="&#xE5CD;" FontFamily="MaterialIcons" FontSize="18"
-                       HorizontalOptions="Center" VerticalOptions="Center"
-                       TextColor="{AppThemeBinding Light=#64748B, Dark=#9DB7D2}"/>
-            </Border>
+            <buttons:SfButton Grid.Column="1" WidthRequest="44" HeightRequest="44"
+                              Padding="0" CornerRadius="22"
+                              Background="Transparent" StrokeThickness="0"
+                              Text="&#xE5CD;" FontFamily="MaterialIcons" FontSize="18"
+                              TextColor="{AppThemeBinding Light=#64748B, Dark=#9DB7D2}"
+                              Command="{Binding CloseCommand}">
+                <VisualStateManager.VisualStateGroups>
+                    <VisualStateGroupList>
+                        <VisualStateGroup x:Name="CommonStates">
+                            <VisualState x:Name="Normal"/>
+                            <VisualState x:Name="Pressed">
+                                <VisualState.Setters>
+                                    <Setter Property="Background" Value="{AppThemeBinding Light=#14000000, Dark=#26FFFFFF}"/>
+                                </VisualState.Setters>
+                            </VisualState>
+                        </VisualStateGroup>
+                    </VisualStateGroupList>
+                </VisualStateManager.VisualStateGroups>
+            </buttons:SfButton>
         </Grid>
 
         <!-- Scrollable Form -->

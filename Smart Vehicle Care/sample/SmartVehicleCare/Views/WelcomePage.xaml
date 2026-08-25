@@ -221,19 +221,11 @@
                             <!-- OR divider -->
                             <Grid ColumnDefinitions="*,Auto,*"
                                   Margin="0,0,0,14">
-                                <BoxView Grid.Column="0"
-                                         HeightRequest="1"
-                                         VerticalOptions="Center"
-                                         Color="{AppThemeBinding Light={StaticResource BrandBorderLight}, Dark={StaticResource BrandNavyLight}}"/>
                                 <Label Grid.Column="1"
                                        Text="  OR  "
                                        FontSize="12"
                                        TextColor="{AppThemeBinding Light={StaticResource BrandMutedOnLight}, Dark={StaticResource BrandMutedOnDark}}"
                                        VerticalOptions="Center"/>
-                                <BoxView Grid.Column="2"
-                                         HeightRequest="1"
-                                         VerticalOptions="Center"
-                                         Color="{AppThemeBinding Light={StaticResource BrandBorderLight}, Dark={StaticResource BrandNavyLight}}"/>
                             </Grid>
 
                             <!-- B: Add Your Vehicle (outlined) -->
@@ -254,7 +246,7 @@
                                    HorizontalOptions="Center"
                                    HorizontalTextAlignment="Center"
                                    FontSize="13"
-                                   TextDecorations="Underline"
+                                   TextDecorations="None"
                                    TextColor="{AppThemeBinding Light=#64748B, Dark=#9DB7D2}">
                                 <Label.GestureRecognizers>
                                     <TapGestureRecognizer Tapped="OnExploreWithSampleDataClicked"/>

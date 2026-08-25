@@ -216,7 +216,6 @@
                                   HeightRequest="48"
                                   Command="{Binding CloseCommand}"/>
                 <buttons:SfButton Grid.Column="1"
-                                  Text="Add Vehicle"
                                   Background="{AppThemeBinding Light={StaticResource BrandBlue}, Dark={StaticResource BrandBlueBright}}"
                                   TextColor="White"
                                   FontSize="14"
@@ -224,7 +223,16 @@
                                   CornerRadius="10"
                                   HeightRequest="48"
                                   IsEnabled="{Binding CanAddVehicle}"
-                                  Command="{Binding AddVehicleCommand}"/>
+                                  Command="{Binding AddVehicleCommand}">
+                    <buttons:SfButton.Content>
+                        <DataTemplate>
+                            <HorizontalStackLayout Spacing="7" HorizontalOptions="Center" VerticalOptions="Center">
+                                <Label Text="+" FontSize="20" FontAttributes="Bold" TextColor="White" VerticalOptions="Center"/>
+                                <Label Text="Add Vehicle" FontSize="14" FontAttributes="Bold" TextColor="White" VerticalOptions="Center"/>
+                            </HorizontalStackLayout>
+                        </DataTemplate>
+                    </buttons:SfButton.Content>
+                </buttons:SfButton>
             </Grid>
         </Grid>
     </ContentView.Content>
