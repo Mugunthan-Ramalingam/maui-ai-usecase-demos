@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:picker="clr-namespace:Syncfusion.Maui.Picker;assembly=Syncfusion.Maui.Picker"
+    xmlns:viewmodels="clr-namespace:SmartAIDatePicker.ViewModels"
+    x:DataType="viewmodels:DatePickerViewModel"
+    x:Class="SmartAIDatePicker.MainPage">
+
+    <ScrollView>
+
+        <VerticalStackLayout
+            Padding="20"
+            Margin="0,80,0,0"
+            VerticalOptions="Start"
+            Spacing="24">
+
+            <Label
+                Text="AI-Powered Smart Date Selection"
+                FontSize="24"
+                FontAttributes="Bold"
+                HorizontalOptions="Center"
+                TextColor="{StaticResource Black}" />
+
+            <!-- Input -->
+
+                <Grid
+                    ColumnDefinitions="*,Auto"
+                    ColumnSpacing="8"
+                    HeightRequest="56">
+
+                <Editor
+                        x:Name="DateRequestEditor"
+                        Placeholder="{Binding Placeholder}"
+                        Text="{Binding DateRequest, Mode=TwoWay}"
+                        IsEnabled="{Binding IsEditorEnabled}"
+                        AutoSize="Disabled"
+                        HeightRequest="54"
+                        VerticalOptions="Center"
+                        VerticalTextAlignment="Center"
+                        BackgroundColor="Transparent"
+                        PlaceholderColor="Gray"
+                        TextColor="{StaticResource PrimaryDarkText}"
+                        FontSize="14" >
+                </Editor>
+
+                <Border
+                        Grid.Column="1"
+                        x:Name="SearchButtonBorder"
+                        BackgroundColor="{Binding SearchButtonBackgroundColor}"
+                        Opacity="{Binding SearchButtonOpacity}"
+                        StrokeThickness="0"
+                        StrokeShape="RoundRectangle 12">
+
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding SearchCommand}" />
+                        </Border.GestureRecognizers>
+
+                        <Grid WidthRequest="56"
+                              HeightRequest="56">
+
+                            <Label
+                                x:Name="SearchButton"
+                                Text="&#xE65F;"
+                                IsVisible="{Binding IsSearchIconVisible}"
+                                FontFamily="MaterialIcons"
+                                FontSize="22"
+                                TextColor="White"
+                                HorizontalTextAlignment="Center"
+                                VerticalTextAlignment="Center" />
+
+                            <ActivityIndicator
+                                x:Name="LoadingIndicator"
+                                IsVisible="{Binding IsLoadingVisible}"
+                                IsRunning="{Binding IsLoadingVisible}"
+                                Color="White"
+                                VerticalOptions="Center"
+                                HorizontalOptions="Center" />
+                        </Grid>
+
+                    </Border>
+
+                </Grid>
+
+            <!-- Selected Date -->
+
+            <Border
+                Padding="20,16"
+                BackgroundColor="White"
+                Stroke="{StaticResource Secondary}"
+                StrokeThickness="1"
+                Margin="0,20,0,0"
+                WidthRequest="260"
+                StrokeShape="RoundRectangle 12">
+
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding OpenPickerCommand}" />
+                </Border.GestureRecognizers>
+
+                <Grid
+                    ColumnDefinitions="Auto,*"
+                    ColumnSpacing="12">
+
+                    <Label
+                        Text="&#xE878;"
+                        FontFamily="MaterialIcons"
+                        FontSize="20"
+                        TextColor="{StaticResource Primary}" />
+
+                    <VerticalStackLayout
+                        Grid.Column="1"
+                        Spacing="4">
+
+                        <Label
+                            Text="Selected Date"
+                            FontSize="14"
+                            TextColor="{StaticResource Primary}"
+                            FontAttributes="Bold" />
+
+                        <Label
+                            x:Name="SelectedDateLabel"
+                            Text="{Binding SelectedDateText}"
+                            FontSize="18"
+                            FontAttributes="Bold"
+                            TextColor="{StaticResource PrimaryDarkText}" />
+
+                    </VerticalStackLayout>
+
+                </Grid>
+
+            </Border>
+
+            <picker:SfDatePicker
+                x:Name="DatePicker"
+                Mode="Dialog"
+                IsOpen="{Binding IsPickerOpen, Mode=TwoWay}"
+                SelectedDate="{Binding PickerDate, Mode=TwoWay}"
+                Opacity="0"
+                WidthRequest="1"
+                HeightRequest="1"
+                Format="dd_MM_yyyy">
+
+                <picker:SfDatePicker.HeaderView>
+                    <picker:PickerHeaderView
+                        Text="Select Date"
+                        Height="44" />
+                </picker:SfDatePicker.HeaderView>
+
+            </picker:SfDatePicker>
+
+        </VerticalStackLayout>
+
+    </ScrollView>
+
+</ContentPage>
