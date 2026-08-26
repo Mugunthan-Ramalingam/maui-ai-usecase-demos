@@ -17,7 +17,7 @@ public sealed class DatePickerViewModel : INotifyPropertyChanged
     private bool isBusy;
     private bool isPickerOpen;
     private bool isApplyingAIResult;
-    private string placeholder = "Try: next Friday, first Monday of next month...";
+    private string placeholder = "Try: next leap day, Next christmas...";
 
     private sealed record DateResolutionResult(DateTime? Date, string? ErrorMessage)
     {
@@ -143,7 +143,7 @@ public sealed class DatePickerViewModel : INotifyPropertyChanged
         }
 
         isApplyingAIResult = false;
-        Placeholder = "E.g., next Friday, Christmas, two weeks from now...";
+        Placeholder = "Try: next leap day, Next christmas...";
         IsBusy = false;
     }
 
@@ -151,11 +151,13 @@ public sealed class DatePickerViewModel : INotifyPropertyChanged
     {
         var prompt =
             $"Reference date (today): {DateTime.Today:yyyy-MM-dd} ({DateTime.Today:dddd}). " +
-            "Resolve the following natural-language date request. Apply the exact meaning of words such as " +
-            "next, upcoming, this, last, from now, and after. For 'next' or 'upcoming', the result must be " +
-            "strictly after the reference date. Include the year for every recurring holiday. If the request says " +
-            "Independence Day without a country, interpret it as US Independence Day on July 4. " +
-            $"Request: {request}";
+            "Resolve the following natural-language question to one specific Gregorian calendar date. " +
+            "It may refer to a historical event, war, holiday, weekday, leap day, anniversary, or relative date. " +
+            "For a war, use its start date unless the user asks for its end. Apply the exact meaning of " +
+            "next, upcoming, this, last, from now, and after; next/upcoming must be strictly after the reference date. " +
+            "Use the next occurrence for recurring holidays without a year. Interpret Independence Day without a country " +
+            "as US Independence Day on July 4. Return only yyyy-MM-dd or INVALID_REQUEST. " +
+            $"Question: {request}";
 
         var completion = await azureAIService.GetCompletion(prompt);
 

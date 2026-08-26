@@ -18,7 +18,7 @@
 
             <Label
                 Text="AI-Powered Smart Date Selection"
-                FontSize="24"
+                FontSize="18"
                 FontAttributes="Bold"
                 HorizontalOptions="Center"
                 TextColor="{StaticResource Black}" />
@@ -106,7 +106,7 @@
                         Text="&#xE878;"
                         FontFamily="MaterialIcons"
                         FontSize="20"
-                        TextColor="{StaticResource Primary}" />
+                        TextColor="{StaticResource SearchButtonPurple}" />
 
                     <VerticalStackLayout
                         Grid.Column="1"
@@ -115,7 +115,7 @@
                         <Label
                             Text="Selected Date"
                             FontSize="14"
-                            TextColor="{StaticResource Primary}"
+                            TextColor="{StaticResource SearchButtonPurple}"
                             FontAttributes="Bold" />
 
                         <Label
