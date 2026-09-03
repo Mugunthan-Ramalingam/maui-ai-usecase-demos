@@ -1,20 +1,20 @@
-﻿using SmartRTEFormatter.Services;
+﻿using SmartRTEFormatter;
 
 namespace SmartRTEFormatter
 {
     public partial class App : Application
     {
-        private readonly IAIFormattingService formattingService;
+        private readonly MainPage mainPage;
 
-        public App(IAIFormattingService formattingService)
+        public App(MainPage mainPage)
         {
-            this.formattingService = formattingService;
+            this.mainPage = mainPage;
             InitializeComponent();
         }
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
-            return new Window(new AppShell(new MainPage(formattingService)));
+            return new Window(new AppShell(mainPage));
         }
     }
 }

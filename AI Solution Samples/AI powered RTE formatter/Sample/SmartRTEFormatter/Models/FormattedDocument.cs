@@ -27,6 +27,39 @@ public sealed class FormattedSection
 
     [JsonPropertyName("actionItems")]
     public List<string> ActionItems { get; set; } = new();
+
+    [JsonPropertyName("keywords")]
+    public List<string> Keywords { get; set; } = new();
+
+    [JsonPropertyName("notes")]
+    public List<string> Notes { get; set; } = new();
+
+    [JsonPropertyName("quotes")]
+    public List<string> Quotes { get; set; } = new();
+
+    [JsonPropertyName("codeSnippets")]
+    public List<CodeSnippet> CodeSnippets { get; set; } = new();
+
+    [JsonPropertyName("tables")]
+    public List<FormattedTable> Tables { get; set; } = new();
+}
+
+public sealed class CodeSnippet
+{
+    [JsonPropertyName("language")]
+    public string Language { get; set; } = string.Empty;
+
+    [JsonPropertyName("code")]
+    public string Code { get; set; } = string.Empty;
+}
+
+public sealed class FormattedTable
+{
+    [JsonPropertyName("headers")]
+    public List<string> Headers { get; set; } = new();
+
+    [JsonPropertyName("rows")]
+    public List<List<string>> Rows { get; set; } = new();
 }
 
 public sealed class FormattingResult

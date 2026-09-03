@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using SmartRTEFormatter.Services;
+using SmartRTEFormatter.ViewModels;
 using Syncfusion.Maui.Core.Hosting;
 
 namespace SmartRTEFormatter
@@ -23,6 +24,8 @@ namespace SmartRTEFormatter
 #endif
 
             builder.Services.AddSingleton<IAIFormattingService, AzureOpenAIFormattingService>();
+            builder.Services.AddTransient<MainPageViewModel>();
+            builder.Services.AddTransient<MainPage>();
 
             return builder.Build();
         }

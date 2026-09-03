@@ -1,121 +1,43 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui" 
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
+             xmlns:rte="clr-namespace:Syncfusion.Maui.RichTextEditor;assembly=Syncfusion.Maui.RichTextEditor" 
+             xmlns:viewModels="clr-namespace:SmartRTEFormatter.ViewModels" 
+             x:DataType="viewModels:MainPageViewModel" 
+             x:Class="SmartRTEFormatter.MainPage">
 
-<ContentPage
-    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:rte="clr-namespace:Syncfusion.Maui.RichTextEditor;assembly=Syncfusion.Maui.RichTextEditor"
-    x:Class="SmartRTEFormatter.MainPage"
-    BackgroundColor="#FAFAFC">
-
-    <ScrollView>
-
-        <Grid
-            Padding="24"
-            RowSpacing="12"
-            RowDefinitions="Auto,Auto,Auto">
-
-            <!-- Header -->
-                    <Label
-                        Text="AI Content Formatter"
-                        FontSize="24"
-                        FontAttributes="Bold"
-                        TextColor="#202124" />
+    <ScrollView Orientation="Vertical">
+        <Grid RowDefinitions="Auto,Auto,*" Padding="24" RowSpacing="10">
+            <VerticalStackLayout Spacing="4">
+                <Label Text="AI Powered RichTextEditor" FontSize="22" FontAttributes="Bold" HorizontalOptions="Start" />
+            </VerticalStackLayout>
 
 
-            <!-- Input Section -->
+            <HorizontalStackLayout Grid.Row="1" Spacing="8" HorizontalOptions="End">
+                <Button x:Name="FormatButton"
+                Text="Format text"
+                Command="{Binding FormatCommand}"
+                IsVisible="{Binding IsFormatButtonVisible}"
+                IsEnabled="{Binding IsFormatButtonVisible}"
+                SemanticProperties.Hint="Formats the entered text with Azure OpenAI." />
+                <ActivityIndicator x:Name="ButtonLoadingIndicator"
+                       IsVisible="{Binding IsFormatting}"
+                       IsRunning="{Binding IsFormatting}"
+                       InputTransparent="True"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+            </HorizontalStackLayout>
 
-            <Border
-                Grid.Row="1"
-                Padding="18"
-                Stroke="#E5E7EB"
-                StrokeShape="RoundRectangle 12"
-                Background="White">
+            <VerticalStackLayout Grid.Row="2" Spacing="8">
 
-                <VerticalStackLayout Spacing="10">
-
-                    <Label
-                        Text="Raw Content"
-                        FontAttributes="Bold"
-                        FontSize="18" />
-
-                    <Label
-                        Text="Paste unstructured content for AI analysis and formatting."
-                        FontSize="13"
-                        TextColor="#6B7280" />
-
-                    <Border
-                        Padding="10"
-                        Stroke="#D7DEE8"
-                        StrokeShape="RoundRectangle 10">
-
-                        <Editor
-                            x:Name="InputEditor"
-                            HeightRequest="120"
-                            AutoSize="TextChanges"
-                            Placeholder="Example: Meeting notes, support incidents, project updates, interview feedback..." />
-
-                    </Border>
-
-                    <Grid>
-
-                        <Button
-                            x:Name="FormatButton"
-                            HeightRequest="48"
-                            FontAttributes="Bold"
-                            CornerRadius="10"
-                            BackgroundColor="#5B3FD8"
-                            TextColor="White"
-                            Text="✨ Format with AI"
-                            Clicked="OnFormatTextClicked"
-                            SemanticProperties.Hint="Formats the entered text using AI." />
-
-                        <ActivityIndicator
-                            x:Name="ButtonLoadingIndicator"
-                            HorizontalOptions="Center"
-                            VerticalOptions="Center"
-                            Color="White"
-                            IsVisible="False"
-                            IsRunning="False" />
-
-                    </Grid>
-
-                </VerticalStackLayout>
-
-            </Border>
-
-            <!-- Output Section -->
-
-            <Border
-                Grid.Row="2"
-                Padding="18"
-                Stroke="#E5E7EB"
-                StrokeShape="RoundRectangle 12"
-                Background="White">
-
-                <VerticalStackLayout Spacing="10">
-
-                    <Label
-                        Text="AI Generated Document"
-                        FontAttributes="Bold"
-                        FontSize="18" />
-
-                    <Label
-                        Text="Review, refine, and continue editing the generated content using the Rich Text Editor."
-                        FontSize="13"
-                        TextColor="#6B7280" />
-
-                    <rte:SfRichTextEditor
-                        x:Name="RichTextEditor"
-                        HeightRequest="240"
-                        ShowToolbar="True"
-                        Placeholder="AI generated content will appear here..." />
-
-                </VerticalStackLayout>
-
-            </Border>
+                <rte:SfRichTextEditor x:Name="RichTextEditor"
+                                  ShowToolbar="True"
+                                  HeightRequest="400"
+                                  Text="{Binding InputText, Mode=TwoWay}"
+                                  HtmlText="{Binding FormattedHtml}"
+                                  Placeholder="Paste or enter unformatted text here. Click 'Format text' to transform it into structured content." />
+            </VerticalStackLayout>
 
         </Grid>
-
     </ScrollView>
-
 </ContentPage>

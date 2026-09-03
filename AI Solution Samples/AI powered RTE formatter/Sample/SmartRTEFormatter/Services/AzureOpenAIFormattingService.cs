@@ -16,7 +16,9 @@ public sealed class AzureOpenAIFormattingService : IAIFormattingService
     """
     You are an enterprise-grade document formatting assistant.
 
-    Transform unstructured or semi-structured content into a professional document structure.
+    Transform any unstructured or semi-structured content into a professional documentation structure.
+
+    Your ONLY job is to move text into the right structural slot. You must NEVER change the wording.
 
     Rules:
 
@@ -24,16 +26,22 @@ public sealed class AzureOpenAIFormattingService : IAIFormattingService
     2. Do not return HTML.
     3. Do not return Markdown.
     4. Do not return explanations.
-    5. Do not duplicate information across sections.
-    6. Preserve all information from the source.
-    7. Do not invent facts.
-    8. Create meaningful section headings.
-    9. Extract metrics, achievements and highlights into bulletItems.
-    10. Use numberedItems only when sequence or order matters.
-    11. Use actionItems only for tasks, responsibilities or follow-up activities.
-    12. Keep paragraphs concise and professional.
-    13. Consolidate repeated information into a single section.
-    14. Use empty arrays when a category does not apply.
+    5. Preserve every piece of source information exactly once.
+    6. Do not invent facts or missing content.
+    7. Create concise headings that describe the content; generated headings are structure, not rewritten source content.
+    8. Copy each source sentence, phrase, or item character-for-character exactly as written, including grammar, spelling, punctuation, capitalization, word order, and tense, even if it looks incorrect or informal.
+    9. Do not rewrite, paraphrase, summarize, correct grammar, fix spelling, change tense, substitute words, or improve the user's text in any way.
+    10. Do not merge two source sentences into one, and do not split one source sentence into two in a way that changes its wording.
+    11. Only reorganize the source content into the JSON categories below; the reorganization itself is the only allowed change.
+    12. Use paragraphs for prose, explanations, descriptions, standalone statements, commands, code, configuration, quoted text, and table data when no dedicated field exists.
+    13. Use bulletItems for unordered facts, features, requirements, highlights, metrics, keywords, and items.
+    14. Use numberedItems only when the source expresses an ordered procedure, sequence, or steps.
+    15. Use actionItems only for explicit tasks, responsibilities, follow-ups, or work to be completed.
+    16. Preserve code, commands, configuration, SQL, JSON, XML, markup, paths, identifiers, and code-like text character-for-character inside paragraphs or list items.
+    17. Preserve quoted text verbatim inside paragraphs or bulletItems.
+    18. Keep related content together in one section per logical topic.
+    19. Never place the same source sentence or item in more than one output array.
+    20. Use empty arrays when a category does not apply.
 
     Return exactly this JSON structure:
 
@@ -92,18 +100,22 @@ public sealed class AzureOpenAIFormattingService : IAIFormattingService
                         role = "user",
                         content =
                         $"""
-                        Convert the following content into a structured business document.
+                        Convert the following content into a structured documentation document.
 
                         Requirements:
 
                         - Create logical sections.
-                        - Preserve all facts.
-                        - Remove duplicated information.
-                        - Group metrics under bulletItems.
-                        - Use numberedItems only when sequence matters.
-                        - Use actionItems for tasks and responsibilities.
-                        - Create professional section headings.
-                        - Return valid JSON only.
+                        - Copy every source sentence, phrase, and item exactly as written: same wording, grammar, punctuation, capitalization, spelling, word order, and tense.
+                        - Do not rewrite, paraphrase, summarize, correct grammar, fix spelling, or improve the user's text in any way.
+                        - Do not merge or split source sentences in a way that changes their wording.
+                        - Only restructure the content into title, sections, paragraphs, bulletItems, numberedItems, and actionItems; reorganization is the only allowed change.
+                        - Use paragraphs for prose, explanations, descriptions, commands, code, configuration, quoted text, and table data.
+                        - Use bulletItems for unordered content, features, requirements, highlights, metrics, and keywords.
+                        - Use numberedItems only for ordered procedures or sequences.
+                        - Use actionItems only for explicit tasks or responsibilities.
+                        - Keep related content together, do not duplicate source items, and do not invent missing information.
+                        - Use empty arrays when a category does not apply.
+                        - Return valid JSON only with exactly the requested schema.
 
                         Content:
 
@@ -224,24 +236,33 @@ public sealed class AzureOpenAIFormattingService : IAIFormattingService
 
             AppendParagraphs(html, section.Paragraphs);
 
-            AppendSectionList(
-                html,
-                "Key Points",
-                section.BulletItems,
-                "ul");
+            if (section.BulletItems.Count > 0)
+            {
+                AppendSectionList(
+                    html,
+                    null,
+                    section.BulletItems,
+                    "ul");
+            }
 
-            AppendSectionList(
-                html,
-                "Steps",
-                section.NumberedItems,
-                "ol");
+            if (section.NumberedItems.Count > 0)
+            {
+                AppendSectionList(
+                    html,
+                    null,
+                    section.NumberedItems,
+                    "ol");
+            }
 
-            AppendSectionList(
-                html,
-                "Action Items",
-                section.ActionItems,
-                "ul",
-                "action-items");
+            if (section.ActionItems.Count > 0)
+            {
+                AppendSectionList(
+                    html,
+                    null,
+                    section.ActionItems,
+                    "ul",
+                    "action-items");
+            }
         }
 
         return html.ToString();
@@ -273,7 +294,7 @@ public sealed class AzureOpenAIFormattingService : IAIFormattingService
 
     private static void AppendSectionList(
         StringBuilder html,
-        string title,
+        string? title,
         IEnumerable<string> items,
         string tag,
         string? cssClass = null)
@@ -285,7 +306,10 @@ public sealed class AzureOpenAIFormattingService : IAIFormattingService
         if (values.Count == 0)
             return;
 
-        html.Append($"<h3>{System.Net.WebUtility.HtmlEncode(title)}</h3>");
+        if (!string.IsNullOrWhiteSpace(title))
+        {
+            html.Append($"<h3>{System.Net.WebUtility.HtmlEncode(title)}</h3>");
+        }
 
         if (string.IsNullOrWhiteSpace(cssClass))
         {
