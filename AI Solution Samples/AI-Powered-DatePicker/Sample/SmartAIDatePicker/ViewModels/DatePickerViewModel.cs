@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 using System.Windows.Input;
 using SmartAIDatePicker.AIService;
@@ -15,28 +16,56 @@ public sealed class DatePickerViewModel : INotifyPropertyChanged
     private DateTime? selectedDate = DateTime.Today;
     private DateTime? pickerDate = DateTime.Today;
     private bool isBusy;
-    private bool isPickerOpen;
     private bool isApplyingAIResult;
     private string placeholder = "Try: next leap day, Next christmas...";
+    private DateTime? minimumDate;
+    private DateTime? maximumDate;
+    private int dayInterval = 1;
+    private int monthInterval = 1;
+    private int yearInterval = 1;
+    private bool enableLooping = true;
+    private string dateFormat = "dd_MM_yyyy";
+    private bool hasLocalDateFilter;
+    private bool hasLocalLoopingSetting;
 
-    private sealed record DateResolutionResult(DateTime? Date, string? ErrorMessage)
+    private sealed record DateResolutionResult(
+        DateTime? Date,
+        string? ErrorMessage,
+        DateTime? MinimumDate = null,
+        DateTime? MaximumDate = null,
+        IReadOnlyList<DateTime>? BlackoutDates = null,
+        int DayInterval = 1,
+        int MonthInterval = 1,
+        int YearInterval = 1,
+        bool EnableLooping = true,
+        string DateFormat = "dd_MM_yyyy",
+        bool HasPickerConfiguration = false)
     {
         public bool IsSuccess => Date.HasValue;
     }
+
+    private sealed record AIResolution(
+        string? Date,
+        string? MinimumDate,
+        string? MaximumDate,
+        List<string>? BlackoutDates,
+        int? DayInterval,
+        int? MonthInterval,
+        int? YearInterval,
+        bool? EnableLooping,
+        string? Format,
+        string? Error);
 
     public DatePickerViewModel(IAzureOpenAIService azureAIService)
     {
         this.azureAIService = azureAIService;
 
         SearchCommand = new Command(async () => await ResolveDateRequestAsync());
-        OpenPickerCommand = new Command(() => IsPickerOpen = true);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public ICommand SearchCommand { get; }
-
-    public ICommand OpenPickerCommand { get; }
 
     public string DateRequest
     {
@@ -70,6 +99,50 @@ public sealed class DatePickerViewModel : INotifyPropertyChanged
         }
     }
 
+    public DateTime? MinimumDate
+    {
+        get => minimumDate;
+        private set => SetProperty(ref minimumDate, value);
+    }
+
+    public DateTime? MaximumDate
+    {
+        get => maximumDate;
+        private set => SetProperty(ref maximumDate, value);
+    }
+
+    public ObservableCollection<DateTime> BlackoutDates { get; } = new();
+
+    public int DayInterval
+    {
+        get => dayInterval;
+        private set => SetProperty(ref dayInterval, value);
+    }
+
+    public int MonthInterval
+    {
+        get => monthInterval;
+        private set => SetProperty(ref monthInterval, value);
+    }
+
+    public int YearInterval
+    {
+        get => yearInterval;
+        private set => SetProperty(ref yearInterval, value);
+    }
+
+    public bool EnableLooping
+    {
+        get => enableLooping;
+        private set => SetProperty(ref enableLooping, value);
+    }
+
+    public string DateFormat
+    {
+        get => dateFormat;
+        private set => SetProperty(ref dateFormat, value);
+    }
+
     public string SelectedDateText =>
         SelectedDate?.ToString("dd MMMM yyyy", CultureInfo.CurrentCulture) ?? string.Empty;
 
@@ -83,15 +156,10 @@ public sealed class DatePickerViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(IsSearchIconVisible));
                 OnPropertyChanged(nameof(IsLoadingVisible));
                 OnPropertyChanged(nameof(IsEditorEnabled));
+                OnPropertyChanged(nameof(IsPickerEnabled));
                 OnPropertyChanged(nameof(SearchButtonOpacity));
             }
         }
-    }
-
-    public bool IsPickerOpen
-    {
-        get => isPickerOpen;
-        set => SetProperty(ref isPickerOpen, value);
     }
 
     public string Placeholder
@@ -105,6 +173,8 @@ public sealed class DatePickerViewModel : INotifyPropertyChanged
     public bool IsLoadingVisible => IsBusy;
 
     public bool IsEditorEnabled => !IsBusy;
+
+    public bool IsPickerEnabled => !IsBusy;
 
     public double SearchButtonOpacity =>
         IsBusy || string.IsNullOrWhiteSpace(DateRequest) ? 0.6 : 1;
@@ -126,20 +196,36 @@ public sealed class DatePickerViewModel : INotifyPropertyChanged
         IsBusy = true;
         DateRequest = string.Empty;
         Placeholder = "Finding date...";
+        ResetPickerState();
+        ApplyDateFilter(request);
+        ApplyLocalPickerSettings(request);
 
-        var result = await GetDateFromAIAsync(request);
-
-        if (result.IsSuccess && result.Date.HasValue)
+        try
         {
-            isApplyingAIResult = true;
-            PickerDate = result.Date.Value;
-            IsPickerOpen = true;
+            var result = await GetDateFromAIAsync(request);
 
-            await Task.Delay(1200);
+            if (result.IsSuccess || result.HasPickerConfiguration)
+            {
+                ApplyPickerConfiguration(result);
 
-            IsPickerOpen = false;
-            isApplyingAIResult = false;
-            SelectedDate = result.Date.Value;
+                var dateToSelect = hasLocalDateFilter && MinimumDate.HasValue
+                    ? MinimumDate.Value
+                    : result.Date;
+
+                if (dateToSelect.HasValue)
+                {
+                    isApplyingAIResult = true;
+                    PickerDate = dateToSelect.Value;
+                    isApplyingAIResult = false;
+                    SelectedDate = dateToSelect.Value;
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (HttpRequestException)
+        {
         }
 
         isApplyingAIResult = false;
@@ -150,60 +236,493 @@ public sealed class DatePickerViewModel : INotifyPropertyChanged
     private async Task<DateResolutionResult> GetDateFromAIAsync(string request)
     {
         var prompt =
-            $"Reference date (today): {DateTime.Today:yyyy-MM-dd} ({DateTime.Today:dddd}). " +
+            $"Reference date (today): {DateTime.Today:yyyy-MM-dd} ({DateTime.Today:dddd}); " +
+            $"user locale: {CultureInfo.CurrentCulture.Name}. " +
             "Resolve the following natural-language question to one specific Gregorian calendar date. " +
+            "Return a JSON object with date and any requested picker settings. Supported settings are " +
+            "minimumDate, maximumDate, blackoutDates, dayInterval, monthInterval, yearInterval, " +
+            "enableLooping, and format. Dates must be yyyy-MM-dd. Use null for settings not requested. " +
+            "For filters such as before 2010 or before December 2010, set maximumDate to the end of " +
+            "the requested year or month. For after February 2023, set minimumDate to 2023-03-01. " +
+            "For 'select this date' or 'choose today', set date to the reference date. " +
             "It may refer to a historical event, war, holiday, weekday, leap day, anniversary, or relative date. " +
             "For a war, use its start date unless the user asks for its end. Apply the exact meaning of " +
             "next, upcoming, this, last, from now, and after; next/upcoming must be strictly after the reference date. " +
             "Use the next occurrence for recurring holidays without a year. Interpret Independence Day without a country " +
-            "as US Independence Day on July 4. Return only yyyy-MM-dd or INVALID_REQUEST. " +
+            "as US Independence Day on July 4. Return only the JSON object or INVALID_REQUEST. " +
             $"Question: {request}";
 
         var completion = await azureAIService.GetCompletion(prompt);
 
         if (!string.IsNullOrWhiteSpace(completion))
         {
-                var normalized = completion.Trim();
+            var normalized = completion.Trim();
 
-                if (string.Equals(normalized, "INVALID_REQUEST", StringComparison.OrdinalIgnoreCase))
-                {
-                    return new DateResolutionResult(null, "The request is too vague to resolve to a single valid date.");
-                }
+            if (string.Equals(normalized, "INVALID_REQUEST", StringComparison.OrdinalIgnoreCase))
+            {
+                return new DateResolutionResult(null, "The request is too vague to resolve to a single valid date.");
+            }
 
-                if (DateTime.TryParseExact(
-                    normalized,
-                    "yyyy-MM-dd",
-                    CultureInfo.InvariantCulture,
-                    DateTimeStyles.None,
-                    out var aiDate))
+            var json = Regex.Match(normalized, @"\{.*\}", RegexOptions.Singleline);
+            if (json.Success)
+            {
+                try
                 {
-                    if (IsValidAIResult(request, aiDate))
+                    var resolution = System.Text.Json.JsonSerializer.Deserialize<AIResolution>(
+                        json.Value,
+                        new System.Text.Json.JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+
+                    if (resolution is not null &&
+                        TryParseConfiguration(resolution, out var configuration) &&
+                        IsValidConfigurationRange(configuration))
                     {
-                        return new DateResolutionResult(aiDate, null);
+                        if (TryParseDate(resolution.Date, out var aiDate) &&
+                            IsValidAIResult(
+                                request,
+                                aiDate,
+                                GetEffectiveMinimum(configuration),
+                                GetEffectiveMaximum(configuration)))
+                        {
+                            return configuration with
+                            {
+                                Date = aiDate,
+                                MinimumDate = GetEffectiveMinimum(configuration),
+                                MaximumDate = GetEffectiveMaximum(configuration)
+                            };
+                        }
+
+                        if (HasRequestedConfiguration(resolution))
+                        {
+                            return configuration with
+                            {
+                                MinimumDate = GetEffectiveMinimum(configuration),
+                                MaximumDate = GetEffectiveMaximum(configuration),
+                                HasPickerConfiguration = true
+                            };
+                        }
                     }
                 }
-
-                var match = Regex.Match(normalized, @"\d{4}-\d{2}-\d{2}");
-
-                if (match.Success && DateTime.TryParseExact(
-                    match.Value,
-                    "yyyy-MM-dd",
-                    CultureInfo.InvariantCulture,
-                    DateTimeStyles.None,
-                    out aiDate))
+                catch (System.Text.Json.JsonException)
                 {
-                    if (IsValidAIResult(request, aiDate))
-                    {
-                        return new DateResolutionResult(aiDate, null);
-                    }
+                    // Use the local fallback when the model does not return valid JSON.
                 }
+            }
+
+            var match = Regex.Match(normalized, @"\d{4}-\d{2}-\d{2}");
+            if (match.Success &&
+                TryParseDate(match.Value, out var legacyDate) &&
+                IsValidAIResult(request, legacyDate))
+            {
+                return new DateResolutionResult(legacyDate, null);
+            }
         }
 
         var fallbackDate = CalculateDate(request);
         return fallbackDate.HasValue
+            && IsValidAIResult(request, fallbackDate.Value)
             ? new DateResolutionResult(fallbackDate, null)
             : new DateResolutionResult(null, "Unable to resolve the requested date.");
     }
+
+    private void ApplyDateFilter(string request)
+    {
+        var numericDateMatch = Regex.Match(
+            request,
+            @"(?<!\w)(?<operator><=|>=|<|>|before|after|prior\s+to|earlier\s+than|later\s+than)\s*(?<first>\d{1,2})[/-](?<second>\d{1,2})[/-](?<year>\d{4})(?!\d)",
+            RegexOptions.IgnoreCase);
+
+        if (numericDateMatch.Success &&
+            TryParseUserDate(
+                numericDateMatch.Groups["first"].Value,
+                numericDateMatch.Groups["second"].Value,
+                numericDateMatch.Groups["year"].Value,
+                out var numericDate))
+        {
+            hasLocalDateFilter = true;
+            ApplyDateBoundary(
+                numericDateMatch.Groups["operator"].Value,
+                numericDate,
+                request,
+                exactDate: true);
+            ApplyCurrentDateRange();
+            return;
+        }
+
+        var match = Regex.Match(
+            request,
+            @"(?<!\w)(?:date|dates?|year)?\s*(?<operator><=|>=|<|>|before|after|prior\s+to|earlier\s+than|later\s+than)\s*(?:(?<month>\d{1,2}|January|February|March|April|May|June|July|August|September|October|November|December)\s+)?(?<year>\d{4})(?!\d)",
+            RegexOptions.IgnoreCase);
+
+        if (!match.Success || !int.TryParse(match.Groups["year"].Value, out var year))
+        {
+            return;
+        }
+
+        var comparison = match.Groups["operator"].Value;
+        var hasMonth = match.Groups["month"].Success;
+        var month = hasMonth &&
+                    int.TryParse(match.Groups["month"].Value, out var numericMonth)
+            ? numericMonth
+            : hasMonth && TryParseMonth(match.Groups["month"].Value, out var namedMonth)
+                ? namedMonth
+                : 0;
+
+        if (hasMonth && month is < 1 or > 12)
+        {
+            return;
+        }
+
+        var date = hasMonth
+            ? new DateTime(year, month, 1)
+            : new DateTime(year, 1, 1);
+
+        ApplyDateBoundary(comparison, date, request, hasMonth);
+        hasLocalDateFilter = true;
+        ApplyCurrentDateRange();
+    }
+
+    private void ResetPickerState()
+    {
+        hasLocalDateFilter = false;
+        hasLocalLoopingSetting = false;
+        MinimumDate = null;
+        MaximumDate = null;
+        BlackoutDates.Clear();
+        DayInterval = 1;
+        MonthInterval = 1;
+        YearInterval = 1;
+        EnableLooping = true;
+        DateFormat = "dd_MM_yyyy";
+
+        isApplyingAIResult = true;
+        PickerDate = DateTime.Today;
+        SelectedDate = DateTime.Today;
+        isApplyingAIResult = false;
+    }
+
+    private void ApplyLocalPickerSettings(string request)
+    {
+        if (Regex.IsMatch(
+                request,
+                @"\b(?:disable|turn\s+off|switch\s+off|stop|remove)\b.*\b(?:looping|loop)\b",
+                RegexOptions.IgnoreCase))
+        {
+            EnableLooping = false;
+            hasLocalLoopingSetting = true;
+        }
+        else if (Regex.IsMatch(
+                     request,
+                     @"\b(?:enable|turn\s+on|switch\s+on|start)\b.*\b(?:looping|loop)\b",
+                     RegexOptions.IgnoreCase))
+        {
+            EnableLooping = true;
+            hasLocalLoopingSetting = true;
+        }
+    }
+
+    private void ApplyDateBoundary(
+        string comparison,
+        DateTime date,
+        string request,
+        bool hasMonth = false,
+        bool exactDate = false)
+    {
+        var hidesDatesAfterBoundary = Regex.IsMatch(
+            request,
+            @"\b(?:do\s*not|don't|dont|no|without|remove|removes|removed|hide|hides|hidden|exclude|excludes|excluding|omit|omits)\b.*\bafter\b",
+            RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        var hidesDatesBeforeBoundary = Regex.IsMatch(
+            request,
+            @"\b(?:do\s*not|don't|dont|no|without|remove|removes|removed|hide|hides|hidden|exclude|excludes|excluding|omit|omits)\b.*\bbefore\b",
+            RegexOptions.IgnoreCase | RegexOptions.Singleline);
+
+        switch (comparison.ToLowerInvariant())
+        {
+            case "<":
+            case "before":
+            case "<=":
+                if (hidesDatesBeforeBoundary)
+                {
+                    MinimumDate = exactDate
+                        ? date
+                        : hasMonth
+                            ? date
+                            : new DateTime(date.Year, 1, 1);
+                }
+                else
+                {
+                    MaximumDate = exactDate
+                        ? date
+                        : hasMonth
+                    ? new DateTime(date.Year, date.Month, DateTime.DaysInMonth(date.Year, date.Month))
+                    : new DateTime(date.Year, 12, 31);
+                }
+                break;
+            case ">":
+            case "after":
+                if (hidesDatesAfterBoundary)
+                {
+                    MaximumDate = exactDate
+                        ? date
+                        : hasMonth
+                        ? new DateTime(date.Year, date.Month, DateTime.DaysInMonth(date.Year, date.Month))
+                        : new DateTime(date.Year, 12, 31);
+                }
+                else
+                {
+                    MinimumDate = exactDate
+                        ? date.AddDays(1)
+                        : hasMonth
+                            ? date.AddMonths(1)
+                        : new DateTime(date.Year + 1, 1, 1);
+                }
+                break;
+            case ">=":
+                MinimumDate = date;
+                break;
+        }
+    }
+
+    private void ApplyCurrentDateRange()
+    {
+        var dateToSelect = MinimumDate ?? MaximumDate;
+
+        if (!dateToSelect.HasValue)
+        {
+            return;
+        }
+
+        ApplyDateRange(MinimumDate, MaximumDate, dateToSelect);
+    }
+
+    private void ApplyDateRange(
+        DateTime? minimum,
+        DateTime? maximum,
+        DateTime? dateToSelect)
+    {
+        if (!IsValidConfigurationRange(minimum, maximum))
+        {
+            return;
+        }
+
+        isApplyingAIResult = true;
+        PickerDate = null;
+        MinimumDate = minimum;
+        MaximumDate = maximum;
+
+        if (dateToSelect.HasValue)
+        {
+            var clampedDate = dateToSelect.Value;
+
+            if (minimum.HasValue && clampedDate < minimum.Value)
+            {
+                clampedDate = minimum.Value;
+            }
+
+            if (maximum.HasValue && clampedDate > maximum.Value)
+            {
+                clampedDate = maximum.Value;
+            }
+
+            PickerDate = clampedDate;
+            SelectedDate = clampedDate;
+        }
+
+        isApplyingAIResult = false;
+    }
+
+    private void AdjustPickerDateToRange()
+    {
+        if (PickerDate.HasValue &&
+            ((MinimumDate.HasValue && PickerDate.Value < MinimumDate.Value) ||
+             (MaximumDate.HasValue && PickerDate.Value > MaximumDate.Value)))
+        {
+            isApplyingAIResult = true;
+            PickerDate = MinimumDate ?? MaximumDate;
+            SelectedDate = PickerDate;
+            isApplyingAIResult = false;
+        }
+    }
+
+    private static bool TryParseUserDate(
+        string first,
+        string second,
+        string year,
+        out DateTime date)
+    {
+        return DateTime.TryParse(
+            $"{first}/{second}/{year}",
+            CultureInfo.CurrentCulture,
+            DateTimeStyles.AllowWhiteSpaces,
+            out date);
+    }
+
+    private static bool TryParseMonth(string value, out int month)
+    {
+        if (DateTime.TryParseExact(
+                value,
+                new[] { "MMMM", "MMM" },
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None,
+                out var date))
+        {
+            month = date.Month;
+            return true;
+        }
+
+        month = 0;
+        return false;
+    }
+
+    private void ApplyPickerConfiguration(DateResolutionResult result)
+    {
+        var configuredMinimum = hasLocalDateFilter
+            ? MinimumDate
+            : LaterDate(MinimumDate, result.MinimumDate);
+        var configuredMaximum = hasLocalDateFilter
+            ? MaximumDate
+            : EarlierDate(MaximumDate, result.MaximumDate);
+
+        if (!IsValidConfigurationRange(configuredMinimum, configuredMaximum))
+        {
+            return;
+        }
+
+        ApplyDateRange(configuredMinimum, configuredMaximum, PickerDate);
+        BlackoutDates.Clear();
+
+        if (result.BlackoutDates is not null)
+        {
+            foreach (var date in result.BlackoutDates)
+            {
+                BlackoutDates.Add(date);
+            }
+        }
+
+        DayInterval = result.DayInterval;
+        MonthInterval = result.MonthInterval;
+        YearInterval = result.YearInterval;
+        if (!hasLocalLoopingSetting)
+        {
+            EnableLooping = result.EnableLooping;
+        }
+        DateFormat = result.DateFormat;
+        ApplyCurrentDateRange();
+    }
+
+    private DateTime? GetEffectiveMinimum(DateResolutionResult configuration) =>
+        hasLocalDateFilter
+            ? MinimumDate
+            : LaterDate(MinimumDate, configuration.MinimumDate);
+
+    private DateTime? GetEffectiveMaximum(DateResolutionResult configuration) =>
+        hasLocalDateFilter
+            ? MaximumDate
+            : EarlierDate(MaximumDate, configuration.MaximumDate);
+
+    private static bool IsValidConfigurationRange(DateResolutionResult result) =>
+        IsValidConfigurationRange(result.MinimumDate, result.MaximumDate);
+
+    private static bool IsValidConfigurationRange(DateTime? minimum, DateTime? maximum) =>
+        !minimum.HasValue || !maximum.HasValue || minimum <= maximum;
+
+    private static DateTime? LaterDate(DateTime? first, DateTime? second) =>
+        first.HasValue && second.HasValue
+            ? first.Value >= second.Value ? first : second
+            : first ?? second;
+
+    private static DateTime? EarlierDate(DateTime? first, DateTime? second) =>
+        first.HasValue && second.HasValue
+            ? first.Value <= second.Value ? first : second
+            : first ?? second;
+
+    private static bool TryParseDate(string? value, out DateTime date) =>
+        DateTime.TryParseExact(
+            value,
+            "yyyy-MM-dd",
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.None,
+            out date);
+
+    private static bool TryParseConfiguration(AIResolution resolution, out DateResolutionResult result)
+    {
+        result = new DateResolutionResult(null, null);
+
+        if ((resolution.DayInterval is < 1 or > 31) ||
+            (resolution.MonthInterval is < 1 or > 12) ||
+            (resolution.YearInterval is < 1 or > 100) ||
+            (!string.IsNullOrWhiteSpace(resolution.Format) &&
+             !AllowedFormats.Contains(resolution.Format, StringComparer.Ordinal)))
+        {
+            return false;
+        }
+
+        DateTime? minimum = TryParseDate(resolution.MinimumDate, out var minimumValue)
+            ? minimumValue
+            : null;
+        DateTime? maximum = TryParseDate(resolution.MaximumDate, out var maximumValue)
+            ? maximumValue
+            : null;
+
+        if (minimum.HasValue && maximum.HasValue && minimum > maximum)
+        {
+            return false;
+        }
+
+        var blackoutDates = new List<DateTime>();
+        if (resolution.BlackoutDates is not null)
+        {
+            foreach (var value in resolution.BlackoutDates)
+            {
+                if (!TryParseDate(value, out var date))
+                {
+                    return false;
+                }
+
+                blackoutDates.Add(date);
+            }
+        }
+
+        result = new DateResolutionResult(
+            null,
+            null,
+            minimum,
+            maximum,
+            blackoutDates,
+            resolution.DayInterval ?? 1,
+            resolution.MonthInterval ?? 1,
+            resolution.YearInterval ?? 1,
+            resolution.EnableLooping ?? true,
+            resolution.Format ?? "dd_MM_yyyy",
+            false);
+
+        return true;
+    }
+
+    private static bool HasRequestedConfiguration(AIResolution resolution) =>
+        resolution.MinimumDate is not null ||
+        resolution.MaximumDate is not null ||
+        resolution.BlackoutDates is not null ||
+        resolution.DayInterval.HasValue ||
+        resolution.MonthInterval.HasValue ||
+        resolution.YearInterval.HasValue ||
+        resolution.EnableLooping.HasValue ||
+        resolution.Format is not null;
+
+    private static readonly string[] AllowedFormats =
+    {
+        "dd_MM_yyyy",
+        "MM_dd_yyyy",
+        "yyyy_MM_dd",
+        "dd/MM/yyyy",
+        "MM/dd/yyyy",
+        "yyyy-MM-dd",
+        "dd MMM yyyy",
+        "dd MMMM yyyy"
+    };
 
     private static DateTime? CalculateDate(string request)
     {
@@ -233,14 +752,27 @@ public sealed class DatePickerViewModel : INotifyPropertyChanged
         return null;
     }
 
-    private static bool IsValidAIResult(string request, DateTime date)
+    private bool IsValidAIResult(
+        string request,
+        DateTime date,
+        DateTime? minimumDateOverride = null,
+        DateTime? maximumDateOverride = null)
     {
         var text = request.ToLowerInvariant();
         var requiresFutureDate = text.Contains("next") ||
                                  text.Contains("upcoming") ||
                                  text.Contains("coming");
 
-        return !requiresFutureDate || date.Date > DateTime.Today;
+        if (requiresFutureDate && date.Date <= DateTime.Today)
+        {
+            return false;
+        }
+
+         var minimum = minimumDateOverride ?? MinimumDate;
+         var maximum = maximumDateOverride ?? MaximumDate;
+
+         return (!minimum.HasValue || date.Date >= minimum.Value.Date) &&
+             (!maximum.HasValue || date.Date <= maximum.Value.Date);
     }
 
     private static DateTime NextWeekday(DateTime date, DayOfWeek weekday)
