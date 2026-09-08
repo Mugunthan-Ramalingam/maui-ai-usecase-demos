@@ -76,7 +76,7 @@
                     <Shadow Brush="#20000000" Offset="0,2" Radius="4" Opacity="0.12" />
                 </Border.Shadow>
                 <Grid ColumnDefinitions="48,*,Auto" ColumnSpacing="10">
-                    <core:SfAvatarView Grid.Column="0" ImageSource="doctor.png" AvatarShape="Circle" ContentType="Default" AvatarSize="Medium" WidthRequest="44" HeightRequest="44" VerticalOptions="Center" />
+                    <core:SfAvatarView Grid.Column="0" ImageSource="{Binding PatientPhoto}" AvatarShape="Circle" ContentType="Default" AvatarSize="Medium" WidthRequest="44" HeightRequest="44" VerticalOptions="Center" />
                     <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
                         <Label Text="{Binding PatientName}" FontFamily="OpenSansSemibold" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource DarkText}, Dark={StaticResource DarkTextDark}}" LineBreakMode="TailTruncation" />
                         <Label Text="{Binding VisitType}" FontSize="11" TextColor="{AppThemeBinding Light={StaticResource MutedText}, Dark={StaticResource MutedTextDark}}" LineBreakMode="TailTruncation" />

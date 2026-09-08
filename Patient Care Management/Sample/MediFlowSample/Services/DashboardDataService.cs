@@ -6,13 +6,20 @@ namespace MediFlowSample.Services;
 public sealed class DashboardDataService
 {
     private const string DashboardClinicianId = "CL-01";
+    private static readonly string[] MalePatientPhotos = ["patinet_1.jpg", "patinet_2.jpg", "patient_3.jpg", "patient_4.jpg"];
+    private static readonly string[] FemalePatientPhotos = ["patinet_5.jpg", "patinet_6.jpg"];
     private readonly ScheduleDataService scheduleDataService;
     private readonly NotificationService notificationService;
+    private readonly PatientDataService patientDataService;
 
-    public DashboardDataService(ScheduleDataService scheduleDataService, NotificationService notificationService)
+    public DashboardDataService(
+        ScheduleDataService scheduleDataService,
+        NotificationService notificationService,
+        PatientDataService patientDataService)
     {
         this.scheduleDataService = scheduleDataService;
         this.notificationService = notificationService;
+        this.patientDataService = patientDataService;
     }
 
     public DashboardData GetDashboardData()
@@ -20,6 +27,8 @@ public sealed class DashboardDataService
         var allAppointments = scheduleDataService.GetAppointments();
         var clinicians = scheduleDataService.GetClinicians()
             .ToDictionary(clinician => clinician.ClinicianId, clinician => clinician.Name);
+        var patients = patientDataService.GetPatients()
+            .ToDictionary(patient => patient.PatientId);
         var today = DateTime.Today;
         var dashboardAppointments = allAppointments
             .Where(appointment => appointment.ClinicianId == DashboardClinicianId)
@@ -56,7 +65,7 @@ public sealed class DashboardDataService
                 .OrderBy(GetStatusOrder)
                 .ThenBy(appointment => appointment.StartTime)
                 .Select(appointment =>
-                ToDashboardAppointment(appointment, clinicians)))
+                ToDashboardAppointment(appointment, clinicians, patients)))
         };
     }
 
@@ -79,18 +88,29 @@ public sealed class DashboardDataService
     }
 
     private static DashboardAppointment ToDashboardAppointment(
-        ScheduleAppointment appointment, IReadOnlyDictionary<string, string> clinicians) =>
-        new()
+        ScheduleAppointment appointment,
+        IReadOnlyDictionary<string, string> clinicians,
+        IReadOnlyDictionary<string, Patient> patients)
+    {
+        var patient = patients.GetValueOrDefault(appointment.PatientId);
+        var photos = string.Equals(patient?.Gender, "Female", StringComparison.OrdinalIgnoreCase)
+            ? FemalePatientPhotos
+            : MalePatientPhotos;
+        var photoIndex = (int)(unchecked((uint)StringComparer.Ordinal.GetHashCode(appointment.AppointmentId)) % (uint)photos.Length);
+
+        return new()
         {
             AppointmentId = appointment.AppointmentId,
             PatientId = appointment.PatientId,
             PatientName = appointment.PatientName,
+            PatientPhoto = photos[photoIndex],
             ClinicianName = clinicians.GetValueOrDefault(appointment.ClinicianId, appointment.ClinicianId),
             VisitType = appointment.VisitType,
             StartTime = appointment.StartTime,
             Status = appointment.Status,
             DisplayStatus = appointment.Status == "Completed" ? "Done" : appointment.Status
         };
+    }
 
     private static bool IsCompleted(ScheduleAppointment appointment) => IsStatus(appointment, "Completed");
 

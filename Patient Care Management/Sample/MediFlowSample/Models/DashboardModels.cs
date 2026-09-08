@@ -7,6 +7,7 @@ public sealed class DashboardAppointment
     public string AppointmentId { get; init; } = string.Empty;
     public string PatientId { get; init; } = string.Empty;
     public string PatientName { get; init; } = string.Empty;
+    public string PatientPhoto { get; init; } = string.Empty;
     public string ClinicianName { get; init; } = string.Empty;
     public string VisitType { get; init; } = string.Empty;
     public DateTime StartTime { get; init; }
