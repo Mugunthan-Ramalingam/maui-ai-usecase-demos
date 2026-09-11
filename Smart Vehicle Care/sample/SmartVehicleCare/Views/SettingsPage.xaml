@@ -5,19 +5,17 @@
              xmlns:editors="clr-namespace:Syncfusion.Maui.Inputs;assembly=Syncfusion.Maui.Inputs"
              xmlns:til="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core"
              xmlns:models="clr-namespace:SmartVehicleCare.Models"
+             xmlns:behaviors="clr-namespace:SmartVehicleCare.Behaviors"
              x:Class="SmartVehicleCare.Views.SettingsPage"
              BackgroundColor="{AppThemeBinding Light=#F3F6FB, Dark=#111009}">
 
-    <Grid x:DataType="vm:SettingsViewModel">
-        <Grid.BindingContext>
-            <vm:SettingsViewModel/>
-        </Grid.BindingContext>
-
+    <Grid x:Name="RootSettings" x:DataType="vm:SettingsViewModel">
         <ScrollView>
-            <StackLayout Spacing="0" Padding="{OnPlatform WinUI='32,28,32,32', MacCatalyst='32,28,32,32', Default='16,20,16,24'}">
+            <StackLayout Spacing="0"
+                         Padding="{Binding Source={x:Reference RootSettings}, Path=Width, Converter={StaticResource WidthToThicknessConverter}, ConverterParameter='32,28,32,32|22,28,22,32|16,20,16,24'}">
 
                 
-                <Label Text="APPEARANCE"
+                <Label Text="Appearance"
                        Style="{StaticResource SectionLabelStyle}"
                        Margin="0,0,0,8"/>
 
@@ -38,7 +36,7 @@
 
                         <!-- Label -->
                         <StackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
-                            <Label Text="App Theme"
+                            <Label Text="App theme"
                                    FontSize="14" FontAttributes="Bold"
                                    TextColor="{AppThemeBinding Light=#0F172A, Dark=#EDF6FF}"/>
                         </StackLayout>
@@ -76,7 +74,7 @@
                     </Grid>
                 </Border>
 
-                <Label Text="AI CONFIGURATION"
+                <Label Text="AI configuration"
                        Style="{StaticResource SectionLabelStyle}"
                        Margin="0,0,0,8"/>
 
@@ -94,16 +92,16 @@
                                        HorizontalOptions="Center" VerticalOptions="Center"/>
                             </Border>
                             <StackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
-                                <Label Text="Azure OpenAI API Key"
+                                <Label Text="Azure OpenAI API key"
                                        FontSize="13" FontAttributes="Bold"
                                        TextColor="{AppThemeBinding Light=#0F172A, Dark=#EDF6FF}"/>
-                                <Label Text="{Binding ApiKeyStatusText}" FontSize="11" LineBreakMode="WordWrap"
+                                <Label Text="{Binding ApiKeyStatusText}" FontSize="{OnPlatform Default=12, WinUI=11, MacCatalyst=11}" LineBreakMode="WordWrap"
                                        TextColor="{AppThemeBinding Light=#64748B, Dark=#9DB7D2}"/>
                             </StackLayout>
                         </Grid>
 
                         <!-- Secured key entry — IsPassword obscures the value -->
-                        <Label Text="API Key"
+                        <Label Text="API key"
                                FontSize="12" FontAttributes="Bold"
                                TextColor="{AppThemeBinding Light=#0F172A, Dark=#EDF6FF}"/>
                         <til:SfTextInputLayout
@@ -151,7 +149,7 @@
                                 <Border.GestureRecognizers>
                                     <TapGestureRecognizer Command="{Binding SaveApiKeyCommand}"/>
                                 </Border.GestureRecognizers>
-                                <Label Text="Save Key" FontSize="12" FontAttributes="Bold"
+                                <Label Text="Save key" FontSize="12" FontAttributes="Bold"
                                        HorizontalTextAlignment="Center"
                                        VerticalTextAlignment="Center"
                                        TextColor="White"/>
@@ -160,7 +158,7 @@
                     </StackLayout>
                 </Border>
 
-                <Label Text="YOUR VEHICLES"
+                <Label Text="Your vehicles"
                        Style="{StaticResource SectionLabelStyle}"
                        Margin="0,0,0,8"/>
 
@@ -179,7 +177,7 @@
                                TextColor="{AppThemeBinding Light=#94A3B8, Dark=#4A6482}"
                                HorizontalTextAlignment="Center"/>
                         <Label Text="Add a vehicle from the Dashboard to manage it here."
-                               FontSize="11"
+                               FontSize="{OnPlatform Default=12, WinUI=11, MacCatalyst=11}"
                                TextColor="{AppThemeBinding Light=#B0BEC5, Dark=#3A5570}"
                                HorizontalTextAlignment="Center" LineBreakMode="WordWrap"/>
                     </StackLayout>
@@ -255,7 +253,7 @@
                         StrokeShape="RoundRectangle 14"
                         Padding="16,10"
                         Margin="0,8,0,0"
-                        WidthRequest="240"
+                        WidthRequest="{OnPlatform WinUI=180, MacCatalyst=180, Android=140, iOS=140}"
                         HorizontalOptions="End">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding ExitToWelcomeCommand}"/>
@@ -264,7 +262,7 @@
                         <Label Text="&#xE9BA;" FontFamily="MaterialIcons" FontSize="18"
                                TextColor="{AppThemeBinding Light=#DC2626, Dark=#F87171}"
                                VerticalOptions="Center"/>
-                        <Label Text="Exit to Welcome Page" FontSize="12" FontAttributes="Bold"
+                            <Label Text="Sign out" FontSize="12" FontAttributes="Bold"
                                TextColor="{AppThemeBinding Light=#DC2626, Dark=#F87171}"
                                VerticalOptions="Center"/>
                     </HorizontalStackLayout>
@@ -297,7 +295,7 @@
                           BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#1C1917}"
                           Padding="24,20">
                         <StackLayout Spacing="2">
-                            <Label Text="Edit Vehicle" FontSize="18" FontAttributes="Bold"
+                            <Label Text="Edit vehicle" FontSize="18" FontAttributes="Bold"
                                    TextColor="{AppThemeBinding Light=#0F172A, Dark=#EDF6FF}"/>
                             <Label Text="{Binding EditPanelVehicleName}" FontSize="12"
                                    TextColor="{AppThemeBinding Light=#64748B, Dark=#9DB7D2}"/>
@@ -359,7 +357,7 @@
 
                             <!-- Variant -->
                             <StackLayout Spacing="4">
-                                <Label Text="Variant / Trim" FontSize="12" FontAttributes="Bold"
+                                            <Label Text="Variant / trim" FontSize="12" FontAttributes="Bold"
                                        TextColor="{AppThemeBinding Light={StaticResource BrandTextMid}, Dark={StaticResource BrandTextOnDarkAlt}}"/>
                                 <til:SfTextInputLayout
                                     ContainerType="Outlined" OutlineCornerRadius="10"
@@ -394,9 +392,12 @@
                                         <til:LabelStyle FontSize="14" TextColor="#94A3B8"/>
                                     </til:SfTextInputLayout.HintLabelStyle>
                                     <Entry Text="{Binding EditingVehicle.OdaMeterReading}" Keyboard="Numeric"
-                                           TextChanged="OnNumericTextChanged"
                                            TextColor="{AppThemeBinding Light={StaticResource BrandTextDark}, Dark={StaticResource BrandTextOnDark}}"
-                                           BackgroundColor="Transparent"/>
+                                           BackgroundColor="Transparent">
+                                        <Entry.Behaviors>
+                                            <behaviors:NumericOnlyBehavior/>
+                                        </Entry.Behaviors>
+                                    </Entry>
                                 </til:SfTextInputLayout>
                             </StackLayout>
 
@@ -424,7 +425,7 @@
                             <Border.GestureRecognizers>
                                 <TapGestureRecognizer Command="{Binding SaveVehicleCommand}"/>
                             </Border.GestureRecognizers>
-                            <Label Text="Save Changes" FontSize="14" FontAttributes="Bold"
+                            <Label Text="Save changes" FontSize="14" FontAttributes="Bold"
                                    HorizontalTextAlignment="Center" TextColor="White"/>
                         </Border>
                     </Grid>

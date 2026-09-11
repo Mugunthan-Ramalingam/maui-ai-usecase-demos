@@ -15,7 +15,7 @@ public class SettingsViewModel : INotifyPropertyChanged
         {
             AppTheme.Light => "Light",
             AppTheme.Dark  => "Dark",
-            _              => "System Default"
+            _              => "System default"
         };
 
         SetLightThemeCommand  = new Command(() => ApplyTheme(AppTheme.Light));
@@ -44,8 +44,6 @@ public class SettingsViewModel : INotifyPropertyChanged
             await AzureOpenAIService.SaveApiKeyToStorageAsync(string.Empty);
             RefreshApiKeyStatus();
         });
-
-        _ = LoadApiKeyStatusAsync();
 
         // Sync status when the key is saved or cleared from any other screen (e.g. dashboard popup)
         AzureOpenAIService.ApiKeyChanged += () =>

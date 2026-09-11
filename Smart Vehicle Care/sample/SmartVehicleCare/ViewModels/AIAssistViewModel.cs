@@ -19,13 +19,13 @@ public class AIRecentInsight
 public class AIAssistViewModel : INotifyPropertyChanged
 {
     private readonly AzureOpenAIService _ai = new();
-    private Vehicle _selectedVehicle = null!;
+    private Vehicle? _selectedVehicle;
     private double _vehicleHealthScore;
     private string _vehicleHealthLabel = "—";
 
     public ObservableCollection<Vehicle> Vehicles { get; } = new();
 
-    public Vehicle SelectedVehicle
+    public Vehicle? SelectedVehicle
     {
         get => _selectedVehicle;
         set
@@ -43,7 +43,7 @@ public class AIAssistViewModel : INotifyPropertyChanged
         }
     }
 
-    public string VehicleDisplayName => SelectedVehicle?.MakeModel ?? "Your Vehicle";
+    public string VehicleDisplayName => SelectedVehicle?.MakeModel ?? "Your vehicle";
     public string VehicleVin         => !string.IsNullOrEmpty(SelectedVehicle?.RegistrationNumber)
         ? SelectedVehicle.RegistrationNumber : "—";
     public string VehicleOdometer    => !string.IsNullOrEmpty(SelectedVehicle?.OdometerReading)
@@ -79,10 +79,6 @@ public class AIAssistViewModel : INotifyPropertyChanged
     public bool HasChatItems => AssistItems.Count > 0;
     public bool HasRecentInsights => RecentInsights.Count > 0;
 
-    public ICommand AddServiceCommand  { get; } = new Command(() => { });
-    public ICommand LogFuelCommand     { get; } = new Command(() => { });
-    public ICommand AddDocCommand      { get; } = new Command(() => { });
-    public ICommand SetReminderCommand { get; } = new Command(() => { });
     public ICommand RequestCommand     { get; }
     public ICommand SuggestionTappedCommand { get; }
 
@@ -99,7 +95,7 @@ public class AIAssistViewModel : INotifyPropertyChanged
                 if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset)
                 {
                     Vehicles.Clear();
-                    SelectedVehicle = null!;
+                    SelectedVehicle = null;
                 }
                 else if (e.NewItems != null)
                     foreach (Vehicle vehicle in e.NewItems)
@@ -133,7 +129,7 @@ public class AIAssistViewModel : INotifyPropertyChanged
                     Vehicles.Add(vehicle);
 
                 var selected = VehicleDataService.Instance.SelectedVehicle;
-                SelectedVehicle = selected!;
+                SelectedVehicle = selected;
             }
 
             if (MainThread.IsMainThread)
@@ -147,9 +143,25 @@ public class AIAssistViewModel : INotifyPropertyChanged
         {
             if (v != _selectedVehicle)
             {
-                SelectedVehicle = v!;
+                SelectedVehicle = v;
                 ClearChat();
             }
+        };
+
+        VehicleDataService.Instance.DataChanged += vehicleId =>
+        {
+            if (SelectedVehicle?.Id != vehicleId) return;
+
+            void Refresh()
+            {
+                RebuildRecentInsights();
+                OnPropertyChanged(nameof(VehicleOdometer));
+            }
+
+            if (MainThread.IsMainThread)
+                Refresh();
+            else
+                MainThread.BeginInvokeOnMainThread(Refresh);
         };
     }
 
@@ -357,11 +369,18 @@ User Query: {requestText}
         if (string.IsNullOrEmpty(aiText))
             aiText = $"I'm having trouble reaching the AI right now ({_ai.LastError ?? "no response"}). Please try again shortly.";
 
+        var requestItem = args.RequestItem ?? new AssistItem
+        {
+            Text = requestText,
+            IsRequested = true,
+            DateTime = DateTime.Now
+        };
+
         AssistItems.Add(new AssistItem
         {
             Text        = aiText,
             IsRequested = false,
-            RequestItem = args.RequestItem,
+            RequestItem = requestItem,
             DateTime    = DateTime.Now,
         });
 

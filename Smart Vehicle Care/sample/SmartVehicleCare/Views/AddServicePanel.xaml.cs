@@ -9,14 +9,6 @@ public partial class AddServicePanel : ContentView
         InitializeComponent();
     }
 
-    private void OnNumericTextChanged(object sender, TextChangedEventArgs e)
-    {
-        if (sender is not Entry entry || e.NewTextValue == null) return;
-        var cleaned = new string(e.NewTextValue.Where(char.IsDigit).ToArray());
-        if (cleaned != e.NewTextValue)
-            entry.Text = cleaned;
-    }
-
     private void OnServiceDateFieldTapped(object sender, TappedEventArgs e)
         => ServiceDatePicker.IsOpen = true;
 

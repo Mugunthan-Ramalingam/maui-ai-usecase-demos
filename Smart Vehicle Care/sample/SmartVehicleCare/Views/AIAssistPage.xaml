@@ -28,13 +28,13 @@
         still resolves against the inherited MainViewModel.
     -->
     <Grid x:Name="RootGrid" x:DataType="vm:AIAssistViewModel">
-        <Grid.BindingContext>
-            <vm:AIAssistViewModel/>
-        </Grid.BindingContext>
-
         <!-- ── Main: chat + right panel ── -->
-        <Grid
-              ColumnDefinitions="{OnPlatform WinUI='*,1,380', MacCatalyst='*,1,380', Default='*'}">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="{Binding Source={x:Reference RootGrid}, Path=Width, Converter={StaticResource WidthToGridLengthConverter}, ConverterParameter=1}"/>
+                <ColumnDefinition Width="{Binding Source={x:Reference RootGrid}, Path=Width, Converter={StaticResource WidthToGridLengthConverter}, ConverterParameter=380}"/>
+            </Grid.ColumnDefinitions>
 
             <!-- Chat column -->
             <Grid RowDefinitions="*,Auto" Margin="0,20,0,0"
@@ -97,13 +97,13 @@
                                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
                                     <Label Grid.Column="0"
                                            Text="{Binding Text}"
-                                           FontSize="12"
+                                           FontSize="13"
                                            TextColor="{AppThemeBinding Light=#1A2332, Dark=#EDF6FF}"
                                            VerticalTextAlignment="Center"
                                            LineBreakMode="WordWrap"/>
                                     <Label Grid.Column="1"
                                            Text="→"
-                                           FontSize="13"
+                                           FontSize="16"
                                            TextColor="{AppThemeBinding Light={StaticResource BrandBlue}, Dark={StaticResource BrandBlueBright}}"
                                            VerticalTextAlignment="Center"/>
                                 </Grid>
@@ -157,23 +157,24 @@
 
                 <Label Grid.Row="1"
                        Text="AI can make mistakes. Verify critical technical parameters."
-                       FontSize="11" HorizontalTextAlignment="Center"
+                      FontSize="{OnPlatform Default=12, WinUI=11, MacCatalyst=11}"
+                      HorizontalTextAlignment="Center"
                        TextColor="{AppThemeBinding Light=#94A3B8, Dark=#4A6482}"
                        Padding="16,5,16,8"/>
             </Grid>
 
             <!-- Right info panel (desktop only) -->
             <BoxView Grid.Column="1"
-                     IsVisible="{OnPlatform WinUI=True, MacCatalyst=True, Default=False}"
+                     IsVisible="{Binding Source={x:Reference RootGrid}, Path=Width, Converter={StaticResource WidthToBooleanConverter}, ConverterParameter=desktop}"
                      BackgroundColor="{AppThemeBinding Light=#E2E8F0, Dark=#1A2F45}"
                      WidthRequest="2" HorizontalOptions="Fill"/>
 
             <Grid Grid.Column="2"
-                  IsVisible="{OnPlatform WinUI=True, MacCatalyst=True, Default=False}"
+                  IsVisible="{Binding Source={x:Reference RootGrid}, Path=Width, Converter={StaticResource WidthToBooleanConverter}, ConverterParameter=desktop}"
                   BackgroundColor="{AppThemeBinding Light={StaticResource BrandSurfaceLight}, Dark={StaticResource BrandDarkCard}}">
 
                 <ScrollView Padding="16,16,16,24">
-                    <StackLayout Spacing="16">
+                    <StackLayout Spacing="26">
 
                         <Border BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark={StaticResource AppBackgroundDark}}"
                                 StrokeThickness="0"
@@ -208,7 +209,7 @@
                                       ColumnDefinitions="*,Auto"
                                       Margin="0,12,0,0">
                                     <StackLayout Spacing="2">
-                                        <Label Text="ODOMETER" FontSize="9"
+                                        <Label Text="Odometer" FontSize="11"
                                                TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}"
                                                CharacterSpacing="1"/>
                                         <Label Text="{Binding VehicleOdometer}"
@@ -218,7 +219,7 @@
                                     </StackLayout>
 
                                     <StackLayout Grid.Column="1" Spacing="2" HorizontalOptions="End">
-                                        <Label Text="HEALTH" FontSize="9"
+                                        <Label Text="Health" FontSize="11"
                                                TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}"
                                                CharacterSpacing="1"/>
                                         <Border BackgroundColor="{Binding VehicleHealthBadgeColor}"
@@ -246,25 +247,25 @@
                             <StackLayout Spacing="10">
                                 <HorizontalStackLayout Spacing="5">
                                     <Label Text="&#xE8D0;" FontFamily="MaterialIcons" FontSize="14" Margin="0,2,0,0" TextColor="{AppThemeBinding Light={StaticResource BrandCyan}, Dark={StaticResource BrandCyanBright}}" VerticalOptions="Center"/>
-                                    <Label Text="Service &amp; Maintenance history" FontSize="12"
+                                    <Label Text="Service &amp; maintenance history" FontSize="13"
                                            TextColor="{AppThemeBinding Light=#475569, Dark=#9DB7D2}"
                                            VerticalOptions="Center"/>
                                 </HorizontalStackLayout>
                                 <HorizontalStackLayout Spacing="5">
                                     <Label Text="&#xE9E4;" FontFamily="MaterialIcons" FontSize="14" Margin="0,2,0,0" TextColor="{AppThemeBinding Light={StaticResource BrandCyan}, Dark={StaticResource BrandCyanBright}}" VerticalOptions="Center"/>
-                                    <Label Text="Fuel efficiency &amp; cost analysis" FontSize="12"
+                                    <Label Text="Fuel efficiency &amp; cost analysis" FontSize="13"
                                            TextColor="{AppThemeBinding Light=#475569, Dark=#9DB7D2}"
                                            VerticalOptions="Center"/>
                                 </HorizontalStackLayout>
                                 <HorizontalStackLayout Spacing="5">
                                     <Label Text="&#xE8A1;" FontFamily="MaterialIcons" FontSize="14" Margin="0,2,0,0" TextColor="{AppThemeBinding Light={StaticResource BrandCyan}, Dark={StaticResource BrandCyanBright}}" VerticalOptions="Center"/>
-                                    <Label Text="Expense insights &amp; trends" FontSize="12"
+                                    <Label Text="Expense insights &amp; trends" FontSize="13"
                                            TextColor="{AppThemeBinding Light=#475569, Dark=#9DB7D2}"
                                            VerticalOptions="Center"/>
                                 </HorizontalStackLayout>
                                 <HorizontalStackLayout Spacing="5">
                                     <Label Text="&#xE87D;" FontFamily="MaterialIcons" FontSize="14" Margin="0,2,0,0" TextColor="#EF4444" VerticalOptions="Center"/>
-                                    <Label Text="Vehicle health breakdown" FontSize="12"
+                                    <Label Text="Vehicle health breakdown" FontSize="13"
                                            TextColor="{AppThemeBinding Light=#475569, Dark=#9DB7D2}"
                                            VerticalOptions="Center"/>
                                 </HorizontalStackLayout>
@@ -272,7 +273,7 @@
                         </StackLayout>
 
                         <StackLayout Spacing="10">
-                            <Label Text="Recent Insights"
+                            <Label Text="Recent insights"
                                    Style="{StaticResource CardTitleStyle}"
                                    TextColor="{AppThemeBinding Light=#1A2332, Dark=#EDF6FF}"/>
 

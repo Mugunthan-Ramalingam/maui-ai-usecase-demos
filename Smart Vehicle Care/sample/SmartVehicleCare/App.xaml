@@ -13,6 +13,10 @@
             
             <!-- Value Converters -->
             <converters:InvertedBoolConverter x:Key="InvertedBoolConverter"/>
+            <converters:WidthToBooleanConverter x:Key="WidthToBooleanConverter"/>
+            <converters:WidthToGridLengthConverter x:Key="WidthToGridLengthConverter"/>
+            <converters:WidthToDoubleConverter x:Key="WidthToDoubleConverter"/>
+            <converters:WidthToThicknessConverter x:Key="WidthToThicknessConverter"/>
             
         </ResourceDictionary>
     </Application.Resources>

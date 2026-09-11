@@ -5,6 +5,7 @@
              xmlns:buttons="clr-namespace:Syncfusion.Maui.Buttons;assembly=Syncfusion.Maui.Buttons"
              xmlns:picker="clr-namespace:Syncfusion.Maui.Picker;assembly=Syncfusion.Maui.Picker"
              xmlns:vm="clr-namespace:SmartVehicleCare.ViewModels"
+             xmlns:behaviors="clr-namespace:SmartVehicleCare.Behaviors"
              x:Class="SmartVehicleCare.Views.AddServicePanel"
              x:DataType="vm:AddServiceViewModel"
              BackgroundColor="{AppThemeBinding Light={StaticResource SplashBgLight}, Dark={StaticResource BrandNavy}}">
@@ -31,7 +32,7 @@
                 </picker:DatePickerColumnHeaderView>
             </picker:SfDatePicker.ColumnHeaderView>
             <picker:SfDatePicker.HeaderView>
-                <picker:PickerHeaderView Text="Select Service Date" Height="40"/>
+                <picker:PickerHeaderView Text="Select service date" Height="40"/>
             </picker:SfDatePicker.HeaderView>
             <picker:SfDatePicker.FooterView>
                 <picker:PickerFooterView ShowOkButton="True" CancelButtonText="Cancel" Height="40"/>
@@ -42,7 +43,7 @@
         <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Padding="24,16"
               BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource BrandNavyLight}}">
                  <StackLayout Spacing="2">
-                <Label Text="Add Service Record" FontSize="18" FontAttributes="Bold"
+                    <Label Text="Add service record" FontSize="18" FontAttributes="Bold"
                        TextColor="{AppThemeBinding Light={StaticResource BrandTextDark}, Dark={StaticResource BrandTextOnDark}}"/>
                 <Border BackgroundColor="{AppThemeBinding Light=#FEF3C7, Dark=#152840}"
                         StrokeThickness="1"
@@ -80,7 +81,7 @@
 
                 <!-- Service Type chips (2�3) -->
                 <StackLayout Spacing="8">
-                    <Label Text="Service Type *" FontSize="12" FontAttributes="Bold"
+                    <Label Text="Service type *" FontSize="12" FontAttributes="Bold"
                            TextColor="{AppThemeBinding Light={StaticResource BrandTextMid}, Dark={StaticResource BrandTextOnDarkAlt}}"/>
                     <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
 
@@ -100,7 +101,7 @@
                             <StackLayout Orientation="Horizontal" Spacing="5" HorizontalOptions="Center">
                                 <Label Text="&#xE869;" FontFamily="MaterialIcons" FontSize="14" VerticalOptions="Center"
                                        TextColor="{AppThemeBinding Light=#64748B, Dark=#9DB7D2}"/>
-                                <Label Text="Oil &amp; Filter" FontSize="11" VerticalOptions="Center">
+                                <Label Text="Oil &amp; filter" FontSize="{OnPlatform Default=12, WinUI=11, MacCatalyst=11}" VerticalOptions="Center">
                                     <Label.Triggers>
                                         <DataTrigger TargetType="Label" Binding="{Binding IsOilChangeSelected}" Value="True">
                                             <Setter Property="TextColor" Value="#B45309"/>
@@ -130,7 +131,7 @@
                             <StackLayout Orientation="Horizontal" Spacing="5" HorizontalOptions="Center">
                                 <Label Text="&#xE863;" FontFamily="MaterialIcons" FontSize="14" VerticalOptions="Center"
                                        TextColor="{AppThemeBinding Light=#64748B, Dark=#9DB7D2}"/>
-                                <Label Text="Tyre &amp; Wheel" FontSize="11" VerticalOptions="Center" LineBreakMode="NoWrap">
+                                <Label Text="Tyre &amp; wheel" FontSize="{OnPlatform Default=12, WinUI=11, MacCatalyst=11}" VerticalOptions="Center" LineBreakMode="NoWrap">
                                     <Label.Triggers>
                                         <DataTrigger TargetType="Label" Binding="{Binding IsTyreRotationSelected}" Value="True">
                                             <Setter Property="TextColor" Value="#B45309"/>
@@ -160,7 +161,7 @@
                             <StackLayout Orientation="Horizontal" Spacing="5" HorizontalOptions="Center">
                                 <Label Text="&#xE550;" FontFamily="MaterialIcons" FontSize="14" VerticalOptions="Center"
                                        TextColor="{AppThemeBinding Light=#64748B, Dark=#9DB7D2}"/>
-                                <Label Text="Brake Repair" FontSize="11" VerticalOptions="Center" LineBreakMode="NoWrap">
+                                <Label Text="Brake repair" FontSize="{OnPlatform Default=12, WinUI=11, MacCatalyst=11}" VerticalOptions="Center" LineBreakMode="NoWrap">
                                     <Label.Triggers>
                                         <DataTrigger TargetType="Label" Binding="{Binding IsBrakeServiceSelected}" Value="True">
                                             <Setter Property="TextColor" Value="#B45309"/>
@@ -190,7 +191,7 @@
                             <StackLayout Orientation="Horizontal" Spacing="5" HorizontalOptions="Center">
                                 <Label Text="&#xE3E7;" FontFamily="MaterialIcons" FontSize="14" VerticalOptions="Center"
                                        TextColor="{AppThemeBinding Light=#64748B, Dark=#9DB7D2}"/>
-                                <Label Text="Battery &amp; Electrical" FontSize="11" VerticalOptions="Center">
+                                <Label Text="Battery &amp; electrical" FontSize="{OnPlatform Default=12, WinUI=11, MacCatalyst=11}" VerticalOptions="Center">
                                     <Label.Triggers>
                                         <DataTrigger TargetType="Label" Binding="{Binding IsElectricalSelected}" Value="True">
                                             <Setter Property="TextColor" Value="#B45309"/>
@@ -220,7 +221,7 @@
                             <StackLayout Orientation="Horizontal" Spacing="5" HorizontalOptions="Center">
                                 <Label Text="&#xE877;" FontFamily="MaterialIcons" FontSize="14" VerticalOptions="Center"
                                        TextColor="{AppThemeBinding Light=#64748B, Dark=#9DB7D2}"/>
-                                <Label Text="General Service" FontSize="11" VerticalOptions="Center" LineBreakMode="NoWrap">
+                                <Label Text="General service" FontSize="{OnPlatform Default=12, WinUI=11, MacCatalyst=11}" VerticalOptions="Center" LineBreakMode="NoWrap">
                                     <Label.Triggers>
                                         <DataTrigger TargetType="Label" Binding="{Binding IsGeneralInspectionSelected}" Value="True">
                                             <Setter Property="TextColor" Value="#B45309"/>
@@ -250,7 +251,7 @@
                             <StackLayout Orientation="Horizontal" Spacing="5" HorizontalOptions="Center">
                                 <Label Text="&#xE8B8;" FontFamily="MaterialIcons" FontSize="14" VerticalOptions="Center"
                                        TextColor="{AppThemeBinding Light=#64748B, Dark=#9DB7D2}"/>
-                                <Label Text="Custom" FontSize="11" VerticalOptions="Center">
+                                <Label Text="Custom" FontSize="{OnPlatform Default=12, WinUI=11, MacCatalyst=11}" VerticalOptions="Center">
                                     <Label.Triggers>
                                         <DataTrigger TargetType="Label" Binding="{Binding IsCustomSelected}" Value="True">
                                             <Setter Property="TextColor" Value="#B45309"/>
@@ -268,7 +269,7 @@
 
                 <!-- Service type value; selecting a chip fills this field, Custom stays editable. -->
                 <StackLayout Spacing="6">
-                    <Label Text="Service Description *" FontSize="12" FontAttributes="Bold"
+                    <Label Text="Service description *" FontSize="12" FontAttributes="Bold"
                            TextColor="{AppThemeBinding Light={StaticResource BrandTextMid}, Dark={StaticResource BrandTextOnDarkAlt}}"/>
                     <til:SfTextInputLayout ContainerType="Outlined" OutlineCornerRadius="10" EnableFloating="False"
                                            Hint="e.g. AC gas refill or wheel alignment"
@@ -287,7 +288,7 @@
 
                 <!-- Service Date -->
                 <StackLayout Spacing="6">
-                    <Label Text="Service Date *" FontSize="12" FontAttributes="Bold"
+                    <Label Text="Service date *" FontSize="12" FontAttributes="Bold"
                            TextColor="{AppThemeBinding Light={StaticResource BrandTextMid}, Dark={StaticResource BrandTextOnDarkAlt}}"/>
                     <Grid>
                         <til:SfTextInputLayout Hint="Select service date">
@@ -308,10 +309,10 @@
                     </Grid>
                 </StackLayout>
 
-                <!-- Mileage at Service + Total Cost (2 cols) -->
+                <!-- Odometer at Service + Total Cost (2 cols) -->
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
                     <StackLayout Grid.Column="0" Spacing="6">
-                        <Label Text="Mileage at Service" FontSize="12" FontAttributes="Bold"
+                        <Label Text="Odometer at service" FontSize="12" FontAttributes="Bold"
                                TextColor="{AppThemeBinding Light={StaticResource BrandTextMid}, Dark={StaticResource BrandTextOnDarkAlt}}"/>
                         <til:SfTextInputLayout ContainerType="Outlined" OutlineCornerRadius="10"
                                                EnableFloating="False"
@@ -325,13 +326,16 @@
                                 <til:LabelStyle FontSize="14" TextColor="#94A3B8"/>
                             </til:SfTextInputLayout.HintLabelStyle>
                             <Entry Text="{Binding Mileage}" Keyboard="Numeric"
-                                   TextChanged="OnNumericTextChanged"
                                    TextColor="{AppThemeBinding Light={StaticResource BrandTextDark}, Dark={StaticResource BrandTextOnDark}}"
-                                   BackgroundColor="Transparent"/>
+                                   BackgroundColor="Transparent">
+                                <Entry.Behaviors>
+                                    <behaviors:NumericOnlyBehavior/>
+                                </Entry.Behaviors>
+                            </Entry>
                         </til:SfTextInputLayout>
                     </StackLayout>
                     <StackLayout Grid.Column="1" Spacing="6">
-                        <Label Text="Total Cost (?)" FontSize="12" FontAttributes="Bold"
+                        <Label Text="Total cost" FontSize="12" FontAttributes="Bold"
                                TextColor="{AppThemeBinding Light={StaticResource BrandTextMid}, Dark={StaticResource BrandTextOnDarkAlt}}"/>
                         <til:SfTextInputLayout ContainerType="Outlined" OutlineCornerRadius="10"
                                                EnableFloating="False"
@@ -345,16 +349,19 @@
                                 <til:LabelStyle FontSize="14" TextColor="#94A3B8"/>
                             </til:SfTextInputLayout.HintLabelStyle>
                             <Entry Text="{Binding TotalCost}" Keyboard="Numeric"
-                                   TextChanged="OnNumericTextChanged"
                                    TextColor="{AppThemeBinding Light={StaticResource BrandTextDark}, Dark={StaticResource BrandTextOnDark}}"
-                                   BackgroundColor="Transparent"/>
+                                   BackgroundColor="Transparent">
+                                <Entry.Behaviors>
+                                    <behaviors:NumericOnlyBehavior/>
+                                </Entry.Behaviors>
+                            </Entry>
                         </til:SfTextInputLayout>
                     </StackLayout>
                 </Grid>
 
                 <!-- Service Provider -->
                 <StackLayout Spacing="6">
-                    <Label Text="Service Provider" FontSize="12" FontAttributes="Bold"
+                    <Label Text="Service provider" FontSize="12" FontAttributes="Bold"
                            TextColor="{AppThemeBinding Light={StaticResource BrandTextMid}, Dark={StaticResource BrandTextOnDarkAlt}}"/>
                     <til:SfTextInputLayout ContainerType="Outlined" OutlineCornerRadius="10"
                                            EnableFloating="False"

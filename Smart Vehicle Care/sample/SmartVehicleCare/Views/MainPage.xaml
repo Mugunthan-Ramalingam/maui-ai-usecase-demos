@@ -21,20 +21,20 @@
              Shell.TabBarIsVisible="False"
              BackgroundColor="{AppThemeBinding Light=#FAF9F5, Dark=#111009}">
 
-    <Grid>
+    <Grid x:Name="RootLayout">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="{OnPlatform WinUI=220, MacCatalyst=220, Default=0}"/>
+            <ColumnDefinition Width="{Binding Source={x:Reference RootPage}, Path=Width, Converter={StaticResource WidthToGridLengthConverter}, ConverterParameter=220}"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="{OnPlatform Android=64, iOS=64, Default=0}"/>
+            <RowDefinition Height="{Binding Source={x:Reference RootPage}, Path=Width, Converter={StaticResource WidthToGridLengthConverter}, ConverterParameter=bottom-nav}"/>
         </Grid.RowDefinitions>
 
         <!-- ═══ SIDEBAR  (desktop only — Col 0, Row 0+1) ═══ -->
         <Grid Grid.Column="0" Grid.RowSpan="2"
               BackgroundColor="{StaticResource BrandNavy}"
-              IsVisible="{OnPlatform WinUI=True, MacCatalyst=True, Default=False}">
+              IsVisible="{Binding Source={x:Reference RootPage}, Path=Width, Converter={StaticResource WidthToBooleanConverter}, ConverterParameter=desktop}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -72,7 +72,7 @@
                 <!-- Dashboard -->
                 <Grid ColumnDefinitions="4,*" HeightRequest="46">
                     <Grid.GestureRecognizers>
-                        <TapGestureRecognizer Tapped="OnNavDashboardTapped"/>
+                        <TapGestureRecognizer Command="{Binding ShowDashboardCommand}"/>
                     </Grid.GestureRecognizers>
                     <BoxView Grid.Column="0" BackgroundColor="Transparent" VerticalOptions="Fill">
                         <BoxView.Triggers>
@@ -110,7 +110,7 @@
                 <!-- Vehicle Center -->
                 <Grid ColumnDefinitions="4,*" HeightRequest="46">
                     <Grid.GestureRecognizers>
-                        <TapGestureRecognizer Tapped="OnNavVehicleCenterTapped"/>
+                        <TapGestureRecognizer Command="{Binding ShowVehicleCenterCommand}"/>
                     </Grid.GestureRecognizers>
                     <BoxView Grid.Column="0" BackgroundColor="Transparent" VerticalOptions="Fill">
                         <BoxView.Triggers>
@@ -148,7 +148,7 @@
                 <!-- AI Assist -->
                 <Grid ColumnDefinitions="4,*" HeightRequest="46">
                     <Grid.GestureRecognizers>
-                        <TapGestureRecognizer Tapped="OnNavAIAssistTapped"/>
+                        <TapGestureRecognizer Command="{Binding ShowAIAssistCommand}"/>
                     </Grid.GestureRecognizers>
                     <BoxView Grid.Column="0" BackgroundColor="Transparent" VerticalOptions="Fill">
                         <BoxView.Triggers>
@@ -191,7 +191,7 @@
                     <BoxView HeightRequest="1" BackgroundColor="#3D2E24" Margin="0,0,0,4"/>
                     <Grid ColumnDefinitions="4,*" HeightRequest="46">
                         <Grid.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnNavSettingsTapped"/>
+                            <TapGestureRecognizer Command="{Binding ShowSettingsCommand}"/>
                         </Grid.GestureRecognizers>
                         <BoxView Grid.Column="0" BackgroundColor="Transparent" VerticalOptions="Fill">
                             <BoxView.Triggers>
@@ -244,7 +244,7 @@
             <Grid Grid.Row="0"
                   BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark={StaticResource BrandNavy}}"
                   
-                  IsVisible="{Binding IsDesktopHeaderVisible}">
+                  IsVisible="{Binding Source={x:Reference RootPage}, Path=Width, Converter={StaticResource WidthToBooleanConverter}, ConverterParameter=desktop}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
@@ -253,6 +253,9 @@
 
                 <!-- Title -->
                 <StackLayout Grid.Column="0" Orientation="Horizontal" Spacing="12" Padding="24,0" VerticalOptions="Center">
+                    <StackLayout.IsVisible>
+                        <Binding Source="{x:Reference RootPage}" Path="Width" Converter="{StaticResource WidthToBooleanConverter}" ConverterParameter="wide"/>
+                    </StackLayout.IsVisible>
                     <Label Text="{Binding PageTitle}"
                            Style="{StaticResource PageTitleStyle}"
                            FontSize="20"
@@ -263,7 +266,7 @@
                 <!-- Add Vehicle Button (Desktop) -->
                 <buttons:SfButton Grid.Column="1" 
                     IsVisible="{Binding IsAddVehicleButtonVisible}"
-                    WidthRequest="132"
+                    WidthRequest="126"
                     FontSize="13" 
                     CornerRadius="8"
                     HeightRequest="40"
@@ -271,24 +274,25 @@
                     Background="{AppThemeBinding Light=#B45309, Dark=#D97706}"
                     TextColor="White"
                     Command="{Binding ShowAddVehicleCommand}"
-                    Margin="0,0,12,0" 
+                    Margin="0,0,8,0" 
                     VerticalOptions="Center">
                     <buttons:SfButton.Content>
                         <DataTemplate>
                             <HorizontalStackLayout Spacing="6" HorizontalOptions="Center" VerticalOptions="Center">
                             <Label Text="+" FontSize="18" FontAttributes="Bold" TextColor="White" VerticalOptions="Center"/>
-                            <Label Text="Add Vehicle" FontSize="13" FontAttributes="Bold" TextColor="White" VerticalOptions="Center"/>
+                            <Label Text="Add vehicle" FontSize="13" FontAttributes="Bold" TextColor="White" VerticalOptions="Center"/>
                             </HorizontalStackLayout>
                         </DataTemplate>
                     </buttons:SfButton.Content>
                 </buttons:SfButton>
                 <!-- Vehicle Switcher Pill -->
-                <Border Grid.Column="2" Margin="0,0,24,0"
+                <Border Grid.Column="2" Margin="0,0,16,0"
                         BackgroundColor="{AppThemeBinding Light=#FAF9F5, Dark=#2D2117}"
                         Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#3D2E24}"
                         StrokeThickness="1"
                         Padding="6,0"
-                        WidthRequest="160"
+                        WidthRequest="200"
+                        MinimumWidthRequest="200"
                         HeightRequest="40"
                         VerticalOptions="Center">
 
@@ -299,6 +303,9 @@
                     <Grid ColumnDefinitions="Auto,*">
 
                         <editors:SfComboBox Grid.Column="1"
+                            WidthRequest="188"
+                            MinimumWidthRequest="188"
+                            HorizontalOptions="Fill"
                             ItemsSource="{Binding Vehicles}"
                             SelectedItem="{Binding SelectedVehicle, Mode=TwoWay}"
                             DisplayMemberPath="MakeModel"
@@ -330,7 +337,7 @@
                   MinimumHeightRequest="64"
                   BackgroundColor="{StaticResource BrandNavy}"
                   Padding="16,0"
-                  IsVisible="{Binding IsMobileHeaderVisible}">
+                  IsVisible="{Binding Source={x:Reference RootPage}, Path=Width, Converter={StaticResource WidthToBooleanConverter}, ConverterParameter=mobile}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
@@ -364,6 +371,8 @@
                         Stroke="{AppThemeBinding Light=#E2E8F0, Dark=#3D2E24}"
                         StrokeThickness="1"
                         Padding="6,0"
+                    WidthRequest="180"
+                    MinimumWidthRequest="180"
                         HeightRequest="40"
                         VerticalOptions="Center">
 
@@ -374,6 +383,9 @@
                     <Grid ColumnDefinitions="Auto,*">
 
                         <editors:SfComboBox Grid.Column="1"
+                                            WidthRequest="168"
+                                            MinimumWidthRequest="168"
+                                            HorizontalOptions="Fill"
                                             ItemsSource="{Binding Vehicles}"
                                             SelectedItem="{Binding SelectedVehicle, Mode=TwoWay}"
                                             DisplayMemberPath="MakeModel"
@@ -396,20 +408,21 @@
 
             <!-- ─── DASHBOARD SECTION ─── -->
             <ScrollView Grid.Row="1" IsVisible="{Binding IsDashboardVisible}">
-                <StackLayout Spacing="16"
-                             Padding="{OnPlatform WinUI='24,20,24,24', MacCatalyst='24,20,24,24', Default='16,16,0,20'}">
+                <StackLayout Spacing="{Binding Source={x:Reference RootPage}, Path=Width, Converter={StaticResource WidthToDoubleConverter}, ConverterParameter='0,16'}"
+                             Padding="{Binding Source={x:Reference RootPage}, Path=Width, Converter={StaticResource WidthToThicknessConverter}, ConverterParameter='24,20,24,24|12,16,12,24|16,16,0,20'}">
 
                     <!-- ═ MAIN 2-COL GRID (desktop) / single col (mobile) ═ -->
-                    <Grid ColumnSpacing="16" RowSpacing="0">
+                      <Grid ColumnSpacing="16"
+                          RowSpacing="{Binding Source={x:Reference RootPage}, Path=Width, Converter={StaticResource WidthToDoubleConverter}, ConverterParameter='16,0'}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="3*"/>
-                            <ColumnDefinition Width="{OnPlatform WinUI=3*, MacCatalyst=3*, Default=0.001}"/>
+                            <ColumnDefinition Width="{Binding Source={x:Reference RootPage}, Path=Width, Converter={StaticResource WidthToGridLengthConverter}, ConverterParameter=3*}"/>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="{OnPlatform Default=Auto, WinUI=0, MacCatalyst=0}"/>
-                            <RowDefinition Height="{OnPlatform Default=Auto, WinUI=0, MacCatalyst=0}"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <!-- ─── Vehicle Digital Twin Hero Card  Col 0 Row 0 ─── -->
@@ -590,8 +603,16 @@
                                 BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#2D2117}"
                                 Stroke="{AppThemeBinding Light=#E8ECF0, Dark=Transparent}"
                                 StrokeThickness="1" Padding="12"
-                                Margin="{OnPlatform Android='0,16,0,0', iOS='0,16,0,0'}"
+                                Margin="{Binding Source={x:Reference RootPage}, Path=Width, Converter={StaticResource WidthToThicknessConverter}, ConverterParameter='0,0,0,0|0,0,0,0|0,16,0,0'}"
                                 HeightRequest="220" VerticalOptions="Center">
+                            <Border.Triggers>
+                                <DataTrigger TargetType="Border"
+                                             Binding="{Binding Source={x:Reference RootPage}, Path=Width, Converter={StaticResource WidthToBooleanConverter}, ConverterParameter=compact-desktop}"
+                                             Value="True">
+                                    <Setter Property="Grid.Column" Value="0"/>
+                                    <Setter Property="Grid.Row" Value="1"/>
+                                </DataTrigger>
+                            </Border.Triggers>
                             <Border.StrokeShape>
                                 <RoundRectangle CornerRadius="14"/>
                             </Border.StrokeShape>
@@ -599,7 +620,7 @@
                                 <Grid ColumnDefinitions="*,Auto">
                                     <HorizontalStackLayout Spacing="8">
                                         <Label Text="&#xE87D;" FontFamily="MaterialIcons" FontSize="16" TextColor="#EF4444" VerticalOptions="Center"/>
-                                        <Label Text="Vehicle Health"
+                                            <Label Text="Vehicle health"
                                                TextColor="{AppThemeBinding Light=#0F172A, Dark=White}"
                                                FontSize="16" FontAttributes="Bold" VerticalOptions="Center"/>
                                     </HorizontalStackLayout>
@@ -624,7 +645,9 @@
                                            TextColor="{AppThemeBinding Light=#CBD5E1, Dark=#3D2E24}"
                                            HorizontalOptions="Center"/>
                                     <Label Text="Add a vehicle to see health score"
-                                           FontSize="12" HorizontalTextAlignment="Center"
+                                         FontSize="{OnPlatform Default=13, WinUI=12, MacCatalyst=12}"
+                                         LineBreakMode="WordWrap"
+                                         HorizontalTextAlignment="Center"
                                            TextColor="{AppThemeBinding Light=#94A3B8, Dark=#4A6482}"/>
                                 </StackLayout>
 
@@ -638,7 +661,7 @@
                                     <StackLayout Spacing="4">
                                         <HorizontalStackLayout Spacing="6">
                                             <Label Text="&#xE65F;" FontFamily="MaterialIcons" FontSize="11" TextColor="#0EA5E9" VerticalOptions="Center"/>
-                                            <Label Text="AI INSIGHT" FontSize="9" FontAttributes="Bold"
+                                            <Label Text="AI insight" FontSize="11" FontAttributes="Bold"
                                                    CharacterSpacing="1.5" TextColor="#0EA5E9" VerticalOptions="Center"/>
                                             <ActivityIndicator IsRunning="{Binding IsAiHealthLoading}"
                                                                IsVisible="{Binding IsAiHealthLoading}"
@@ -646,8 +669,9 @@
                                                                VerticalOptions="Center"/>
                                         </HorizontalStackLayout>
                                         <Label Text="{Binding AiHealthSummary}"
-                                               FontSize="11"
+                                                 FontSize="{OnPlatform Default=13, WinUI=12, MacCatalyst=12}"
                                                LineBreakMode="WordWrap"
+                                                 HorizontalTextAlignment="Center"
                                                TextColor="{AppThemeBinding Light=#334155, Dark=#CBD5E1}"
                                                IsVisible="{Binding IsAiHealthLoading, Converter={StaticResource InvertedBoolConverter}}"/>
                                     </StackLayout>
@@ -659,7 +683,7 @@
                                             <HorizontalStackLayout Spacing="8">
                                                 <Label Text="{Binding Prefix}" FontSize="12"
                                                        TextColor="{Binding PrefixColor}" VerticalOptions="Center"/>
-                                                <Label Text="{Binding Text}" FontSize="11" LineBreakMode="WordWrap"
+                                                <Label Text="{Binding Text}" FontSize="12" LineBreakMode="WordWrap"
                                                        TextColor="{AppThemeBinding Light=#334155, Dark=#CBD5E1}"
                                                        VerticalOptions="Center"/>
                                             </HorizontalStackLayout>
@@ -675,8 +699,15 @@
                                 Grid.Row="{OnPlatform WinUI=1, MacCatalyst=1, Default=2}"
                                 BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#2D2117}"
                                 Stroke="{AppThemeBinding Light=#E8ECF0, Dark=Transparent}"
-                                Margin="0,16,0,0"
+                                Margin="{Binding Source={x:Reference RootPage}, Path=Width, Converter={StaticResource WidthToThicknessConverter}, ConverterParameter='0,0,0,0|0,0,0,0|0,16,0,0'}"
                                 StrokeThickness="1" Padding="16">
+                            <Border.Triggers>
+                                <DataTrigger TargetType="Border"
+                                             Binding="{Binding Source={x:Reference RootPage}, Path=Width, Converter={StaticResource WidthToBooleanConverter}, ConverterParameter=compact-desktop}"
+                                             Value="True">
+                                    <Setter Property="Grid.Row" Value="2"/>
+                                </DataTrigger>
+                            </Border.Triggers>
                             <Border.StrokeShape>
                                 <RoundRectangle CornerRadius="14"/>
                             </Border.StrokeShape>
@@ -686,7 +717,7 @@
                                     <HorizontalStackLayout Grid.Column="0" Spacing="8">
                                         <Label Text="&#xE65F;" FontFamily="MaterialIcons"
                                                TextColor="#3B82F6" FontSize="18" VerticalOptions="Center"/>
-                                        <Label Text="Active Intelligence"
+                                        <Label Text="Active intelligence"
                                                TextColor="{AppThemeBinding Light=#0F172A, Dark=White}"
                                                FontSize="16" FontAttributes="Bold" VerticalOptions="Center"/>
                                         <ActivityIndicator IsRunning="{Binding IsAiInsightsLoading}"
@@ -728,7 +759,8 @@
                                                                LineBreakMode="TailTruncation"/>
                                                         <Label Text="{Binding Subtitle}"
                                                                TextColor="{AppThemeBinding Light=#64748B, Dark=#64748B}"
-                                                               FontSize="11"/>
+                                                                                FontSize="{OnPlatform Default=12, WinUI=11, MacCatalyst=11}"
+                                                                                    LineBreakMode="WordWrap"/>
                                                     </StackLayout>
                                                 </Grid>
                                             </Border>
@@ -743,8 +775,16 @@
                                 Grid.Row="{OnPlatform WinUI=1, MacCatalyst=1, Default=3}"
                                 BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#2D2117}"
                                 Stroke="{AppThemeBinding Light=#E8ECF0, Dark=Transparent}"
-                                Margin="0,16,0,0"
+                            Margin="{Binding Source={x:Reference RootPage}, Path=Width, Converter={StaticResource WidthToThicknessConverter}, ConverterParameter='0,0,0,0|0,0,0,0|0,16,0,0'}"
                                 StrokeThickness="1" Padding="16">
+                            <Border.Triggers>
+                                <DataTrigger TargetType="Border"
+                                             Binding="{Binding Source={x:Reference RootPage}, Path=Width, Converter={StaticResource WidthToBooleanConverter}, ConverterParameter=compact-desktop}"
+                                             Value="True">
+                                    <Setter Property="Grid.Column" Value="0"/>
+                                    <Setter Property="Grid.Row" Value="3"/>
+                                </DataTrigger>
+                            </Border.Triggers>
                             <Border.StrokeShape>
                                 <RoundRectangle CornerRadius="14"/>
                             </Border.StrokeShape>
@@ -755,7 +795,7 @@
                                     <HorizontalStackLayout Spacing="8">
                                         <Label Text="&#xE8B0;" FontFamily="MaterialIcons"
                                                TextColor="#3B82F6" FontSize="18" VerticalOptions="Center"/>
-                                        <Label Text="Monthly Expense"
+                                        <Label Text="Monthly expense"
                                                TextColor="{AppThemeBinding Light=#0F172A, Dark=White}"
                                                FontSize="16" FontAttributes="Bold" VerticalOptions="Center"/>
                                     </HorizontalStackLayout>
@@ -777,7 +817,7 @@
                                                             DropDownItemTextColor="{AppThemeBinding Light=#0F172A, Dark=White}"
                                                             TextColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}"
                                                             DropDownIconColor="{AppThemeBinding Light=#64748B, Dark=#94A3B8}"
-                                                            FontSize="11"/>
+                                                            FontSize="12"/>
                                     </Border>
                                 </Grid>
 
@@ -798,7 +838,7 @@
                                 <!-- All-time context: avg/month and cost/km -->
                                 <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
                                     <StackLayout Grid.Column="0" Spacing="1">
-                                        <Label Text="AVG / MONTH"
+                                        <Label Text="AVG / Month"
                                                FontSize="9" FontAttributes="Bold" CharacterSpacing="0.8"
                                                TextColor="{AppThemeBinding Light=#94A3B8, Dark=#4A6482}"/>
                                         <Label Text="{Binding AvgMonthlyLabel}"
@@ -810,7 +850,7 @@
 
                                 <Label Text="{Binding ExpenseBreakdownTitle}"
                                        TextColor="{AppThemeBinding Light=#94A3B8, Dark=#4A6482}"
-                                       FontSize="9" FontAttributes="Bold" CharacterSpacing="1"/>
+                                       FontSize="11" FontAttributes="Bold" CharacterSpacing="1"/>
 
                                 <!-- Fuel row -->
                                 <StackLayout Spacing="5">
@@ -826,7 +866,7 @@
                                         </HorizontalStackLayout>
                                         <Label Grid.Column="1" Text="{Binding CurrentMonthFuelLabel}"
                                                TextColor="{AppThemeBinding Light=#64748B, Dark=#64748B}"
-                                               FontSize="11" VerticalOptions="Center"/>
+                                                 FontSize="{OnPlatform Default=12, WinUI=11, MacCatalyst=11}" VerticalOptions="Center"/>
                                         <Label Grid.Column="2" Text="{Binding CurrentFuelPercent}"
                                                TextColor="{AppThemeBinding Light=#0F172A, Dark=White}"
                                                FontSize="11" FontAttributes="Bold" VerticalOptions="Center"/>
@@ -853,7 +893,7 @@
                                         </HorizontalStackLayout>
                                         <Label Grid.Column="1" Text="{Binding CurrentMonthServiceLabel}"
                                                TextColor="{AppThemeBinding Light=#64748B, Dark=#64748B}"
-                                               FontSize="11" VerticalOptions="Center"/>
+                                                 FontSize="{OnPlatform Default=12, WinUI=11, MacCatalyst=11}" VerticalOptions="Center"/>
                                         <Label Grid.Column="2" Text="{Binding CurrentServicePercent}"
                                                TextColor="{AppThemeBinding Light=#0F172A, Dark=White}"
                                                FontSize="11" FontAttributes="Bold" VerticalOptions="Center"/>
@@ -875,8 +915,8 @@
                     <!-- ═ RECENT ACTIVITY ═ -->
                     <Border BackgroundColor="{AppThemeBinding Light=#FFFFFF, Dark=#2D2117}"
                             Stroke="{AppThemeBinding Light=#E8ECF0, Dark=Transparent}"
-                            HeightRequest="186"
-                            Margin="{OnPlatform Android='0,0,14,0'}"
+                            HeightRequest="{OnPlatform WinUI=250, MacCatalyst=250, Android=390, iOS=390}"
+                            Margin="{Binding Source={x:Reference RootPage}, Path=Width, Converter={StaticResource WidthToThicknessConverter}, ConverterParameter='0,-14,-4,0|0,0,20,0|0,0,14,0'}"
                             StrokeThickness="1" Padding="0">
                         <Border.StrokeShape>
                             <RoundRectangle CornerRadius="14"/>
@@ -886,7 +926,7 @@
                                 <HorizontalStackLayout Spacing="8">
                                     <Label Text="&#xE889;" FontFamily="MaterialIcons"
                                            TextColor="#3B82F6" FontSize="16" VerticalOptions="Center"/>
-                                    <Label Text="Recent Activity"
+                                    <Label Text="Recent activity"
                                            TextColor="{AppThemeBinding Light=#0F172A, Dark=White}"
                                            FontSize="14" FontAttributes="Bold" VerticalOptions="Center"/>
                                 </HorizontalStackLayout>
@@ -895,7 +935,7 @@
                                                   IsVisible="{Binding HasRecentActivity}"
                                                   Background="Transparent"
                                                   TextColor="{AppThemeBinding Light={StaticResource BrandBlue}, Dark={StaticResource BrandBlueBright}}"
-                                                  FontSize="11" FontAttributes="Bold"
+                                                  FontSize="14" FontAttributes="Bold"
                                                   HeightRequest="30" CornerRadius="8"
                                                   StrokeThickness="0"
                                                   Command="{Binding ShowRecentActivityAllCommand}"/>
@@ -906,7 +946,7 @@
                                        TextColor="{AppThemeBinding Light=#CBD5E1, Dark=#2A3D5C}"/>
                                 <Label Text="No recent activity" FontSize="13" FontAttributes="Bold" HorizontalOptions="Center"
                                        TextColor="{AppThemeBinding Light=#64748B, Dark=#9DB7D2}"/>
-                                <Label Text="Add fuel or service records to see them here" FontSize="11" HorizontalOptions="Center"
+                                <Label Text="Add fuel or service records to see them here" FontSize="{OnPlatform Default=12, WinUI=11, MacCatalyst=11}" HorizontalOptions="Center"
                                        HorizontalTextAlignment="Center"
                                        TextColor="{AppThemeBinding Light=#94A3B8, Dark=#64748B}"/>
                             </StackLayout>
@@ -916,12 +956,12 @@
                                                  AllowEditing="False"
                                                  ColumnWidthMode="Fill"
                                                  RowHeight="{OnPlatform WinUI=32, MacCatalyst=32, Android=48, iOS=48}"
-                                                 HeaderRowHeight="{OnPlatform WinUI=34, MacCatalyst=34, Android=42, iOS=42}"
+                                                 HeaderRowHeight="{OnPlatform WinUI=34, MacCatalyst=34, Android=46, iOS=46}"
                                                  GridLinesVisibility="Horizontal"
                                                  HeaderGridLinesVisibility="Horizontal"
                                                  VerticalScrollBarVisibility="Never"
                                                  HorizontalScrollBarVisibility="Never"
-                                                 HeightRequest="260"
+                                                 HeightRequest="{OnPlatform WinUI=320, MacCatalyst=320, Android=390, iOS=390, Default=390}"
                                                  IsVisible="{Binding HasRecentActivity}">
                                 <dataGrid:SfDataGrid.DefaultStyle>
                                     <dataGrid:DataGridStyle HeaderRowBackground="{AppThemeBinding Light=#F8FAFC, Dark=#2D2117}"
@@ -932,7 +972,7 @@
                                 </dataGrid:SfDataGrid.DefaultStyle>
                                 <dataGrid:SfDataGrid.Columns>
                                     <dataGrid:DataGridTextColumn MappingName="Date" HeaderText="Date" Width="{OnPlatform WinUI=200, MacCatalyst=200, Android=110, iOS=110}"/>
-                                    <dataGrid:DataGridTextColumn MappingName="Type" HeaderText="type" Width="{OnPlatform WinUI=210, MacCatalyst=210, Android=110, iOS=110}"/>
+                                    <dataGrid:DataGridTextColumn MappingName="Type" HeaderText="Type" Width="{OnPlatform WinUI=210, MacCatalyst=210, Android=110, iOS=110}"/>
                                     <dataGrid:DataGridTextColumn MappingName="Detail" HeaderText="Details" LineBreakMode="WordWrap" Width="{OnPlatform Android=140, iOS=140}"/>
                                     <dataGrid:DataGridTemplateColumn MappingName="Status" HeaderText="Summary" Width="{OnPlatform WinUI=160, MacCatalyst=160, Android=90, iOS=90}">
                                         <dataGrid:DataGridTemplateColumn.CellTemplate>
@@ -957,14 +997,18 @@
             </ScrollView>
 
             <!-- ─── VEHICLE CENTER SECTION ─── -->
-            <views:VehicleCenterPage Grid.Row="1" IsVisible="{Binding IsVehicleCenterVisible}"/>
+            <!-- IsVisible lives on the wrapper so it keeps resolving against MainViewModel even
+                 though the inner page's BindingContext is reassigned to VehicleCenterViewModel. -->
+            <Grid Grid.Row="1" IsVisible="{Binding IsVehicleCenterVisible}">
+                <views:VehicleCenterPage BindingContext="{Binding VehicleCenterViewModel}"/>
+            </Grid>
 
             <popup:SfPopup IsOpen="{Binding IsAllRecordsPopupVisible}"
                            HeaderTitle="{Binding CurrentPopupTitle}"
                            ShowHeader="True"
                            ShowFooter="False"
                            ShowCloseButton="True"
-                           MaximumWidthRequest="760"
+                           WidthRequest="{OnPlatform WinUI=760, MacCatalyst=760, Android=340, iOS=340}"
                            HeightRequest="{Binding AllRecordsPopupHeight}"
                            StaysOpen="False">
                 <popup:SfPopup.PopupStyle>
@@ -1023,10 +1067,14 @@
             </popup:SfPopup>
 
             <!-- ─── AI ASSIST SECTION ─── -->
-            <views:AIAssistPage x:Name="AIAssistView" Grid.Row="1" IsVisible="{Binding IsAIAssistVisible}"/>
+            <Grid Grid.Row="1" IsVisible="{Binding IsAIAssistVisible}">
+                <views:AIAssistPage x:Name="AIAssistView" BindingContext="{Binding AIAssistViewModel}"/>
+            </Grid>
 
             <!-- ─── SETTINGS SECTION ─── -->
-            <views:SettingsPage Grid.Row="1" IsVisible="{Binding IsSettingsVisible}"/>
+            <Grid Grid.Row="1" IsVisible="{Binding IsSettingsVisible}">
+                <views:SettingsPage BindingContext="{Binding SettingsViewModel}"/>
+            </Grid>
 
             <buttons:SfButton Grid.Row="1"
                               IsVisible="{Binding IsMobileAddVehicleButtonVisible}"
@@ -1052,13 +1100,13 @@
         <!-- ═══ BOTTOM NAV  (mobile only — Col 1, Row 1) ═══ -->
         <Grid Grid.Column="1" Grid.Row="1"
               BackgroundColor="{StaticResource BrandNavy}"
-              IsVisible="{OnPlatform Android=True, iOS=True, Default=False}">
+              IsVisible="{Binding Source={x:Reference RootPage}, Path=Width, Converter={StaticResource WidthToBooleanConverter}, ConverterParameter=bottom-nav}">
             <Grid ColumnDefinitions="1*,1*,1*,1*">
 
                 <!-- Dashboard tab -->
                 <StackLayout Grid.Column="0" VerticalOptions="Center" HorizontalOptions="Center" Spacing="2">
                     <StackLayout.GestureRecognizers>
-                        <TapGestureRecognizer Tapped="OnNavDashboardTapped"/>
+                        <TapGestureRecognizer Command="{Binding ShowDashboardCommand}"/>
                     </StackLayout.GestureRecognizers>
                     <Label Text="&#xE871;" FontFamily="MaterialIcons" FontSize="22"
                            HorizontalOptions="Center" TextColor="{StaticResource BrandMutedOnDark}">
@@ -1080,7 +1128,7 @@
                 <!-- Vehicle Center tab -->
                 <StackLayout Grid.Column="1" VerticalOptions="Center" HorizontalOptions="Center" Spacing="2">
                     <StackLayout.GestureRecognizers>
-                        <TapGestureRecognizer Tapped="OnNavVehicleCenterTapped"/>
+                        <TapGestureRecognizer Command="{Binding ShowVehicleCenterCommand}"/>
                     </StackLayout.GestureRecognizers>
                     <Label Text="&#xE531;" FontFamily="MaterialIcons" FontSize="22"
                            HorizontalOptions="Center" TextColor="{StaticResource BrandMutedOnDark}">
@@ -1102,7 +1150,7 @@
                 <!-- AI Assist tab -->
                 <StackLayout Grid.Column="2" VerticalOptions="Center" HorizontalOptions="Center" Spacing="2">
                     <StackLayout.GestureRecognizers>
-                        <TapGestureRecognizer Tapped="OnNavAIAssistTapped"/>
+                        <TapGestureRecognizer Command="{Binding ShowAIAssistCommand}"/>
                     </StackLayout.GestureRecognizers>
                     <Label Text="&#xE65F;" FontFamily="MaterialIcons" FontSize="22"
                            HorizontalOptions="Center" TextColor="{StaticResource BrandMutedOnDark}">
@@ -1124,7 +1172,7 @@
                 <!-- Settings tab -->
                 <StackLayout Grid.Column="3" VerticalOptions="Center" HorizontalOptions="Center" Spacing="2">
                     <StackLayout.GestureRecognizers>
-                        <TapGestureRecognizer Tapped="OnNavSettingsTapped"/>
+                        <TapGestureRecognizer Command="{Binding ShowSettingsCommand}"/>
                     </StackLayout.GestureRecognizers>
                     <Label Text="&#xE8B8;" FontFamily="MaterialIcons" FontSize="22"
                            HorizontalOptions="Center" TextColor="{StaticResource BrandMutedOnDark}">
@@ -1159,7 +1207,7 @@
 
                 <BoxView.GestureRecognizers>
                     <TapGestureRecognizer
-                Tapped="OnDrawerBackdropTapped"/>
+                Command="{Binding CloseAddVehicleCommand}"/>
                 </BoxView.GestureRecognizers>
 
             </BoxView>
@@ -1187,7 +1235,7 @@
 
                 <BoxView.GestureRecognizers>
                     <TapGestureRecognizer
-                Tapped="OnBottomSheetBackdropTapped"/>
+                Command="{Binding CloseAddVehicleCommand}"/>
                 </BoxView.GestureRecognizers>
 
             </BoxView>
@@ -1231,7 +1279,7 @@
                                HorizontalOptions="Center" VerticalOptions="Center"/>
                     </Border>
 
-                    <Label Text="Activate AI Features"
+                    <Label Text="Activate AI features"
                            FontSize="18" FontAttributes="Bold"
                            HorizontalTextAlignment="Center"
                            TextColor="{AppThemeBinding Light=#1C1412, Dark=#FAF6F0}"/>

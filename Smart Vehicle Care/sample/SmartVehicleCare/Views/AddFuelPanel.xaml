@@ -5,6 +5,7 @@
              xmlns:buttons="clr-namespace:Syncfusion.Maui.Buttons;assembly=Syncfusion.Maui.Buttons"
              xmlns:picker="clr-namespace:Syncfusion.Maui.Picker;assembly=Syncfusion.Maui.Picker"
              xmlns:vm="clr-namespace:SmartVehicleCare.ViewModels"
+             xmlns:behaviors="clr-namespace:SmartVehicleCare.Behaviors"
              x:Class="SmartVehicleCare.Views.AddFuelPanel"
              x:DataType="vm:AddFuelViewModel"
              BackgroundColor="{AppThemeBinding Light={StaticResource SplashBgLight}, Dark={StaticResource BrandNavy}}">
@@ -31,7 +32,7 @@
                 </picker:DatePickerColumnHeaderView>
             </picker:SfDatePicker.ColumnHeaderView>
             <picker:SfDatePicker.HeaderView>
-                <picker:PickerHeaderView Text="Select Fuel Date" Height="40"/>
+                <picker:PickerHeaderView Text="Select fuel date" Height="40"/>
             </picker:SfDatePicker.HeaderView>
             <picker:SfDatePicker.FooterView>
                 <picker:PickerFooterView ShowOkButton="True" CancelButtonText="Cancel" Height="40"/>
@@ -42,7 +43,7 @@
         <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Padding="24,16"
               BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource BrandNavyLight}}">
                  <StackLayout Spacing="2">
-                <Label Text="Add Fuel Log" FontSize="18" FontAttributes="Bold"
+                    <Label Text="Add fuel log" FontSize="18" FontAttributes="Bold"
                        TextColor="{AppThemeBinding Light={StaticResource BrandTextDark}, Dark={StaticResource BrandTextOnDark}}"/>
                 <Border BackgroundColor="{AppThemeBinding Light=#FEF3C7, Dark=#152840}"
                         StrokeThickness="1"
@@ -80,7 +81,7 @@
 
                 <!-- Fuel Type chips (1�4) -->
                 <StackLayout Spacing="8">
-                    <Label Text="Fuel Type *" FontSize="12" FontAttributes="Bold"
+                    <Label Text="Fuel type *" FontSize="12" FontAttributes="Bold"
                            TextColor="{AppThemeBinding Light={StaticResource BrandTextMid}, Dark={StaticResource BrandTextOnDarkAlt}}"/>
                     <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
 
@@ -197,7 +198,7 @@
                     </StackLayout>
                     <!-- Station -->
                     <StackLayout Grid.Column="1" Spacing="6">
-                        <Label Text="STATION" FontSize="12" FontAttributes="Bold"
+                            <Label Text="Station" FontSize="12" FontAttributes="Bold"
                                TextColor="{AppThemeBinding Light={StaticResource BrandTextMid}, Dark={StaticResource BrandTextOnDarkAlt}}"/>
                         <til:SfTextInputLayout ContainerType="Outlined" OutlineCornerRadius="10"
                                                EnableFloating="False"
@@ -220,7 +221,7 @@
                 <!-- Litres Filled + Cost Per Litre (2 cols) -->
                 <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
                     <StackLayout Grid.Column="0" Spacing="6">
-                        <Label Text="LITRES FILLED" FontSize="12" FontAttributes="Bold"
+                            <Label Text="Litres filled" FontSize="12" FontAttributes="Bold"
                                TextColor="{AppThemeBinding Light={StaticResource BrandTextMid}, Dark={StaticResource BrandTextOnDarkAlt}}"/>
                         <til:SfTextInputLayout ContainerType="Outlined" OutlineCornerRadius="10"
                                                EnableFloating="False"
@@ -234,9 +235,12 @@
                                 <til:LabelStyle FontSize="14" TextColor="#94A3B8"/>
                             </til:SfTextInputLayout.HintLabelStyle>
                             <Entry Text="{Binding LitresFilled}" Keyboard="Numeric"
-                                   TextChanged="OnNumericTextChanged"
                                    TextColor="{AppThemeBinding Light={StaticResource BrandTextDark}, Dark={StaticResource BrandTextOnDark}}"
-                                   BackgroundColor="Transparent"/>
+                                   BackgroundColor="Transparent">
+                                <Entry.Behaviors>
+                                    <behaviors:NumericOnlyBehavior/>
+                                </Entry.Behaviors>
+                            </Entry>
                         </til:SfTextInputLayout>
                     </StackLayout>
                     <StackLayout Grid.Column="1" Spacing="6">
@@ -254,9 +258,12 @@
                                 <til:LabelStyle FontSize="14" TextColor="#94A3B8"/>
                             </til:SfTextInputLayout.HintLabelStyle>
                             <Entry Text="{Binding CostPerLitre}" Keyboard="Numeric"
-                                   TextChanged="OnNumericTextChanged"
                                    TextColor="{AppThemeBinding Light={StaticResource BrandTextDark}, Dark={StaticResource BrandTextOnDark}}"
-                                   BackgroundColor="Transparent"/>
+                                   BackgroundColor="Transparent">
+                                <Entry.Behaviors>
+                                    <behaviors:NumericOnlyBehavior/>
+                                </Entry.Behaviors>
+                            </Entry>
                         </til:SfTextInputLayout>
                     </StackLayout>
                 </Grid>
@@ -266,18 +273,18 @@
                         StrokeThickness="1" Stroke="{AppThemeBinding Light=#BAE6FD, Dark=#3D2E24}"
                         StrokeShape="RoundRectangle 12" Padding="16,14">
                     <StackLayout Spacing="4" HorizontalOptions="Center">
-                        <Label Text="Total Cost" FontSize="12" FontAttributes="Bold" HorizontalOptions="Center"
+                        <Label Text="Total cost" FontSize="12" FontAttributes="Bold" HorizontalOptions="Center"
                                TextColor="{AppThemeBinding Light=#0284C7, Dark=#7DD3FC}"/>
                         <Label Text="{Binding TotalCostDisplay}" FontSize="28" FontAttributes="Bold" HorizontalOptions="Center"
                                TextColor="{AppThemeBinding Light=#0C4A6E, Dark=#EDF6FF}"/>
-                        <Label Text="{Binding TotalCostBreakdown}" FontSize="11" HorizontalOptions="Center"
+                        <Label Text="{Binding TotalCostBreakdown}" FontSize="{OnPlatform Default=12, WinUI=11, MacCatalyst=11}" HorizontalOptions="Center"
                                TextColor="{AppThemeBinding Light=#64748B, Dark=#9DB7D2}"/>
                     </StackLayout>
                 </Border>
 
                 <!-- Odometer Reading -->
                 <StackLayout Spacing="6">
-                    <Label Text="ODOMETER READING (KM) *" FontSize="12" FontAttributes="Bold"
+                    <Label Text="Odometer reading (km) *" FontSize="12" FontAttributes="Bold"
                            TextColor="{AppThemeBinding Light={StaticResource BrandTextMid}, Dark={StaticResource BrandTextOnDarkAlt}}"/>
                     <til:SfTextInputLayout ContainerType="Outlined" OutlineCornerRadius="10"
                                            EnableFloating="False"
@@ -291,9 +298,12 @@
                             <til:LabelStyle FontSize="14" TextColor="#94A3B8"/>
                         </til:SfTextInputLayout.HintLabelStyle>
                         <Entry Text="{Binding OdometerReading}" Keyboard="Numeric"
-                               TextChanged="OnNumericTextChanged"
                                TextColor="{AppThemeBinding Light={StaticResource BrandTextDark}, Dark={StaticResource BrandTextOnDark}}"
-                               BackgroundColor="Transparent"/>
+                               BackgroundColor="Transparent">
+                            <Entry.Behaviors>
+                                <behaviors:NumericOnlyBehavior/>
+                            </Entry.Behaviors>
+                        </Entry>
                     </til:SfTextInputLayout>
                 </StackLayout>
 

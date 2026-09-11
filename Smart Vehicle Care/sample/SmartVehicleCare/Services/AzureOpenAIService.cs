@@ -8,7 +8,7 @@ namespace SmartVehicleCare.Services;
 internal class AzureOpenAIService
 {
     // Base endpoint — uses the Azure AI Foundry /openai/v1 project endpoint
-    const string BaseEndpoint          = "https://mugunthan-azure.services.ai.azure.com/openai/v1";
+    const string BaseEndpoint          = "API_ENDPOINT";
     const string DefaultDeploymentName = "gpt-5-mini";
 
     internal const string SecureStorageKey       = "AzureOpenAI_ApiKey";

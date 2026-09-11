@@ -9,7 +9,7 @@
     FlyoutBehavior="Disabled">
 
     <!-- Splash / Landing Page — always shown first -->
-    <ShellContent
+    <ShellContent x:Name="SplashShellContent"
         Title="Splash"
         ContentTemplate="{DataTemplate views:SplashPage}"
         Route="splash"
@@ -17,7 +17,7 @@
         Shell.TabBarIsVisible="False" />
 
     <!-- Welcome Page — onboarding form -->
-    <ShellContent
+    <ShellContent x:Name="WelcomeShellContent"
         Title="Welcome"
         ContentTemplate="{DataTemplate views:WelcomePage}"
         Route="welcome"
@@ -25,7 +25,7 @@
         Shell.TabBarIsVisible="False" />
 
     <!-- Main App (dashboard + navigation) -->
-    <ShellContent
+    <ShellContent x:Name="MainShellContent"
         Title="Main"
         ContentTemplate="{DataTemplate views:MainPage}"
         Route="main"

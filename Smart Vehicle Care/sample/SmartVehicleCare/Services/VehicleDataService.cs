@@ -4,8 +4,7 @@ using SmartVehicleCare.Models;
 namespace SmartVehicleCare.Services;
 
 /// <summary>
-/// Manages vehicle data with separate storage for sample (demo) and real user data.
-/// Prevents mixing of demo and real data to maintain data integrity.
+/// Owns the in-memory demo data used by the sample.
 /// </summary>
 public class VehicleDataService
 {
@@ -13,38 +12,27 @@ public class VehicleDataService
     public static VehicleDataService Instance => _instance ??= new VehicleDataService();
 
     /// <summary>
-    /// Indicates the current mode: Demo (sample data) or Real (user data)
+    /// The sample keeps one in-memory demo mode for the lifetime of the app process.
     /// </summary>
     public enum DataMode { Demo, Real }
 
-    private DataMode _currentMode = DataMode.Real;
-    private bool _hasRealDataBeenAdded = false;
-    private bool _hasDemoDataBeenLoaded = false;
+    private DataMode _currentMode = DataMode.Demo;
 
     private VehicleDataService() { }
 
     public ObservableCollection<Vehicle> Vehicles { get; } = new();
     
     /// <summary>
-    /// Gets the current data mode (Demo or Real)
+    /// Gets the current data mode.
     /// </summary>
     public DataMode CurrentMode => _currentMode;
     
     /// <summary>
-    /// Returns true if currently in Demo mode
+    /// Returns true when the sample is using its in-memory demo mode.
     /// </summary>
     public bool IsDemoMode => _currentMode == DataMode.Demo;
     
     /// <summary>
-    /// Returns true if currently in Real mode
-    /// </summary>
-    public bool IsRealMode => _currentMode == DataMode.Real;
-    
-    /// <summary>
-    /// Returns true if real user data has been added (blocks demo mode)
-    /// </summary>
-    public bool HasRealDataBeenAdded => _hasRealDataBeenAdded;
-
     private Vehicle? _selectedVehicle;
     public Vehicle? SelectedVehicle
     {
@@ -81,54 +69,22 @@ public class VehicleDataService
     public void FullReset()
     {
         ClearAllData();
-        _hasRealDataBeenAdded = false;
-        _hasDemoDataBeenLoaded = false;
-        _currentMode = DataMode.Real;
+        _currentMode = DataMode.Demo;
         ModeChanged?.Invoke(_currentMode);
     }
 
     /// <summary>
     /// Switches to Demo mode and loads sample data.
-    /// Clears all existing data to prevent mixing.
-    /// Only allowed if no real user data has been added.
+    /// Clears all existing data and starts a fresh demo session.
     /// </summary>
     public bool TryLoadDemoData()
     {
-        // Don't allow switching to demo if user has already added real data
-        if (_hasRealDataBeenAdded)
-        {
-            System.Diagnostics.Debug.WriteLine("[VehicleDataService] Cannot load demo data - real user data exists");
-            return false;
-        }
-
         ClearAllData();
         _currentMode = DataMode.Demo;
-        _hasDemoDataBeenLoaded = true;
         ModeChanged?.Invoke(_currentMode);
         
-        System.Diagnostics.Debug.WriteLine("[VehicleDataService] Switched to Demo mode");
+        System.Diagnostics.Debug.WriteLine("[VehicleDataService] Started a fresh demo session");
         return true;
-    }
-
-    /// <summary>
-    /// Switches to Real mode with real user data.
-    /// If demo data is active, it will be cleared first.
-    /// Once real data is added, demo mode is locked.
-    /// </summary>
-    public void SwitchToRealData()
-    {
-        // If we were in demo mode, clear it before switching to real
-        if (_currentMode == DataMode.Demo)
-        {
-            ClearAllData();
-            System.Diagnostics.Debug.WriteLine("[VehicleDataService] Cleared demo data, switching to Real mode");
-        }
-
-        _currentMode = DataMode.Real;
-        _hasRealDataBeenAdded = true;  // Lock real mode - prevents demo from loading again
-        ModeChanged?.Invoke(_currentMode);
-        
-        System.Diagnostics.Debug.WriteLine("[VehicleDataService] Switched to Real mode (locked)");
     }
 
     public void AddVehicle(Vehicle vehicle)
@@ -143,11 +99,6 @@ public class VehicleDataService
         Vehicles.Add(vehicle);
         SelectedVehicle ??= vehicle;
         
-        // If we're in real mode, mark that real data has been added
-        if (_currentMode == DataMode.Real)
-        {
-            _hasRealDataBeenAdded = true;
-        }
     }
 
     /// <summary>Persist in-place edits to a vehicle already in the collection and notify listeners.</summary>
@@ -183,6 +134,12 @@ public class VehicleDataService
         DataChanged?.Invoke(vehicleId);
     }
 
+    public void UpdateServiceRecord(int vehicleId, ServiceRecord record)
+    {
+        if (!_vehicleServices.TryGetValue(vehicleId, out var records) || !records.Contains(record)) return;
+        DataChanged?.Invoke(vehicleId);
+    }
+
     public IReadOnlyList<ServiceRecord> GetServiceRecords(int vehicleId)
         => _vehicleServices.TryGetValue(vehicleId, out var r) ? r.AsReadOnly() : Array.Empty<ServiceRecord>();
 
@@ -194,6 +151,12 @@ public class VehicleDataService
     {
         if (!_vehicleFuel.ContainsKey(vehicleId)) _vehicleFuel[vehicleId] = new();
         _vehicleFuel[vehicleId].Insert(0, entry);
+        DataChanged?.Invoke(vehicleId);
+    }
+
+    public void UpdateFuelEntry(int vehicleId, FuelEntry entry)
+    {
+        if (!_vehicleFuel.TryGetValue(vehicleId, out var entries) || !entries.Contains(entry)) return;
         DataChanged?.Invoke(vehicleId);
     }
 

@@ -1,21 +1,18 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using SmartVehicleCare.Services;
-
-namespace SmartVehicleCare
+﻿namespace SmartVehicleCare
 {
     public partial class App : Application
     {
-        public App()
+        private readonly IServiceProvider _services;
+
+        public App(IServiceProvider services)
         {
+            // Merge App.xaml's resources (Colors.xaml/Styles.xaml) before any page is constructed —
+            // AppShell's pages read StaticResources from them, so they must resolve after this call.
             InitializeComponent();
-            // Clear any persisted key on every launch so the popup appears fresh each run
-            SecureStorage.Remove(AzureOpenAIService.SecureStorageKey);
-            AzureOpenAIService.SetApiKey(null);
-            // Deployment name is not sensitive — keep it across launches
-            AzureOpenAIService.LoadDeploymentName();
+            _services = services;
         }
 
         protected override Window CreateWindow(IActivationState? activationState)
-            => new Window(new AppShell());
+            => new Window(_services.GetRequiredService<AppShell>());
     }
 }

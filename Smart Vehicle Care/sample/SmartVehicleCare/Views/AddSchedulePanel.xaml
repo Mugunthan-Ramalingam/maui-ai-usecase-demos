@@ -31,7 +31,7 @@
                 </picker:DatePickerColumnHeaderView>
             </picker:SfDatePicker.ColumnHeaderView>
             <picker:SfDatePicker.HeaderView>
-                <picker:PickerHeaderView Text="Select Due Date" Height="40"/>
+                <picker:PickerHeaderView Text="Select due date" Height="40"/>
             </picker:SfDatePicker.HeaderView>
             <picker:SfDatePicker.FooterView>
                 <picker:PickerFooterView ShowOkButton="True" Height="40"/>
@@ -50,7 +50,7 @@
                 <picker:PickerTextStyle TextColor="White" FontAttributes="Bold"/>
             </picker:SfTimePicker.SelectedTextStyle>
             <picker:SfTimePicker.HeaderView>
-                <picker:PickerHeaderView Text="Select Time" Height="40"
+                <picker:PickerHeaderView Text="Select time" Height="40"
                                          Background="{AppThemeBinding Light=White, Dark={StaticResource BrandNavyLight}}"
                                          DividerColor="{AppThemeBinding Light=#E5E0D8, Dark=#3D2E24}">
                     <picker:PickerHeaderView.TextStyle>
@@ -75,9 +75,9 @@
         <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Padding="24,16"
               BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource BrandNavyLight}}">
             <StackLayout Spacing="2">
-                <Label Text="Schedule Planner" FontSize="11"
+                    <Label Text="Schedule planner" FontSize="{OnPlatform Default=12, WinUI=11, MacCatalyst=11}"
                        TextColor="{AppThemeBinding Light={StaticResource BrandMutedOnLight}, Dark={StaticResource BrandMutedOnDark}}"/>
-                <Label Text="Create Reminder" FontSize="18" FontAttributes="Bold"
+                    <Label Text="Create reminder" FontSize="18" FontAttributes="Bold"
                        TextColor="{AppThemeBinding Light={StaticResource BrandTextDark}, Dark={StaticResource BrandTextOnDark}}"/>
                 <Border BackgroundColor="{AppThemeBinding Light=#FEF3C7, Dark=#152840}"
                         StrokeThickness="1"
@@ -107,7 +107,7 @@
 
                 <!-- Reminder Type chips (3 × 2) -->
                 <StackLayout Spacing="8">
-                    <Label Text="Reminder Type *" FontSize="12" FontAttributes="Bold"
+                    <Label Text="Reminder type *" FontSize="12" FontAttributes="Bold"
                            TextColor="{AppThemeBinding Light={StaticResource BrandTextMid}, Dark={StaticResource BrandTextOnDarkAlt}}"/>
                     <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto"
                           ColumnSpacing="8" RowSpacing="8">
@@ -130,7 +130,7 @@
                             <StackLayout Orientation="Horizontal" Spacing="5" HorizontalOptions="Center">
                                 <Label Text="&#xE869;" FontFamily="MaterialIcons" FontSize="13" VerticalOptions="Center"
                                        TextColor="{AppThemeBinding Light=#64748B, Dark=#9DB7D2}"/>
-                                <Label Text="Oil &amp; Filter" FontSize="11" VerticalOptions="Center">
+                                <Label Text="Oil &amp; filter" FontSize="{OnPlatform Default=12, WinUI=11, MacCatalyst=11}" VerticalOptions="Center">
                                     <Label.Triggers>
                                         <DataTrigger TargetType="Label" Binding="{Binding IsOilChangeSelected}" Value="True">
                                             <Setter Property="TextColor" Value="#B45309"/>
@@ -162,7 +162,7 @@
                             <StackLayout Orientation="Horizontal" Spacing="5" HorizontalOptions="Center">
                                 <Label Text="&#xE863;" FontFamily="MaterialIcons" FontSize="13" VerticalOptions="Center"
                                        TextColor="{AppThemeBinding Light=#64748B, Dark=#9DB7D2}"/>
-                                <Label Text="Tyre &amp; Wheel" FontSize="11" VerticalOptions="Center" LineBreakMode="NoWrap">
+                                <Label Text="Tyre &amp; wheel" FontSize="{OnPlatform Default=12, WinUI=11, MacCatalyst=11}" VerticalOptions="Center" LineBreakMode="NoWrap">
                                     <Label.Triggers>
                                         <DataTrigger TargetType="Label" Binding="{Binding IsTyreRotationSelected}" Value="True">
                                             <Setter Property="TextColor" Value="#B45309"/>
@@ -194,7 +194,7 @@
                             <StackLayout Orientation="Horizontal" Spacing="5" HorizontalOptions="Center">
                                 <Label Text="&#xE8B8;" FontFamily="MaterialIcons" FontSize="13" VerticalOptions="Center"
                                        TextColor="{AppThemeBinding Light=#64748B, Dark=#9DB7D2}"/>
-                                <Label Text="General Service" FontSize="11" VerticalOptions="Center" LineBreakMode="NoWrap">
+                                <Label Text="General service" FontSize="{OnPlatform Default=12, WinUI=11, MacCatalyst=11}" VerticalOptions="Center" LineBreakMode="NoWrap">
                                     <Label.Triggers>
                                         <DataTrigger TargetType="Label" Binding="{Binding IsGeneralServiceSelected}" Value="True">
                                             <Setter Property="TextColor" Value="#B45309"/>
@@ -226,7 +226,7 @@
                             <StackLayout Orientation="Horizontal" Spacing="5" HorizontalOptions="Center">
                                 <Label Text="&#xE145;" FontFamily="MaterialIcons" FontSize="13" VerticalOptions="Center"
                                        TextColor="{AppThemeBinding Light=#64748B, Dark=#9DB7D2}"/>
-                                <Label Text="Custom" FontSize="11" VerticalOptions="Center">
+                                <Label Text="Custom" FontSize="{OnPlatform Default=12, WinUI=11, MacCatalyst=11}" VerticalOptions="Center">
                                     <Label.Triggers>
                                         <DataTrigger TargetType="Label" Binding="{Binding IsCustomSelected}" Value="True">
                                             <Setter Property="TextColor" Value="#B45309"/>
@@ -245,7 +245,7 @@
 
                 <!-- Reminder Title -->
                 <StackLayout Spacing="6">
-                    <Label Text="Reminder Title *" FontSize="12" FontAttributes="Bold"
+                    <Label Text="Reminder title *" FontSize="12" FontAttributes="Bold"
                            TextColor="{AppThemeBinding Light={StaticResource BrandTextMid}, Dark={StaticResource BrandTextOnDarkAlt}}"/>
                     <til:SfTextInputLayout ContainerType="Outlined" OutlineCornerRadius="10" EnableFloating="False"
                                            Hint="e.g. Oil Change Due — Toyota Camry"
@@ -465,7 +465,7 @@
                 Stroke="{AppThemeBinding Light={StaticResource BrandBlue}, Dark={StaticResource BrandBlueBright}}"
                 StrokeThickness="1.5" FontSize="14" CornerRadius="10" HeightRequest="48"
                 Command="{Binding CloseCommand}"/>
-            <buttons:SfButton Grid.Column="1" Text="Create Reminder"
+            <buttons:SfButton Grid.Column="1" Text="Create reminder"
                 Background="{AppThemeBinding Light={StaticResource BrandBlue}, Dark={StaticResource BrandBlueBright}}"
                 TextColor="White" FontSize="14" FontAttributes="Bold" CornerRadius="10" HeightRequest="48"
                 IsEnabled="{Binding CanSave}"

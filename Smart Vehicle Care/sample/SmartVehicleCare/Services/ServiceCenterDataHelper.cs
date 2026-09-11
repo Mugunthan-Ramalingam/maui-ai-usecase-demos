@@ -132,7 +132,7 @@ internal class ServiceCenterDataHelper
                     name = normalizedType == "Fuel Station" ? "Fuel Station" : "Service Center";
                 }
 
-                var addressParts = new List<string>
+                var addressParts = new[]
                 {
                     tags["addr:street"]?.ToString(),
                     tags["addr:city"]?.ToString(),
@@ -233,8 +233,6 @@ internal class ServiceCenterDataHelper
         }
         return new JObject { ["markercollections"] = arr };
     }
-
-    internal JObject? GetFallbackData(string query) => null;
 
     private static double HaversineKm(double lat1, double lon1, double lat2, double lon2)
     {

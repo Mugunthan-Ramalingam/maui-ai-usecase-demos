@@ -154,18 +154,8 @@ public partial class VehicleCenterPage : ContentView
         {
             displayDate = visibleDates[0];
         }
-        if (RootGrid?.BindingContext is VehicleCenterViewModel vm)
-            vm.CurrentMonthDisplayDate = displayDate;
-    }
-
-    protected override void OnPropertyChanged(string? propertyName = null)
-    {
-        base.OnPropertyChanged(propertyName);
-
-        if (propertyName == nameof(IsVisible) && IsVisible && VehicleTabView != null)
-        {
-            VehicleTabView.SelectedIndex = 0;
-        }
+        if (_vm != null)
+            _vm.CurrentMonthDisplayDate = displayDate;
     }
 
     private void OnServiceHistoryQueryRowHeight(object sender, DataGridQueryRowHeightEventArgs e)
@@ -183,8 +173,8 @@ public partial class VehicleCenterPage : ContentView
 
     private void OnEditServiceDateOkClicked(object sender, EventArgs e)
     {
-        if (EditServiceDatePicker.SelectedDate.HasValue && RootGrid.BindingContext is VehicleCenterViewModel vm)
-            vm.EditServiceDate = EditServiceDatePicker.SelectedDate.Value;
+        if (EditServiceDatePicker.SelectedDate.HasValue && _vm != null)
+            _vm.EditServiceDate = EditServiceDatePicker.SelectedDate.Value;
     }
 
     private void OnEditFuelDateFieldTapped(object sender, Microsoft.Maui.Controls.TappedEventArgs e)
@@ -192,8 +182,8 @@ public partial class VehicleCenterPage : ContentView
 
     private void OnEditFuelDateOkClicked(object sender, EventArgs e)
     {
-        if (EditFuelDatePicker.SelectedDate.HasValue && RootGrid.BindingContext is VehicleCenterViewModel vm)
-            vm.EditFuelDate = EditFuelDatePicker.SelectedDate.Value;
+        if (EditFuelDatePicker.SelectedDate.HasValue && _vm != null)
+            _vm.EditFuelDate = EditFuelDatePicker.SelectedDate.Value;
     }
 
     private void OnPreviousSchedulePeriodTapped(object sender, Microsoft.Maui.Controls.TappedEventArgs e)
@@ -204,11 +194,11 @@ public partial class VehicleCenterPage : ContentView
 
     private void NavigateSchedulePeriod(int direction)
     {
-        if (ScheduleCalendar == null || RootGrid?.BindingContext is not VehicleCenterViewModel vm)
+        if (ScheduleCalendar == null || _vm == null)
             return;
 
         var current = ScheduleCalendar.DisplayDate;
-        var newDate = vm.CurrentSchedulerView switch
+        var newDate = _vm.CurrentSchedulerView switch
         {
             SchedulerView.Day => current.AddDays(direction),
             SchedulerView.Week => current.AddDays(7 * direction),
@@ -216,6 +206,6 @@ public partial class VehicleCenterPage : ContentView
         };
 
         ScheduleCalendar.DisplayDate = newDate;
-        vm.CurrentMonthDisplayDate = newDate;
+        _vm.CurrentMonthDisplayDate = newDate;
     }
 }

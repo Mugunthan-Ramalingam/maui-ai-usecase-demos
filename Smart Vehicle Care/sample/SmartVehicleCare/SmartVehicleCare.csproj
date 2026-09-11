@@ -26,6 +26,8 @@
 		       <MauiXaml Update="MyPage.xaml" Inflator="Default" /> (reverts to defaults: Runtime for Debug, XamlC for Release)
 		       <MauiXaml Update="MyPage.xaml" Inflator="Runtime" /> (force runtime inflation) -->
 		<MauiXamlInflator>SourceGen</MauiXamlInflator>
+		<!-- Syncfusion controls can trigger WinUI COM/XAML startup failures during SourceGen type scanning. -->
+		<MauiXamlInflator Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">Runtime</MauiXamlInflator>
 
 		<!-- Display name -->
 		<ApplicationTitle>SmartVehicleCare</ApplicationTitle>
@@ -39,6 +41,8 @@
 
 		<!-- To develop, package, and publish an app to the Microsoft Store, see: https://aka.ms/MauiTemplateUnpackaged -->
 		<WindowsPackageType>None</WindowsPackageType>
+		<!-- Bundle the Windows App Runtime so startup doesn't depend on a matching system-wide install (avoids COMException on App activation). -->
+		<WindowsAppSDKSelfContained Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">true</WindowsAppSDKSelfContained>
 
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
@@ -68,13 +72,8 @@
 		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
 		<MauiAsset Include="Resources\files\**\*" LogicalName="files/%(Filename)%(Extension)" />
 	</ItemGroup>
-
 	<ItemGroup>
-	  <MauiFont Remove="C:\Users\MugunthanRamalingam\.nuget\packages\syncfusion.maui.core\34.1.33\buildTransitive\..\buildTransitive\Resources\Fonts\MauiMaterialAssets.ttf" />
-	</ItemGroup>
-
-
-	<ItemGroup>
+		
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />

@@ -5,6 +5,7 @@
              xmlns:buttons="clr-namespace:Syncfusion.Maui.Buttons;assembly=Syncfusion.Maui.Buttons"
              xmlns:combo="clr-namespace:Syncfusion.Maui.Inputs;assembly=Syncfusion.Maui.Inputs"
              xmlns:vm="clr-namespace:SmartVehicleCare.ViewModels"
+             xmlns:behaviors="clr-namespace:SmartVehicleCare.Behaviors"
              x:Class="SmartVehicleCare.Views.AddVehiclePanel"
              BackgroundColor="{AppThemeBinding Light={StaticResource SplashBgLight}, Dark={StaticResource BrandNavy}}"
              x:DataType="vm:AddVehicleViewModel">
@@ -18,7 +19,7 @@
                   Padding="24,16"
                   BackgroundColor="{AppThemeBinding Light=White, Dark={StaticResource BrandNavyLight}}">
                 <Label Grid.Column="0"
-                       Text="Add New Vehicle"
+                       Text="Add new vehicle"
                        FontSize="18"
                        FontAttributes="Bold"
                        VerticalOptions="Center"
@@ -39,7 +40,7 @@
                     <!-- Vehicle Type -->
                     <StackLayout Spacing="6">
 
-                        <Label Text="Vehicle Type"
+                        <Label Text="Vehicle type"
                                FontSize="12"
                                FontAttributes="Bold"
                                TextColor="{AppThemeBinding Light={StaticResource BrandTextMid},
@@ -169,7 +170,7 @@
 
                     <!-- Current Odometer -->
                     <StackLayout Spacing="6">
-                        <Label Text="Current Odameter (km)"
+                                <Label Text="Current odometer (km)"
                                FontSize="12"
                                FontAttributes="Bold"
                                TextColor="{AppThemeBinding Light={StaticResource BrandTextMid}, Dark={StaticResource BrandTextOnDarkAlt}}"/>
@@ -190,9 +191,12 @@
                             </til:SfTextInputLayout.HintLabelStyle>
                             <Entry Text="{Binding OdaMeterReading}"
                                    Keyboard="Numeric"
-                                   TextChanged="OnNumericTextChanged"
                                    TextColor="{AppThemeBinding Light={StaticResource BrandTextDark}, Dark={StaticResource BrandTextOnDark}}"
-                                   BackgroundColor="Transparent"/>
+                                   BackgroundColor="Transparent">
+                                <Entry.Behaviors>
+                                    <behaviors:NumericOnlyBehavior/>
+                                </Entry.Behaviors>
+                            </Entry>
                         </til:SfTextInputLayout>
                     </StackLayout>
 
@@ -228,7 +232,7 @@
                         <DataTemplate>
                             <HorizontalStackLayout Spacing="7" HorizontalOptions="Center" VerticalOptions="Center">
                                 <Label Text="+" FontSize="20" FontAttributes="Bold" TextColor="White" VerticalOptions="Center"/>
-                                <Label Text="Add Vehicle" FontSize="14" FontAttributes="Bold" TextColor="White" VerticalOptions="Center"/>
+                                <Label Text="Add vehicle" FontSize="14" FontAttributes="Bold" TextColor="White" VerticalOptions="Center"/>
                             </HorizontalStackLayout>
                         </DataTemplate>
                     </buttons:SfButton.Content>

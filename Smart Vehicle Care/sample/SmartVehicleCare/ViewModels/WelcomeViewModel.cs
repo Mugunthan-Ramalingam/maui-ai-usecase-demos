@@ -3,11 +3,14 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using SmartVehicleCare.Models;
+using SmartVehicleCare.Services;
 
 namespace SmartVehicleCare.ViewModels;
 
 public class WelcomeViewModel : INotifyPropertyChanged
 {
+    private readonly VehicleDataService _dataService;
+
     #region Wizard Navigation
 
     private int _currentStep = 0;
@@ -56,8 +59,8 @@ public class WelcomeViewModel : INotifyPropertyChanged
 
     public string NextButtonText => CurrentStep switch
     {
-        1 => "Vehicle Details →",
-        2 => "Finish Setup →",
+        1 => "Vehicle details →",
+        2 => "Finish setup →",
         _ => "Continue →"
     };
 
@@ -310,6 +313,18 @@ public class WelcomeViewModel : INotifyPropertyChanged
 
     public ICommand SelectVehicleTypeCommand { get; }
 
+    public ICommand ExploreWithSampleDataCommand { get; }
+
+    private bool _isLoadingSampleData;
+    public bool IsLoadingSampleData
+    {
+        get => _isLoadingSampleData;
+        private set => SetProperty(ref _isLoadingSampleData, value);
+    }
+
+    public event Action? SetupCompleted;
+    public event Action? ExploreWithSampleDataRequested;
+
     #endregion
 
     public void ResetWelcomeFlow()
@@ -332,8 +347,10 @@ public class WelcomeViewModel : INotifyPropertyChanged
 
     }
 
-    public WelcomeViewModel()
+    public WelcomeViewModel(VehicleDataService dataService)
     {
+        _dataService = dataService;
+
         ShowLoginCommand = new Command(() =>
         {
             IsLoginPhoneVisible = true;
@@ -405,6 +422,30 @@ public class WelcomeViewModel : INotifyPropertyChanged
             if (CurrentStep < 3)
             {
                 CurrentStep++;
+
+                if (CurrentStep == 3)
+                {
+                    AddVehicleFromWizard();
+                    SetupCompleted?.Invoke();
+                }
+            }
+        });
+
+        ExploreWithSampleDataCommand = new Command(async () =>
+        {
+            if (IsLoadingSampleData)
+                return;
+
+            IsLoadingSampleData = true;
+            try
+            {
+                await Task.Delay(150);
+                LoadSampleData();
+                ExploreWithSampleDataRequested?.Invoke();
+            }
+            finally
+            {
+                IsLoadingSampleData = false;
             }
         });
 
@@ -431,29 +472,246 @@ public class WelcomeViewModel : INotifyPropertyChanged
 
     }
 
-    #region Vehicle Type Display
+    /// <summary>Creates the vehicle entered in the wizard and makes it the active vehicle.</summary>
+    private void AddVehicleFromWizard()
+    {
+        if (!_dataService.IsDemoMode)
+            _dataService.TryLoadDemoData();
 
-    public string VehicleTypeName =>
-        SelectedVehicleTypeIndex switch
+        var vehicle = new Vehicle
         {
-            0 => "Car / Sedan",
-            1 => "Motorcycle",
-            2 => "Truck",
-            3 => "Electric Vehicle",
-            _ => "Vehicle"
+            VehicleType     = SelectedVehicleTypeIndex,
+            Make            = SelectedMake,
+            Model           = VehicleModel,
+            Variant         = Variant,
+            OdometerReading = OdaMeterReading,
+            CreatedDate     = DateTime.Now,
+            IsActive        = true
         };
 
-    public string VehicleTypeIcon =>
-        SelectedVehicleTypeIndex switch
+        _dataService.AddVehicle(vehicle);
+        _dataService.SelectedVehicle = vehicle;
+    }
+
+    /// <summary>Seeds a fully populated demo session (two vehicles with service/fuel/reminder history).</summary>
+    private void LoadSampleData()
+    {
+        _dataService.TryLoadDemoData();
+
+        var car = new Vehicle
         {
-            0 => "\uE531",
-            1 => "\uE91B",
-            2 => "\uE558",
-            3 => "\uEBD1",
-            _ => "\uE531"
+            Id = 1,
+            VehicleType = 0,
+            Make = "Hyundai",
+            Model = "i20",
+            Variant = "Sportz",
+            OdometerReading = "45230",
+            ServiceInterval = "Every 10,000 km",
+            CreatedDate = DateTime.Now,
+            IsActive = true
         };
 
-    #endregion
+        var bike = new Vehicle
+        {
+            Id = 2,
+            VehicleType = 1,
+            Make = "Honda",
+            Model = "Activa",
+            Variant = "125",
+            OdometerReading = "18950",
+            ServiceInterval = "Every 5,000 km",
+            CreatedDate = DateTime.Now,
+            IsActive = true
+        };
+
+        _dataService.AddVehicle(car);
+        _dataService.AddVehicle(bike);
+        _dataService.SelectedVehicle = car;
+
+        _dataService.AddServiceRecord(car.Id, new ServiceRecord
+        {
+            ServiceType = "Oil & Filter Change",
+            ServiceDate = DateTime.Today.AddDays(-24),
+            Workshop = "Hyundai Authorized Service",
+            Amount = "₹3200",
+            Mileage = "45200 km",
+            Status = "Completed",
+            Notes = "Routine service with filter change."
+        });
+
+        _dataService.AddServiceRecord(car.Id, new ServiceRecord
+        {
+            ServiceType = "Brake Inspection",
+            ServiceDate = DateTime.Today.AddDays(-61),
+            Workshop = "City Auto Works",
+            Amount = "₹1850",
+            Mileage = "44600 km",
+            Status = "Completed",
+            Notes = "Brake pads checked; wear within limit."
+        });
+
+        _dataService.AddServiceRecord(car.Id, new ServiceRecord
+        {
+            ServiceType = "Tyre Rotation",
+            ServiceDate = DateTime.Today.AddDays(-97),
+            Workshop = "WheelCare Center",
+            Amount = "₹1600",
+            Mileage = "44120 km",
+            Status = "Completed",
+            Notes = "Rotated tyres and checked alignment."
+        });
+
+        _dataService.AddServiceRecord(car.Id, new ServiceRecord
+        {
+            ServiceType = "Battery Health Check",
+            ServiceDate = DateTime.Today.AddDays(-150),
+            Workshop = "AutoCare Plus",
+            Amount = "₹1300",
+            Mileage = "43680 km",
+            Status = "Completed",
+            Notes = "Battery voltage checked and terminals cleaned."
+        });
+
+        _dataService.AddServiceRecord(car.Id, new ServiceRecord
+        {
+            ServiceType = "Cabin Filter Replacement",
+            ServiceDate = DateTime.Today.AddDays(-260),
+            Workshop = "City Auto Works",
+            Amount = "₹950",
+            Mileage = "43210 km",
+            Status = "Completed",
+            Notes = "Air filter replaced for cabin airflow improvement."
+        });
+
+        _dataService.AddFuelEntry(car.Id, new FuelEntry
+        {
+            FuelDate = DateTime.Today.AddDays(-7),
+            FuelType = "Petrol",
+            Station = "Shell Rajaji Nagar",
+            LitresFilled = 30,
+            CostPerLitre = 102.40,
+            OdometerReading = 45230,
+            IsFullTank = true
+        });
+
+        _dataService.AddFuelEntry(car.Id, new FuelEntry
+        {
+            FuelDate = DateTime.Today.AddDays(-19),
+            FuelType = "Petrol",
+            Station = "HP Fuel Point",
+            LitresFilled = 28,
+            CostPerLitre = 101.80,
+            OdometerReading = 44910,
+            IsFullTank = true
+        });
+
+        _dataService.AddFuelEntry(car.Id, new FuelEntry
+        {
+            FuelDate = DateTime.Today.AddDays(-41),
+            FuelType = "Petrol",
+            Station = "Reliance Fuel",
+            LitresFilled = 32,
+            CostPerLitre = 100.90,
+            OdometerReading = 44540,
+            IsFullTank = true
+        });
+
+        _dataService.AddFuelEntry(car.Id, new FuelEntry
+        {
+            FuelDate = DateTime.Today.AddDays(-68),
+            FuelType = "Petrol",
+            Station = "Indian Oil - Purasawalkam",
+            LitresFilled = 29,
+            CostPerLitre = 103.60,
+            OdometerReading = 44210,
+            IsFullTank = true
+        });
+
+        _dataService.AddFuelEntry(car.Id, new FuelEntry
+        {
+            FuelDate = DateTime.Today.AddDays(-112),
+            FuelType = "Petrol",
+            Station = "Bharat Petroleum - Koyambedu",
+            LitresFilled = 31,
+            CostPerLitre = 102.90,
+            OdometerReading = 43875,
+            IsFullTank = true
+        });
+
+        _dataService.AddReminder(car.Id, new ScheduleReminder
+        {
+            Title = "Oil Change",
+            ReminderType = "Service",
+            DueDate = DateTime.Today.AddDays(15),
+            Priority = "High"
+        });
+
+        _dataService.AddReminder(car.Id, new ScheduleReminder
+        {
+            Title = "Tyre Pressure Check",
+            ReminderType = "Inspection",
+            DueDate = DateTime.Today.AddDays(20),
+            Priority = "High"
+        });
+
+        _dataService.AddReminder(car.Id, new ScheduleReminder
+        {
+            Title = "Brake Check",
+            ReminderType = "Inspection",
+            DueDate = DateTime.Today.AddDays(32),
+            Priority = "Medium"
+        });
+
+        _dataService.AddReminder(car.Id, new ScheduleReminder
+        {
+            Title = "Wheel Alignment Check",
+            ReminderType = "Inspection",
+            DueDate = DateTime.Today.AddDays(18),
+            Priority = "High"
+        });
+
+        _dataService.AddReminder(car.Id, new ScheduleReminder
+        {
+            Title = "General Service Due",
+            ReminderType = "Service",
+            DueDate = DateTime.Today.AddDays(45),
+            Priority = "Medium"
+        });
+
+        _dataService.AddServiceRecord(bike.Id, new ServiceRecord
+        {
+            ServiceType = "General Service",
+            ServiceDate = DateTime.Today.AddDays(-95),
+            Workshop = "Two Wheeler Care",
+            Amount = "₹1800",
+            Mileage = "18650 km",
+            Status = "Completed",
+            Notes = "Chain, spark plug, and engine check completed."
+        });
+
+        _dataService.AddFuelEntry(bike.Id, new FuelEntry
+        {
+            FuelDate = DateTime.Today.AddDays(-5),
+            FuelType = "Petrol",
+            Station = "Bharath Fuel Hub",
+            LitresFilled = 6.2,
+            CostPerLitre = 106.20,
+            OdometerReading = 18950,
+            IsFullTank = true
+        });
+
+        _dataService.AddReminder(bike.Id, new ScheduleReminder
+        {
+            Title = "Service Reminder",
+            ReminderType = "Service",
+            DueDate = DateTime.Today.AddDays(24),
+            Priority = "Medium"
+        });
+
+        // Publish one final state after the complete sample dataset is loaded.
+        _dataService.SelectedVehicle = car;
+        _dataService.NotifyDataReloaded();
+    }
 
     #region INotifyPropertyChanged
 

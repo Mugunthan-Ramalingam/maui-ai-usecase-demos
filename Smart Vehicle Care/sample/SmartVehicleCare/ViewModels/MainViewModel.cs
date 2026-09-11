@@ -1,13 +1,10 @@
 using Microsoft.Maui.Graphics;
 using SmartVehicleCare.Models;
 using SmartVehicleCare.Services;
-using SmartVehicleCare.ViewModels;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
-using SmartVehicleCare.Models;
-using SmartVehicleCare.Services;
 
 namespace SmartVehicleCare.ViewModels;
 
@@ -17,6 +14,11 @@ public class MainViewModel : INotifyPropertyChanged
 {
     private NavSection _currentSection = NavSection.Dashboard;
     private bool _hasSkippedApiKeyThisSession;
+
+    public VehicleCenterViewModel VehicleCenterViewModel { get; }
+    public AIAssistViewModel AIAssistViewModel { get; }
+    public SettingsViewModel SettingsViewModel { get; }
+    public AddVehicleViewModel AddVehicleViewModel { get; }
 
     // ── API Key Gate ──────────────────────────────────────────────────────────
 
@@ -36,6 +38,17 @@ public class MainViewModel : INotifyPropertyChanged
 
     public ICommand PromptSaveApiKeyCommand { get; }
     public ICommand PromptSkipApiKeyCommand { get; }
+    public ICommand ShowDashboardCommand { get; }
+    public ICommand ShowVehicleCenterCommand { get; }
+    public ICommand ShowAIAssistCommand { get; }
+    public ICommand ShowServiceCenterCommand { get; }
+    public ICommand ShowSettingsCommand { get; }
+    public ICommand CloseAddVehicleCommand { get; }
+
+    public void ResetToDashboard()
+    {
+        CurrentSection = NavSection.Dashboard;
+    }
 
     internal async Task CheckApiKeyPromptAsync()
     {
@@ -46,8 +59,24 @@ public class MainViewModel : INotifyPropertyChanged
             IsApiKeyPromptVisible = true;
     }
 
-    public MainViewModel()
+    public MainViewModel(
+        VehicleCenterViewModel vehicleCenterViewModel,
+        AIAssistViewModel aiAssistViewModel,
+        SettingsViewModel settingsViewModel,
+        AddVehicleViewModel addVehicleViewModel)
     {
+        VehicleCenterViewModel = vehicleCenterViewModel;
+        AIAssistViewModel = aiAssistViewModel;
+        SettingsViewModel = settingsViewModel;
+        AddVehicleViewModel = addVehicleViewModel;
+
+        ShowDashboardCommand = new Command(() => CurrentSection = NavSection.Dashboard);
+        ShowVehicleCenterCommand = new Command(() => CurrentSection = NavSection.VehicleCenter);
+        ShowAIAssistCommand = new Command(() => CurrentSection = NavSection.AIAssist);
+        ShowServiceCenterCommand = new Command(() => CurrentSection = NavSection.ServiceCenter);
+        ShowSettingsCommand = new Command(() => CurrentSection = NavSection.Settings);
+        CloseAddVehicleCommand = new Command(HandleCloseAddVehicle);
+
         PromptSaveApiKeyCommand = new Command(async () =>
         {
             if (!string.IsNullOrWhiteSpace(_promptApiKeyEntry))
@@ -93,7 +122,7 @@ public class MainViewModel : INotifyPropertyChanged
                 _ = RefreshAiHealthSummaryAsync(vid);
             });
 
-        // ✅ Subscribe to demo mode changes
+        // Keep the dashboard synchronized with the in-memory demo session.
         VehicleDataService.Instance.ModeChanged += OnDataModeChanged;
         VehicleDataService.Instance.DataReloaded += SynchronizeAfterDataReload;
 
@@ -101,7 +130,7 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Called when data mode changes (Demo <-> Real)
+    /// Called when the in-memory demo session is reset.
     /// </summary>
     private void OnDataModeChanged(VehicleDataService.DataMode newMode)
     {
@@ -149,7 +178,7 @@ public class MainViewModel : INotifyPropertyChanged
     /// <summary>
     /// Text for demo badge
     /// </summary>
-    public string DemoBadgeText => IsDemoMode ? "DEMO MODE" : "";
+    public string DemoBadgeText => IsDemoMode ? "Demo mode" : "";
 
     private void ShowPopupTable(string title, IEnumerable<DashboardTableRow> rows)
     {
@@ -176,7 +205,6 @@ public class MainViewModel : INotifyPropertyChanged
         };
 
         VehicleDataService.Instance.AddVehicle(newVehicle);
-        Vehicles.Add(newVehicle);
 
         // Set as selected vehicle (will show in dashboard)
         SelectedVehicle = newVehicle;
@@ -232,6 +260,14 @@ public class MainViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(IsMobileAddVehicleButtonVisible));
                 OnPropertyChanged(nameof(IsDesktopHeaderVisible));
                 OnPropertyChanged(nameof(IsMobileHeaderVisible));
+
+                // Start each visit to AI Assist with a clean conversation.
+                if (value == NavSection.AIAssist)
+                    AIAssistViewModel.ClearChat();
+
+                // Always land back on the Maintenance tab when re-entering Vehicle Center.
+                if (value == NavSection.VehicleCenter)
+                    VehicleCenterViewModel.SelectedTabIndex = 0;
             }
         }
     }
@@ -251,13 +287,25 @@ public class MainViewModel : INotifyPropertyChanged
         (DeviceInfo.Platform == DevicePlatform.WinUI || DeviceInfo.Platform == DevicePlatform.MacCatalyst);
     public bool IsMobileHeaderVisible =>
         (DeviceInfo.Platform == DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS);
-    public bool IsMobileAddVehicleButtonVisible => IsMobileHeaderVisible && IsDashboardVisible;
+    public bool IsMobileAddVehicleButtonVisible =>
+        IsDashboardVisible && (IsMobileHeaderVisible || IsCompactDesktop);
+
+    private bool _isCompactDesktop;
+    public bool IsCompactDesktop
+    {
+        get => _isCompactDesktop;
+        set
+        {
+            if (SetProperty(ref _isCompactDesktop, value))
+                OnPropertyChanged(nameof(IsMobileAddVehicleButtonVisible));
+        }
+    }
 
     // ── Vehicle selector ──────────────────────────────────────────────────────
 
     public ObservableCollection<Vehicle> Vehicles { get; } = new();
 
-    private Vehicle _selectedVehicle;
+    private Vehicle? _selectedVehicle;
     public Vehicle SelectedVehicle
     {
         get => _selectedVehicle ?? new Vehicle
@@ -269,6 +317,12 @@ public class MainViewModel : INotifyPropertyChanged
         };
         set
         {
+            // The header combo box is TwoWay-bound; ignore anything that isn't a real vehicle
+            // from the list (a stale/placeholder item briefly pushed back during a refresh would
+            // otherwise null out VehicleDataService.SelectedVehicle and wipe every section's data).
+            if (value != null && Vehicles.Count > 0 && !Vehicles.Any(v => v.Id == value.Id))
+                return;
+
             if (SetProperty(ref _selectedVehicle, value))
             {
                 VehicleDataService.Instance.SelectedVehicle = value;
@@ -287,16 +341,16 @@ public class MainViewModel : INotifyPropertyChanged
 
     // ── Header & identity ─────────────────────────────────────────────────────
 
-    public string UserName => Preferences.Default.Get("UserDisplayName", "Vehicle Owner");
+    public string UserName => "Vehicle Owner";
     public string UserInitial => UserName.Length > 0 ? UserName[0].ToString().ToUpper() : "V";
     public string PageTitle => CurrentSection switch
     {
         NavSection.Dashboard => "Dashboard",
-        NavSection.VehicleCenter => "Vehicle Center",
+        NavSection.VehicleCenter => "Vehicle center",
         NavSection.AIAssist => "AI Assist",
-        NavSection.ServiceCenter => "Service Centers",
+        NavSection.ServiceCenter => "Service centers",
         NavSection.Settings => "Settings",
-        _ => "Vehicle Command Center"
+        _ => "Vehicle command center"
     };
     public bool IsAddVehicleButtonVisible => CurrentSection == NavSection.Dashboard;
     public bool HasVehicles => Vehicles.Count > 0;
@@ -322,31 +376,30 @@ public class MainViewModel : INotifyPropertyChanged
             var latest = records.OrderByDescending(r => r.ServiceDate).First();
             var diff = DateTime.Today - latest.ServiceDate;
             if (diff.TotalDays < 1) return "Serviced today";
-            if (diff.TotalDays < 7) return $"Last service: {(int)diff.TotalDays} days ago";
-            if (diff.TotalDays < 31) return $"Last service: {(int)(diff.TotalDays / 7)} weeks ago";
-            return $"Last service: {(int)(diff.TotalDays / 30)} months ago";
+            var daysSinceService = (int)diff.TotalDays;
+            return $"Last service: {daysSinceService} day{(daysSinceService == 1 ? string.Empty : "s")} ago";
         }
     }
     public string ConditionText => HasVehicles ? _healthLabel switch
     {
-        "EXCELLENT" => "EXCELLENT",
-        "GOOD" => "GOOD",
-        _ => "NEEDS ATTENTION"
-    } : "NO DATA";
+        "EXCELLENT" => "Excellent",
+        "GOOD" => "Good",
+        _ => "Needs attention"
+    } : "No data";
 
     public Color ConditionBackgroundColor => ConditionText switch
     {
-        "EXCELLENT" => Color.FromArgb("#DCFCE7"),
-        "GOOD" => Color.FromArgb("#DCFCE7"),
-        "NO DATA" => Color.FromArgb("#F1F5F9"),
+        "Excellent" => Color.FromArgb("#DCFCE7"),
+        "Good" => Color.FromArgb("#DCFCE7"),
+        "No data" => Color.FromArgb("#F1F5F9"),
         _ => Color.FromArgb("#FEF3C7")
     };
 
     public Color ConditionTextColor => ConditionText switch
     {
-        "EXCELLENT" => Color.FromArgb("#15803D"),
-        "GOOD" => Color.FromArgb("#16A34A"),
-        "NO DATA" => Color.FromArgb("#64748B"),
+        "Excellent" => Color.FromArgb("#15803D"),
+        "Good" => Color.FromArgb("#16A34A"),
+        "No data" => Color.FromArgb("#64748B"),
         _ => Color.FromArgb("#B45309")
     };
 
@@ -431,8 +484,8 @@ public class MainViewModel : INotifyPropertyChanged
     private double _allTimeTotal => _allTimeFuel + _allTimeService;
     private double _avgMonthly => _trackedMonths > 0 ? _allTimeTotal / _trackedMonths : 0;
 
-    public string CurrentMonthName => GetSelectedExpenseDate().ToString("MMMM yyyy").ToUpper();
-    public string ExpenseBreakdownTitle => $"{CurrentMonthName} BREAKDOWN";
+    public string CurrentMonthName => GetSelectedExpenseDate().ToString("MMMM yyyy");
+    public string ExpenseBreakdownTitle => $"{CurrentMonthName} breakdown";
     public string CurrentMonthTotal => _currentTotal > 0 ? $"₹{_currentTotal:N0}" : "₹0";
     public string CurrentMonthFuelLabel => _currentMonthFuel > 0 ? $"₹{_currentMonthFuel:N0}" : "₹0";
     public string CurrentMonthServiceLabel => _currentMonthService > 0 ? $"₹{_currentMonthService:N0}" : "₹0";
@@ -464,20 +517,6 @@ public class MainViewModel : INotifyPropertyChanged
 
     private void RebuildSelectedMonthExpense() => RebuildDashboard();
 
-    // Legacy aliases so other bindings don't break
-    public string ThisMonthExpense => CurrentMonthTotal;
-    public string ExpenseTrend => AvgMonthlyLabel;
-    public string MonthlyTotal => CurrentMonthTotal;
-    public string MonthlyTrend => AvgMonthlyLabel;
-    public double FuelProgress => CurrentFuelProgress;
-    public double ServiceProgress => CurrentServiceProgress;
-    public string FuelPercentLabel => CurrentFuelPercent;
-    public string ServicePercentLabel => CurrentServicePercent;
-    public string FuelAmountLabel => CurrentMonthFuelLabel;
-    public string ServiceAmountLabel => CurrentMonthServiceLabel;
-    // Legacy aliases kept for other bindings
-    public string TotalSpendLabel => CurrentMonthTotal;
-
     // ── Analytics chart data ──────────────────────────────────────────────────
 
     public ObservableCollection<ExpenseDataPoint> FuelExpenses { get; } = new();
@@ -489,6 +528,7 @@ public class MainViewModel : INotifyPropertyChanged
     public bool HasAiInsights => AiInsights.Count > 0;
 
     private bool _isAiInsightsLoading;
+    private int _aiInsightsRefreshVersion;
     public bool IsAiInsightsLoading
     {
         get => _isAiInsightsLoading;
@@ -565,7 +605,6 @@ public class MainViewModel : INotifyPropertyChanged
         set => SetProperty(ref _isAddVehicleBottomSheetVisible, value);
     }
 
-    public AddVehicleViewModel AddVehicleViewModel { get; } = new();
 
     public ICommand ShowAddVehicleCommand { get; }
     // ── Init ──────────────────────────────────────────────────────────────────
@@ -658,15 +697,9 @@ public class MainViewModel : INotifyPropertyChanged
         {
             if (_selectedVehicle?.Id != vid) return;
 
-            var updatedVehicle = Vehicles.FirstOrDefault(v => v.Id == vid);
-            if (updatedVehicle != null)
-            {
-                _selectedVehicle = null;
-                OnPropertyChanged(nameof(SelectedVehicle));
-                _selectedVehicle = updatedVehicle;
-                OnPropertyChanged(nameof(SelectedVehicle));
-            }
-
+            // RebuildDashboard() already re-raises SelectedVehicle/-Label for the combo box;
+            // don't null it out here — a transient null briefly desyncs the TwoWay-bound
+            // SfComboBox.SelectedItem, which can bounce back and clear SelectedVehicle for real.
             RebuildDashboard();
         };
 
@@ -740,15 +773,6 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(CostPerKmLabel));
         OnPropertyChanged(nameof(VsAvgLabel));
         OnPropertyChanged(nameof(VsAvgColor));
-        OnPropertyChanged(nameof(TotalSpendLabel));
-        OnPropertyChanged(nameof(ThisMonthExpense));
-        OnPropertyChanged(nameof(ExpenseTrend));
-        OnPropertyChanged(nameof(FuelProgress));
-        OnPropertyChanged(nameof(ServiceProgress));
-        OnPropertyChanged(nameof(FuelPercentLabel));
-        OnPropertyChanged(nameof(ServicePercentLabel));
-        OnPropertyChanged(nameof(FuelAmountLabel));
-        OnPropertyChanged(nameof(ServiceAmountLabel));
         OnPropertyChanged(nameof(LastServiceText));
 
         // Refresh vehicle identity display properties in case vehicle details were edited externally
@@ -770,6 +794,7 @@ public class MainViewModel : INotifyPropertyChanged
 
     private async Task RefreshAiInsightsAsync(int vehicleId)
     {
+        var refreshVersion = Interlocked.Increment(ref _aiInsightsRefreshVersion);
         AiInsights.Clear();
         IsAiInsightsLoading = true;
         OnPropertyChanged(nameof(HasAiInsights));
@@ -785,6 +810,9 @@ public class MainViewModel : INotifyPropertyChanged
             .OrderByDescending(f => f.FuelDate)
             .ToList();
         var reminders = VehicleDataService.Instance.GetReminders(vehicleId).ToList();
+
+        if (refreshVersion != _aiInsightsRefreshVersion)
+            return;
 
         if (!services.Any() && !fuels.Any() && !reminders.Any())
         {
@@ -859,9 +887,12 @@ public class MainViewModel : INotifyPropertyChanged
             "You are a concise vehicle maintenance advisor. Generate exactly 3 insights using the exact format specified. Use only the supplied vehicle data.");
 
         var parsed = ParseAiInsightItems(aiResponse);
+        if (refreshVersion != _aiInsightsRefreshVersion)
+            return;
+
         if (parsed.Count > 0)
         {
-            foreach (var item in parsed)
+            foreach (var item in parsed.Take(3))
                 AiInsights.Add(item);
         }
         else
@@ -910,6 +941,9 @@ public class MainViewModel : INotifyPropertyChanged
                 ActionBgColor   = actionBg,
                 ActionTextColor = actionText
             });
+
+            if (result.Count == 3)
+                break;
         }
         return result;
     }
@@ -919,13 +953,13 @@ public class MainViewModel : INotifyPropertyChanged
         if (!services.Any() && !fuels.Any() && !reminders.Any()) return;
 
         if (services.Any()) AiInsights.Add(BuildServiceInsight(services));
-        if (fuels.Any())    AiInsights.Add(BuildFuelInsight(fuels));
+        if (fuels.Any() && AiInsights.Count < 3) AiInsights.Add(BuildFuelInsight(fuels));
 
         var typeInsight = BuildMaintenanceTypeInsight(services);
-        if (typeInsight != null) AiInsights.Add(typeInsight);
+        if (typeInsight != null && AiInsights.Count < 3) AiInsights.Add(typeInsight);
 
         var reminderInsight = BuildReminderInsight(reminders);
-        if (reminderInsight != null) AiInsights.Add(reminderInsight);
+        if (reminderInsight != null && AiInsights.Count < 3) AiInsights.Add(reminderInsight);
     }
 
     private AiInsightItem? BuildMaintenanceTypeInsight(List<ServiceRecord> services)
@@ -1170,7 +1204,7 @@ public class MainViewModel : INotifyPropertyChanged
         foreach (var row in activityRows.OrderByDescending(r => DateTime.Parse(r.Date == "—" ? DateTime.Today.ToString("dd MMM yyyy") : r.Date)).ToList())
             AllRecentActivityRows.Add(row);
 
-        foreach (var row in AllRecentActivityRows.Take(3))
+        foreach (var row in AllRecentActivityRows.Take(6))
             RecentActivityTableRows.Add(row);
 
         foreach (var fuel in VehicleDataService.Instance.GetFuelEntries(vehicleId).OrderByDescending(f => f.FuelDate))
@@ -1460,7 +1494,7 @@ public class MainViewModel : INotifyPropertyChanged
         if (!hasAnyData)
         {
             _isAiHealthLoading = false;
-            _aiHealthSummary = "No data available yet. Add a service record or fuel log to generate AI health insights.";
+            _aiHealthSummary = "Add a service record or fuel log to generate health insights.";
             OnPropertyChanged(nameof(AiHealthSummary));
             OnPropertyChanged(nameof(IsAiHealthLoading));
             return;

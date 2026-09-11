@@ -11,7 +11,7 @@ namespace SmartVehicleCare
     {
         public static MauiApp CreateMauiApp()
         {
-            SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1JAaF5cX2pCd0x1WmFZfVhgc19EZVZSQGYuP1ZhSXxVdk1jXX9ZcnFWQ2BdU0N9XEY=");
+            SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1JAaF1cXmhIfkx1WmFZfVhgdVRMZVpbQHBPMyBoS35RcEVqWH9eeHVQR2VeVExzVEFZ");
 
             var builder = MauiApp.CreateBuilder();
             builder
@@ -25,18 +25,22 @@ namespace SmartVehicleCare
                     // TODO: Add Inter-Regular.ttf and Inter-SemiBold.ttf to Resources/Fonts for PDS typography compliance
                 });
 
-            // Register services as singletons so they can be injected in future
+            // Register the in-memory demo store as the single source of truth.
             builder.Services.AddSingleton<VehicleDataService>(_ => VehicleDataService.Instance);
 
-            // Register pages and ViewModels
+            builder.Services.AddSingleton<WelcomeViewModel>();
+            builder.Services.AddSingleton<AddVehicleViewModel>();
+            builder.Services.AddSingleton<AddServiceViewModel>();
+            builder.Services.AddSingleton<AddScheduleViewModel>();
+            builder.Services.AddSingleton<AddFuelViewModel>();
+            builder.Services.AddSingleton<MainViewModel>();
+            builder.Services.AddSingleton<VehicleCenterViewModel>();
+            builder.Services.AddSingleton<AIAssistViewModel>();
+            builder.Services.AddSingleton<SettingsViewModel>();
             builder.Services.AddSingleton<SplashPage>();
             builder.Services.AddSingleton<WelcomePage>();
-            builder.Services.AddSingleton<WelcomeViewModel>();
-            builder.Services.AddTransient<MainPage>();
-            builder.Services.AddTransient<MainViewModel>();
-            builder.Services.AddTransient<AIAssistPage>();
-            builder.Services.AddTransient<AIAssistViewModel>();
-            builder.Services.AddTransient<SettingsViewModel>();
+            builder.Services.AddSingleton<MainPage>();
+            builder.Services.AddSingleton<AppShell>();
 
 #if DEBUG
     		builder.Logging.AddDebug();
