@@ -60,7 +60,7 @@ public partial class StockChartViewModel : ObservableObject
     public partial int SelectedViewIndex { get; set; }
 
     [ObservableProperty]
-    public partial string SelectedTimeRange { get; set; } = "1Y";
+    public partial string SelectedTimeRange { get; set; } = "1M";
 
     [ObservableProperty]
     public partial DateTime CustomStartDate { get; set; }
@@ -85,7 +85,7 @@ public partial class StockChartViewModel : ObservableObject
     [ObservableProperty]
     public partial string MobilePickerKind { get; set; } = string.Empty;
 
-    private string _lastStandardTimeRange = "1Y";
+    private string _lastStandardTimeRange = "1M";
 
     [ObservableProperty]
     public partial string SelectedChartType { get; set; } = "Candle";
@@ -104,7 +104,7 @@ public partial class StockChartViewModel : ObservableObject
     public partial bool IsAxisInverted { get; set; }
 
     [ObservableProperty]
-    public partial bool IsAxisOpposed { get; set; }
+    public partial bool IsAxisOpposed { get; set; } = true;
 
     [ObservableProperty]
     public partial bool IsRangeControlEnabled { get; set; }

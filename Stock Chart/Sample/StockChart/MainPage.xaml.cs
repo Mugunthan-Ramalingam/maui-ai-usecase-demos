@@ -23,6 +23,12 @@ namespace StockChart
         private bool _isSynchronizingChartRange;
         private bool _customDateRangePopupOpen;
         private bool _windowActivated;
+        private bool _mobileStockDrawerExpanded;
+        private bool _mobileStockDrawerPanMoved;
+        private double _mobileStockDrawerPanStartHeight;
+
+        private const double MobileStockDrawerPreviewHeight = 52;
+        private const double MobileStockDrawerGap = 16;
 
         private SfPopup SettingsPopup => (SfPopup)Resources["SettingsPopup"];
         private SfPopup DisclaimerPopup => (SfPopup)Resources["DisclaimerPopup"];
@@ -94,7 +100,19 @@ namespace StockChart
                 }
 
                 ResetChartZoomControl.IsVisible = false;
-                ApplyChartRange(viewModel);
+                ScheduleChartRangeApplication(viewModel);
+            });
+        }
+
+        private void ScheduleChartRangeApplication(StockChartViewModel viewModel)
+        {
+            ApplyChartRange(viewModel);
+            Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(50), () =>
+            {
+                if (_isPageActive && Handler is not null && ReferenceEquals(BindingContext, viewModel))
+                {
+                    ApplyChartRange(viewModel);
+                }
             });
         }
 
@@ -175,9 +193,10 @@ namespace StockChart
                 {
                     if (BindingContext is StockChartViewModel { LastSelectedStock: not null } && !_isChartFullscreen)
                     {
-                        StockPanel.IsVisible = false;
+                        _mobileStockDrawerExpanded = false;
+                        StockPanel.IsVisible = true;
                         ChartPanel.IsVisible = true;
-                        OpenStocksButton.Text = "Stocks & Watchlists";
+                        UpdateMobileStockDrawerLayout();
                     }
                 });
             }
@@ -269,7 +288,7 @@ namespace StockChart
                 return;
             }
 
-            popup.PopupStyle.CornerRadius = 6;
+            ConfigureDesktopPopupStyle(popup);
             popup.PopupStyle.PopupBackground = Application.Current?.RequestedTheme == AppTheme.Dark
                 ? Color.FromArgb("#1E293B")
                 : Colors.White;
@@ -278,6 +297,12 @@ namespace StockChart
                 : Color.FromArgb("#E2E8F0");
             popup.PopupStyle.StrokeThickness = 1;
             SafePopupOperation(() => popup.Show());
+        }
+
+        private static void ConfigureDesktopPopupStyle(SfPopup popup)
+        {
+            popup.PopupStyle.CornerRadius = 20;
+            popup.PopupStyle.StrokeThickness = 1;
         }
 
         private void OnPageLoaded(object? sender, EventArgs e)
@@ -302,7 +327,17 @@ namespace StockChart
                 DisclaimerPopup.WidthRequest = Width > 0 && Width < MobileBreakpoint
                     ? Width
                     : 680;
-                DisclaimerPopup.HeightRequest = Width > 0 && Width < MobileBreakpoint ? 315 : 250;
+                if (Width > 0 && Width < MobileBreakpoint)
+                {
+                    var display = DeviceDisplay.MainDisplayInfo;
+                    var screenHeight = display.Height / display.Density;
+                    DisclaimerPopup.HeightRequest = Math.Min(620, Math.Max(460, screenHeight * 0.9));
+                }
+                else
+                {
+                    DisclaimerPopup.HeightRequest = 200;
+                    ConfigureDesktopPopupStyle(DisclaimerPopup);
+                }
                 Dispatcher.Dispatch(() =>
                 {
                     if (CanUsePopup && !_disclaimerShown)
@@ -318,6 +353,18 @@ namespace StockChart
         {
             if (CanUsePopup && sender is View informationButton && informationButton.Handler is not null)
             {
+                if (Width >= MobileBreakpoint)
+                {
+                    InformationPopup.WidthRequest = 350;
+                    InformationPopup.HeightRequest = 220;
+                    ConfigureDesktopPopupStyle(InformationPopup);
+                }
+                else
+                {
+                    InformationPopup.WidthRequest = Math.Max(280, Width - 32);
+                    InformationPopup.HeightRequest = 220;
+                    InformationPopup.PopupStyle.CornerRadius = 12;
+                }
                 SafePopupOperation(() => InformationPopup.ShowRelativeToView(informationButton, PopupRelativePosition.AlignBottomRight, 0, -20));
             }
         }
@@ -384,6 +431,7 @@ namespace StockChart
             {
                 SettingsPopup.WidthRequest = 625;
                 SettingsPopup.HeightRequest = 570;
+                ConfigureDesktopPopupStyle(SettingsPopup);
                 SafePopupOperation(() => SettingsPopup.Show());
             }
         }
@@ -434,6 +482,16 @@ namespace StockChart
             }
 
             ConfigureSheet(WatchlistMenuPopup, 240, viewModel.CanDeleteSelectedWatchlist ? 105 : 52);
+            if (Width >= MobileBreakpoint)
+            {
+                ConfigureDesktopPopupStyle(WatchlistMenuPopup);
+            }
+            else
+            {
+                WatchlistMenuPopup.PopupStyle.CornerRadius = 0;
+            }
+            WatchlistMenuPopup.PopupStyle.Stroke = Colors.Transparent;
+            WatchlistMenuPopup.PopupStyle.StrokeThickness = 0;
             Dispatcher.Dispatch(() =>
             {
                 if (CanUsePopup && WatchlistOverflowButton.Handler is not null)
@@ -456,7 +514,7 @@ namespace StockChart
                     }
 
                     viewModel.PrepareEditWatchlistCommand.Execute(null);
-                    ConfigureSheet(EditWatchlistPopup, 620, 460);
+                    ConfigureSheet(EditWatchlistPopup, 620, Width > 0 && Width < MobileBreakpoint ? 440 : 460);
                     ShowWorkflowPopup(EditWatchlistPopup);
                 });
             }
@@ -474,7 +532,7 @@ namespace StockChart
                         return;
                     }
 
-                    ConfigureSheet(DeleteWatchlistPopup, 530, 200);
+                    ConfigureSheet(DeleteWatchlistPopup, 530, Width > 0 && Width < MobileBreakpoint ? 215 : 200);
                     ShowWorkflowPopup(DeleteWatchlistPopup);
                 });
             }
@@ -795,12 +853,102 @@ namespace StockChart
             }
         }
 
-        private void OnOpenStocksClicked(object? sender, EventArgs e)
+        private void OnMobileStockDrawerTapped(object? sender, TappedEventArgs e)
         {
-            var showStocks = !StockPanel.IsVisible;
-            StockPanel.IsVisible = showStocks;
-            ChartPanel.IsVisible = !showStocks;
-            OpenStocksButton.Text = showStocks ? "Back to chart" : "Stocks & Watchlists";
+            if (_mobileStockDrawerPanMoved)
+            {
+                return;
+            }
+
+            ToggleMobileStockDrawer();
+        }
+
+        private void OnMobileStockDrawerPanUpdated(object? sender, PanUpdatedEventArgs e)
+        {
+            if (BindingContext is not StockChartViewModel { LastSelectedStock: not null } || _isChartFullscreen)
+            {
+                return;
+            }
+
+            switch (e.StatusType)
+            {
+                case GestureStatus.Started:
+                    _mobileStockDrawerPanMoved = false;
+                    StockPanel.IsVisible = true;
+                    _mobileStockDrawerPanStartHeight = StockPanel.Height;
+                    break;
+                case GestureStatus.Running:
+                    _mobileStockDrawerPanMoved = Math.Abs(e.TotalY) > 4;
+                    var maxHeight = Math.Max(MobileStockDrawerPreviewHeight, WorkspaceGrid.Height - MobileStockDrawerGap);
+                    StockPanel.HeightRequest = Math.Clamp(
+                        _mobileStockDrawerPanStartHeight - e.TotalY,
+                        MobileStockDrawerPreviewHeight,
+                        maxHeight);
+                    break;
+                case GestureStatus.Completed:
+                case GestureStatus.Canceled:
+                    SnapMobileStockDrawer();
+                    Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(100), () => _mobileStockDrawerPanMoved = false);
+                    break;
+            }
+        }
+
+        private void ToggleMobileStockDrawer()
+        {
+            if (BindingContext is not StockChartViewModel { LastSelectedStock: not null } || _isChartFullscreen)
+            {
+                return;
+            }
+
+            SetMobileStockDrawerExpanded(!_mobileStockDrawerExpanded, true);
+        }
+
+        private void SnapMobileStockDrawer()
+        {
+            var maxHeight = Math.Max(MobileStockDrawerPreviewHeight, WorkspaceGrid.Height - MobileStockDrawerGap);
+            var expanded = StockPanel.Height > (MobileStockDrawerPreviewHeight + maxHeight) / 2;
+            SetMobileStockDrawerExpanded(expanded, true);
+        }
+
+        private void SetMobileStockDrawerExpanded(bool expanded, bool animate)
+        {
+            _mobileStockDrawerExpanded = expanded;
+            var target = expanded
+                ? Math.Max(MobileStockDrawerPreviewHeight, WorkspaceGrid.Height - MobileStockDrawerGap)
+                : MobileStockDrawerPreviewHeight;
+            StockPanel.IsVisible = true;
+
+            if (!animate)
+            {
+                StockPanel.HeightRequest = target;
+                return;
+            }
+
+            this.AbortAnimation("MobileStockDrawer");
+            var animation = new Animation(
+                value => StockPanel.HeightRequest = value,
+                StockPanel.Height,
+                target);
+            animation.Commit(this, "MobileStockDrawer", 16, 220, Easing.CubicOut);
+        }
+
+        private void UpdateMobileStockDrawerLayout()
+        {
+            var isMobile = Width > 0 && Width < MobileBreakpoint;
+            var hasSelectedStock = BindingContext is StockChartViewModel { LastSelectedStock: not null };
+            if (!isMobile || _isChartFullscreen)
+            {
+                this.AbortAnimation("MobileStockDrawer");
+                StockPanel.ClearValue(VisualElement.HeightRequestProperty);
+                MobileStockDrawerHandle.IsVisible = false;
+                return;
+            }
+
+            StockPanel.IsVisible = true;
+            MobileStockDrawerHandle.IsVisible = hasSelectedStock;
+            StockPanel.HeightRequest = _mobileStockDrawerExpanded
+                ? Math.Max(MobileStockDrawerPreviewHeight, WorkspaceGrid.Height - MobileStockDrawerGap)
+                : MobileStockDrawerPreviewHeight;
         }
 
         private void OnFullscreenClicked(object? sender, EventArgs e)
@@ -812,6 +960,15 @@ namespace StockChart
         private void OnPageSizeChanged(object? sender, EventArgs e)
         {
             ApplyResponsiveLayout();
+        }
+
+        private void OnWorkspaceSizeChanged(object? sender, EventArgs e)
+        {
+            if (Width > 0 && Width < MobileBreakpoint && !_isChartFullscreen)
+            {
+                UpdateMobileStockDrawerLayout();
+                Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(50), UpdateMobileStockDrawerLayout);
+            }
         }
 
         private void ApplyResponsiveLayout()
@@ -826,11 +983,14 @@ namespace StockChart
             {
                 HeaderGrid.IsVisible = false;
                 StockPanel.IsVisible = false;
-                OpenStocksButton.IsVisible = false;
+                MobileStockDrawerHandle.IsVisible = false;
                 MainContentGrid.Padding = new Thickness(12);
                 MainContentGrid.RowSpacing = 0;
                 WorkspaceGrid.ColumnDefinitions.Clear();
                 WorkspaceGrid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
+                WorkspaceGrid.RowDefinitions.Clear();
+                WorkspaceGrid.RowDefinitions.Add(new RowDefinition(GridLength.Star));
+                Grid.SetRow(StockPanel, 0);
                 Grid.SetColumn(ChartPanel, 0);
                 FullscreenButton.Text = "\uE5D1";
                 SemanticProperties.SetDescription(FullscreenButton, "Exit chart fullscreen");
@@ -839,29 +999,37 @@ namespace StockChart
             }
 
             HeaderGrid.IsVisible = true;
-            MainContentGrid.Padding = new Thickness((double)Application.Current!.Resources["PagePadding"]);
+            MainContentGrid.Padding = isMobile
+                ? new Thickness((double)Application.Current!.Resources["PagePadding"], 20, (double)Application.Current!.Resources["PagePadding"], 4)
+                : new Thickness((double)Application.Current!.Resources["PagePadding"]);
             MainContentGrid.RowSpacing = 16;
             FullscreenButton.Text = "\uE5D0";
             SemanticProperties.SetDescription(FullscreenButton, "Enter chart fullscreen");
             ChartRangeSelector.IsVisible = false;
-            StockPanel.IsVisible = !isMobile;
-            OpenStocksButton.IsVisible = isMobile;
-
-            if (isMobile && BindingContext is StockChartViewModel responsiveViewModel && responsiveViewModel.LastSelectedStock is not null && !_isChartFullscreen)
-            {
-                StockPanel.IsVisible = false;
-                ChartPanel.IsVisible = true;
-            }
+            StockPanel.IsVisible = true;
 
             if (isMobile)
             {
-                WatchlistSelector.ClearValue(VisualElement.WidthRequestProperty);
-                WatchlistSelector.HorizontalOptions = LayoutOptions.Fill;
+                WorkspaceGrid.RowDefinitions.Clear();
+                WorkspaceGrid.RowDefinitions.Add(new RowDefinition(GridLength.Star));
+                WorkspaceGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+                WorkspaceGrid.RowSpacing = MobileStockDrawerGap;
+                Grid.SetRow(ChartPanel, 0);
+                Grid.SetRow(StockPanel, 1);
+                StockPanel.Margin = new Thickness(0);
+                WatchlistSelectorBorder.WidthRequest = 160;
+                WatchlistSelector.HorizontalOptions = LayoutOptions.Start;
                 WatchlistSelector.DropdownWidth = Math.Max(200, Width - 100);
             }
             else
             {
-                WatchlistSelector.WidthRequest = 160;
+                WorkspaceGrid.RowDefinitions.Clear();
+                WorkspaceGrid.RowDefinitions.Add(new RowDefinition(GridLength.Star));
+                WorkspaceGrid.RowSpacing = 0;
+                Grid.SetRow(ChartPanel, 0);
+                Grid.SetRow(StockPanel, 0);
+                StockPanel.Margin = new Thickness(0);
+                WatchlistSelectorBorder.WidthRequest = 160;
                 WatchlistSelector.HorizontalOptions = LayoutOptions.Start;
                 WatchlistSelector.DropdownWidth = 160;
             }
@@ -878,6 +1046,8 @@ namespace StockChart
             {
                 Grid.SetColumn(ChartPanel, 0);
             }
+
+            UpdateMobileStockDrawerLayout();
         }
     }
 }
