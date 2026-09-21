@@ -583,7 +583,7 @@ namespace StockChart
 
             if (viewModel.IsWatchlistSelected)
             {
-                viewModel.PrepareRemoveStock(stock);
+                viewModel.PrepareRemoveStock(stock, viewModel.SelectedWatchlist);
                 ConfigureSheet(RemoveStockPopup, 530, 360);
                 ShowWorkflowPopup(RemoveStockPopup);
             }

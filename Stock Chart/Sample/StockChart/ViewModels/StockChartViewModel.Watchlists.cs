@@ -4,6 +4,18 @@ namespace StockChart.ViewModels;
 
 public partial class StockChartViewModel
 {
+    private void SubscribeToWatchlist(WatchlistModel watchlist)
+    {
+        watchlist.SymbolsChanged -= OnWatchlistSymbolsChanged;
+        watchlist.SymbolsChanged += OnWatchlistSymbolsChanged;
+    }
+
+    private void OnWatchlistSymbolsChanged(object? sender, EventArgs e)
+    {
+        OnSearchTextChanged(SearchText);
+        OnPropertyChanged(nameof(IsLastSelectedStockInSelectedWatchlist));
+    }
+
     partial void OnSelectedWatchlistChanged(WatchlistModel? value)
     {
         OnPropertyChanged(nameof(CanDeleteSelectedWatchlist));

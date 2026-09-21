@@ -140,6 +140,8 @@ public partial class StockChartViewModel : ObservableObject
     [ObservableProperty]
     public partial StockModel? PendingStock { get; set; }
 
+    private WatchlistModel? _pendingRemovalWatchlist;
+
     [ObservableProperty]
     public partial string AddStockSearchText { get; set; } = string.Empty;
 
@@ -172,7 +174,7 @@ public partial class StockChartViewModel : ObservableObject
     public string ChartPlaceholderText => "Select a stock to view its chart.";
     public bool CanOpenFavoritePopup => LastSelectedStock is not null;
     public bool IsLastSelectedStockInSelectedWatchlist => LastSelectedStock is not null &&
-        SelectedWatchlist?.Symbols.Contains(LastSelectedStock.Symbol) == true;
+        Watchlists.Any(watchlist => watchlist.Symbols.Contains(LastSelectedStock.Symbol));
     public string SelectedStockPrice => LastSelectedStock?.PriceText ?? "--";
     public string SelectedStockChange => LastSelectedStock?.ChangeText ?? "--";
     public Color SelectedStockChangeColor
@@ -297,6 +299,7 @@ public partial class StockChartViewModel : ObservableObject
             }
 
             var defaultWatchlist = new WatchlistModel("Watchlist 1");
+            SubscribeToWatchlist(defaultWatchlist);
             Watchlists.Clear();
             Watchlists.Add(defaultWatchlist);
             SelectedWatchlist = defaultWatchlist;
@@ -805,6 +808,7 @@ public partial class StockChartViewModel : ObservableObject
         }
 
         var watchlist = new WatchlistModel(name);
+        SubscribeToWatchlist(watchlist);
         if (NewWatchlistStock is not null)
         {
             watchlist.Symbols.Add(NewWatchlistStock.Symbol);
@@ -952,10 +956,15 @@ public partial class StockChartViewModel : ObservableObject
 
     public void PrepareRemoveStock()
     {
-        PrepareRemoveStock(LastSelectedStock);
+        PrepareRemoveStock(LastSelectedStock, IsWatchlistSelected ? SelectedWatchlist : null);
     }
 
     public void PrepareRemoveStock(StockModel? stock)
+    {
+        PrepareRemoveStock(stock, IsWatchlistSelected ? SelectedWatchlist : null);
+    }
+
+    public void PrepareRemoveStock(StockModel? stock, WatchlistModel? sourceWatchlist)
     {
         if (stock is null)
         {
@@ -963,6 +972,7 @@ public partial class StockChartViewModel : ObservableObject
         }
 
         PendingStock = stock;
+        _pendingRemovalWatchlist = sourceWatchlist;
         AddStockWatchlists.Clear();
         foreach (var watchlist in Watchlists)
         {
@@ -979,11 +989,24 @@ public partial class StockChartViewModel : ObservableObject
             return;
         }
 
-        foreach (var selection in AddStockWatchlists.Where(item => item.IsSelected))
+        var selectedWatchlists = AddStockWatchlists
+            .Where(item => item.IsSelected)
+            .Select(item => item.Watchlist)
+            .ToList();
+
+        if (_pendingRemovalWatchlist is not null &&
+            _pendingRemovalWatchlist.Symbols.Contains(PendingStock.Symbol) &&
+            !selectedWatchlists.Contains(_pendingRemovalWatchlist))
         {
-            selection.Watchlist.Symbols.Remove(PendingStock.Symbol);
+            selectedWatchlists.Add(_pendingRemovalWatchlist);
         }
 
+        foreach (var watchlist in selectedWatchlists)
+        {
+            watchlist.Symbols.Remove(PendingStock.Symbol);
+        }
+
+        _pendingRemovalWatchlist = null;
         OnPropertyChanged(nameof(IsLastSelectedStockInSelectedWatchlist));
         OnSearchTextChanged(SearchText);
     }
