@@ -26,6 +26,11 @@ namespace StockChart
         private bool _mobileStockDrawerExpanded;
         private bool _mobileStockDrawerPanMoved;
         private double _mobileStockDrawerPanStartHeight;
+        private bool _mobileStockDrawerPanUpdateScheduled;
+        private double _mobileStockDrawerPendingHeight;
+        private bool _chartRangeUpdateScheduled;
+        private int _pendingChartRangeStart;
+        private int _pendingChartRangeEnd;
 
         private const double MobileStockDrawerPreviewHeight = 52;
         private const double MobileStockDrawerGap = 16;
@@ -100,20 +105,36 @@ namespace StockChart
                 }
 
                 ResetChartZoomControl.IsVisible = false;
+                UpdatePriceAxisRange(viewModel);
                 ScheduleChartRangeApplication(viewModel);
             });
         }
 
         private void ScheduleChartRangeApplication(StockChartViewModel viewModel)
         {
-            ApplyChartRange(viewModel);
-            Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(50), () =>
+            ApplyChartRangeWhenReady(viewModel, 0);
+        }
+
+        private void ApplyChartRangeWhenReady(StockChartViewModel viewModel, int attempt)
+        {
+            if (!_isPageActive || Handler is null || !ReferenceEquals(BindingContext, viewModel))
             {
-                if (_isPageActive && Handler is not null && ReferenceEquals(BindingContext, viewModel))
-                {
-                    ApplyChartRange(viewModel);
-                }
-            });
+                return;
+            }
+
+            if (StockChartView.Width > 0 &&
+                StockChartView.Height > 0 &&
+                StockChartView.Series.Count > 0 &&
+                StockChartView.XAxes.Count > 0)
+            {
+                ApplyChartRange(viewModel);
+            }
+
+            if (attempt < 5)
+            {
+                var delay = TimeSpan.FromMilliseconds(50 * (attempt + 1));
+                Dispatcher.DispatchDelayed(delay, () => ApplyChartRangeWhenReady(viewModel, attempt + 1));
+            }
         }
 
         protected override async void OnAppearing()
@@ -180,6 +201,24 @@ namespace StockChart
             catch (COMException)
             {
                 // WinUI can reject cleanup after the native popup has closed.
+            }
+        }
+
+        // Native chart/axis mutations can be rejected mid-teardown (e.g. navigating away or
+        // switching stocks while a drag/zoom is still in flight); swallow and log rather than crash.
+        private static void SafeChartOperation(Action operation)
+        {
+            try
+            {
+                operation();
+            }
+            catch (InvalidOperationException exception)
+            {
+                System.Diagnostics.Trace.TraceWarning($"Chart operation rejected: {exception.Message}");
+            }
+            catch (COMException exception)
+            {
+                System.Diagnostics.Trace.TraceWarning($"Chart operation rejected: {exception.Message}");
             }
         }
 
@@ -324,20 +363,18 @@ namespace StockChart
         {
             if (CanUsePopup && !_disclaimerShown)
             {
-                DisclaimerPopup.WidthRequest = Width > 0 && Width < MobileBreakpoint
-                    ? Width
-                    : 680;
-                if (Width > 0 && Width < MobileBreakpoint)
-                {
-                    var display = DeviceDisplay.MainDisplayInfo;
-                    var screenHeight = display.Height / display.Density;
-                    DisclaimerPopup.HeightRequest = Math.Min(620, Math.Max(460, screenHeight * 0.9));
-                }
-                else
-                {
-                    DisclaimerPopup.HeightRequest = 200;
-                    ConfigureDesktopPopupStyle(DisclaimerPopup);
-                }
+                // Width can still be 0/-1 the first time this runs (before the page's initial
+                // layout pass); fall back to the device idiom so phones never get the compact
+                // desktop-sized popup.
+                var isMobile = Width > 0
+                    ? Width < MobileBreakpoint
+                    : DeviceInfo.Current.Idiom == DeviceIdiom.Phone;
+
+                DisclaimerPopup.WidthRequest = isMobile && Width > 0 ? Width : isMobile ? 420 : 680;
+                // Size to the message content rather than a fraction of the screen height,
+                // otherwise the card is left with a large empty area below the text.
+                DisclaimerPopup.HeightRequest = isMobile ? 300 : 200;
+                ConfigureDesktopPopupStyle(DisclaimerPopup);
                 Dispatcher.Dispatch(() =>
                 {
                     if (CanUsePopup && !_disclaimerShown)
@@ -417,20 +454,20 @@ namespace StockChart
                 var screenWidth = display.Width / display.Density;
                 var screenHeight = display.Height / display.Density;
                 SettingsPopup.WidthRequest = screenWidth;
-                SettingsPopup.HeightRequest = Math.Min(560, screenHeight * 0.82);
+                SettingsPopup.HeightRequest = Math.Min(520, screenHeight * 0.78);
                 SettingsPopup.StartX = 0;
                 SettingsPopup.StartY = (int)Math.Max(0, screenHeight - SettingsPopup.HeightRequest);
                 SettingsPopup.PopupStyle.PopupBackground = Colors.Transparent;
                 SettingsPopup.PopupStyle.Stroke = Colors.Transparent;
                 SettingsPopup.PopupStyle.StrokeThickness = 0;
-                SettingsPopup.PopupStyle.CornerRadius = 0;
+                SettingsPopup.PopupStyle.CornerRadius = new CornerRadius(20, 20, 0, 0);
                 SettingsPopup.AnimationMode = PopupAnimationMode.SlideOnBottom;
                 SafePopupOperation(() => SettingsPopup.Show(SettingsPopup.StartX, SettingsPopup.StartY));
             }
             else
             {
                 SettingsPopup.WidthRequest = 625;
-                SettingsPopup.HeightRequest = 625;
+                SettingsPopup.HeightRequest = 540;
                 ConfigureDesktopPopupStyle(SettingsPopup);
                 SafePopupOperation(() => SettingsPopup.Show());
             }
@@ -464,7 +501,7 @@ namespace StockChart
                 }
 
                 viewModel.PrepareNewWatchlistCommand.Execute(null);
-                ConfigureSheet(NewWatchlistPopup, 620, 350);
+                ConfigureSheet(NewWatchlistPopup, 620, 360);
                 ShowWorkflowPopup(NewWatchlistPopup);
             });
         }
@@ -691,16 +728,17 @@ namespace StockChart
 
         private void ApplyChartSettings(StockChartViewModel viewModel)
         {
-            foreach (var series in StockChartView.Series.OfType<ChartSeries>())
-            {
-                series.EnableTooltip = viewModel.IsTooltipEnabled;
-            }
+            var isDarkTheme = Application.Current?.RequestedTheme == AppTheme.Dark;
+            var borderColor = isDarkTheme ? Color.FromArgb("#334155") : Color.FromArgb("#E2E8F0");
 
             RangeAxisBase axis = viewModel.IsLogarithmicAxis
                 ? new LogarithmicAxis()
                 : new NumericalAxis();
             axis.Name = "PriceAxis";
             axis.ShowMajorGridLines = true;
+            axis.MajorGridLineStyle = new ChartLineStyle { Stroke = new SolidColorBrush(borderColor), StrokeWidth = 0.8 };
+            axis.AxisLineStyle = new ChartLineStyle { Stroke = new SolidColorBrush(borderColor), StrokeWidth = 1 };
+            axis.MajorTickStyle = new ChartAxisTickStyle { Stroke = new SolidColorBrush(borderColor), StrokeWidth = 1 };
             if (viewModel.IsAxisOpposed)
             {
                 axis.CrossesAt = double.MaxValue;
@@ -708,23 +746,33 @@ namespace StockChart
             axis.LabelStyle = new ChartAxisLabelStyle
             {
                 FontSize = 11,
-                TextColor = Application.Current?.RequestedTheme == AppTheme.Dark
+                TextColor = isDarkTheme
                     ? Color.FromArgb("#CBD5E1")
                     : Color.FromArgb("#64748B")
             };
 
             if (axis is NumericalAxis numericalAxis)
             {
+                numericalAxis.RangePadding = NumericalPadding.Auto;
                 numericalAxis.LabelCreated += OnPriceAxisLabelCreated;
             }
 
-            StockChartView.YAxes.Clear();
-            StockChartView.YAxes.Add(axis);
-            StockChartView.IsTransposed = viewModel.IsAxisInverted;
+            SafeChartOperation(() =>
+            {
+                foreach (var series in StockChartView.Series.OfType<ChartSeries>())
+                {
+                    series.EnableTooltip = viewModel.IsTooltipEnabled;
+                }
+
+                StockChartView.YAxes.Clear();
+                StockChartView.YAxes.Add(axis);
+                StockChartView.IsTransposed = viewModel.IsAxisInverted;
+            });
 
             ChartRangeSelector.IsVisible = _isChartFullscreen && viewModel.IsRangeControlEnabled;
 
             viewModel.RefreshChart();
+            UpdatePriceAxisRange(viewModel);
         }
 
         private void OnRangeSelectorLabelCreated(object? sender, SliderLabelCreatedEventArgs e)
@@ -740,6 +788,60 @@ namespace StockChart
             e.Text = viewModel.LastSelectedStock.Data[dataIndex].Date.ToString("MMM yyyy");
         }
 
+        private void OnRangeSelectorValueChanged(object? sender, RangeSelectorValueChangedEventArgs e)
+        {
+            if (_isSynchronizingChartRange ||
+                BindingContext is not StockChartViewModel viewModel ||
+                viewModel.LastSelectedStock is null ||
+                viewModel.LastSelectedStock.Data.Count == 0)
+            {
+                return;
+            }
+
+            var lastIndex = viewModel.LastSelectedStock.Data.Count - 1;
+            var startIndex = Math.Clamp((int)Math.Floor(e.NewRangeStart), 0, lastIndex);
+            var endIndex = Math.Clamp((int)Math.Ceiling(e.NewRangeEnd), startIndex, lastIndex);
+
+            _isSynchronizingChartRange = true;
+            try
+            {
+                viewModel.ApplyVisibleRangeSelection(startIndex, endIndex);
+                ResetChartZoomControl.IsVisible = true;
+            }
+            finally
+            {
+                _isSynchronizingChartRange = false;
+            }
+
+            // ZoomByRange and axis rescaling are the expensive part of this update; coalesce
+            // rapid drag ticks into at most one native chart update per dispatcher cycle.
+            ScheduleChartRangeUpdate(viewModel, startIndex, endIndex);
+        }
+
+        private void ScheduleChartRangeUpdate(StockChartViewModel viewModel, int startIndex, int endIndex)
+        {
+            _pendingChartRangeStart = startIndex;
+            _pendingChartRangeEnd = endIndex;
+
+            if (_chartRangeUpdateScheduled)
+            {
+                return;
+            }
+
+            _chartRangeUpdateScheduled = true;
+            Dispatcher.Dispatch(() =>
+            {
+                _chartRangeUpdateScheduled = false;
+                if (!_isPageActive || !ReferenceEquals(BindingContext, viewModel))
+                {
+                    return;
+                }
+
+                ApplyChartRange(viewModel, _pendingChartRangeStart, _pendingChartRangeEnd);
+                UpdatePriceAxisRange(viewModel, _pendingChartRangeStart, _pendingChartRangeEnd);
+            });
+        }
+
         private void OnRangeSelectorValueChangeEnd(object? sender, EventArgs e)
         {
             if (_isSynchronizingChartRange || BindingContext is not StockChartViewModel viewModel)
@@ -750,10 +852,14 @@ namespace StockChart
             _isSynchronizingChartRange = true;
             try
             {
-                StockChartView.ZoomPanBehavior.Reset();
                 viewModel.CommitRangeSelection();
                 ApplyChartRange(viewModel);
-                ResetChartZoomControl.IsVisible = false;
+                UpdatePriceAxisRange(viewModel);
+                // Keep any still-queued drag update (from ScheduleChartRangeUpdate) in sync with the commit
+                // so it can't overwrite this final range with a stale mid-drag value.
+                _pendingChartRangeStart = viewModel.ChartRangeStartIndex;
+                _pendingChartRangeEnd = viewModel.ChartRangeEndIndex;
+                ResetChartZoomControl.IsVisible = true;
             }
             finally
             {
@@ -774,7 +880,10 @@ namespace StockChart
             _isSynchronizingChartRange = true;
             try
             {
-                viewModel.ApplyZoomSelection(e.CurrentZoomFactor, e.CurrentZoomPosition);
+                var dateTimeAxis = (DateTimeAxis)e.Axis;
+                var visibleRange = GetVisibleDataRange(viewModel, dateTimeAxis);
+                viewModel.ApplyVisibleRangeSelection(visibleRange.Start, visibleRange.End);
+                UpdatePriceAxisRange(viewModel, visibleRange.Start, visibleRange.End);
                 ResetChartZoomControl.IsVisible = true;
             }
             finally
@@ -793,9 +902,11 @@ namespace StockChart
             _isSynchronizingChartRange = true;
             try
             {
-                StockChartView.ZoomPanBehavior.Reset();
-                viewModel.ResetZoomSelection();
-                ApplyChartRange(viewModel);
+                var selectedRange = viewModel.RestoreCommittedRange();
+                ChartRangeSelector.RangeStart = selectedRange.Start;
+                ChartRangeSelector.RangeEnd = selectedRange.End;
+                ApplyChartRange(viewModel, selectedRange.Start, selectedRange.End);
+                UpdatePriceAxisRange(viewModel, selectedRange.Start, selectedRange.End);
                 ResetChartZoomControl.IsVisible = false;
             }
             finally
@@ -829,20 +940,93 @@ namespace StockChart
                 return;
             }
 
-            var startIndex = Math.Clamp(viewModel.ChartRangeStartIndex, 0, viewModel.LastSelectedStock.Data.Count - 1);
-            var endIndex = Math.Clamp(viewModel.ChartRangeEndIndex, startIndex, viewModel.LastSelectedStock.Data.Count - 1);
+            ApplyChartRange(viewModel, viewModel.ChartRangeStartIndex, viewModel.ChartRangeEndIndex);
+        }
+
+        private void ApplyChartRange(StockChartViewModel viewModel, int startIndex, int endIndex)
+        {
+            if (viewModel.LastSelectedStock is null ||
+                StockChartView.XAxes.FirstOrDefault() is not DateTimeAxis dateTimeAxis ||
+                viewModel.LastSelectedStock.Data.Count == 0)
+            {
+                return;
+            }
+
+            startIndex = Math.Clamp(startIndex, 0, viewModel.LastSelectedStock.Data.Count - 1);
+            endIndex = Math.Clamp(endIndex, startIndex, viewModel.LastSelectedStock.Data.Count - 1);
+            var rangeStartDate = viewModel.LastSelectedStock.Data[startIndex].Date;
+            var rangeEndDate = viewModel.LastSelectedStock.Data[endIndex].Date;
             _isSynchronizingChartRange = true;
             try
             {
-                StockChartView.ZoomPanBehavior.ZoomByRange(
-                    dateTimeAxis,
-                    viewModel.LastSelectedStock.Data[startIndex].Date,
-                    viewModel.LastSelectedStock.Data[endIndex].Date);
+                SafeChartOperation(() => StockChartView.ZoomPanBehavior.ZoomByRange(dateTimeAxis, rangeStartDate, rangeEndDate));
             }
             finally
             {
                 _isSynchronizingChartRange = false;
             }
+        }
+
+        private void UpdatePriceAxisRange(StockChartViewModel viewModel)
+        {
+            UpdatePriceAxisRange(viewModel, viewModel.ChartRangeStartIndex, viewModel.ChartRangeEndIndex);
+        }
+
+        private void UpdatePriceAxisRange(StockChartViewModel viewModel, int startIndex, int endIndex)
+        {
+            if (StockChartView.YAxes.FirstOrDefault(axis => axis.Name == "PriceAxis") is not NumericalAxis numericalAxis ||
+                viewModel.LastSelectedStock is null ||
+                viewModel.LastSelectedStock.Data.Count == 0)
+            {
+                return;
+            }
+
+            var data = viewModel.LastSelectedStock.Data;
+            startIndex = Math.Clamp(startIndex, 0, data.Count - 1);
+            endIndex = Math.Clamp(endIndex, startIndex, data.Count - 1);
+
+            var minimum = double.MaxValue;
+            var maximum = double.MinValue;
+            for (var i = startIndex; i <= endIndex; i++)
+            {
+                var candle = data[i];
+                if (candle.Low < minimum) minimum = candle.Low;
+                if (candle.High > maximum) maximum = candle.High;
+            }
+
+            var padding = Math.Max((maximum - minimum) * 0.05, 0.01);
+            var axisMinimum = Math.Max(0.01, minimum - padding);
+            var axisMaximum = maximum + padding;
+
+            SafeChartOperation(() =>
+            {
+                numericalAxis.Minimum = axisMinimum;
+                numericalAxis.Maximum = axisMaximum;
+                numericalAxis.RangePadding = NumericalPadding.None;
+            });
+        }
+
+        private void UpdatePriceAxisRangeFromVisibleAxis(StockChartViewModel viewModel, DateTimeAxis dateTimeAxis)
+        {
+            var visibleRange = GetVisibleDataRange(viewModel, dateTimeAxis);
+            UpdatePriceAxisRange(viewModel, visibleRange.Start, visibleRange.End);
+        }
+
+        private static (int Start, int End) GetVisibleDataRange(StockChartViewModel viewModel, DateTimeAxis dateTimeAxis)
+        {
+            if (viewModel.LastSelectedStock is null || viewModel.LastSelectedStock.Data.Count == 0)
+            {
+                return (0, 0);
+            }
+
+            var data = viewModel.LastSelectedStock.Data;
+            var visibleStart = DateTime.FromOADate(dateTimeAxis.VisibleMinimum);
+            var visibleEnd = DateTime.FromOADate(dateTimeAxis.VisibleMaximum);
+            var startIndex = data.FindIndex(candle => candle.Date >= visibleStart);
+            var endIndex = data.FindLastIndex(candle => candle.Date <= visibleEnd);
+            startIndex = Math.Clamp(startIndex < 0 ? 0 : startIndex, 0, data.Count - 1);
+            endIndex = Math.Clamp(endIndex < 0 ? data.Count - 1 : endIndex, startIndex, data.Count - 1);
+            return (startIndex, endIndex);
         }
 
         private void OnPriceAxisLabelCreated(object? sender, ChartAxisLabelEventArgs e)
@@ -880,10 +1064,11 @@ namespace StockChart
                 case GestureStatus.Running:
                     _mobileStockDrawerPanMoved = Math.Abs(e.TotalY) > 4;
                     var maxHeight = Math.Max(MobileStockDrawerPreviewHeight, WorkspaceGrid.Height - MobileStockDrawerGap);
-                    StockPanel.HeightRequest = Math.Clamp(
+                    _mobileStockDrawerPendingHeight = Math.Clamp(
                         _mobileStockDrawerPanStartHeight - e.TotalY,
                         MobileStockDrawerPreviewHeight,
                         maxHeight);
+                    ScheduleMobileStockDrawerHeightUpdate();
                     break;
                 case GestureStatus.Completed:
                 case GestureStatus.Canceled:
@@ -891,6 +1076,22 @@ namespace StockChart
                     Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(100), () => _mobileStockDrawerPanMoved = false);
                     break;
             }
+        }
+
+        // Coalesces rapid pan-gesture ticks into at most one layout pass per dispatcher cycle.
+        private void ScheduleMobileStockDrawerHeightUpdate()
+        {
+            if (_mobileStockDrawerPanUpdateScheduled)
+            {
+                return;
+            }
+
+            _mobileStockDrawerPanUpdateScheduled = true;
+            Dispatcher.Dispatch(() =>
+            {
+                _mobileStockDrawerPanUpdateScheduled = false;
+                StockPanel.HeightRequest = _mobileStockDrawerPendingHeight;
+            });
         }
 
         private void ToggleMobileStockDrawer()
@@ -994,6 +1195,8 @@ namespace StockChart
                 Grid.SetColumn(ChartPanel, 0);
                 FullscreenButton.Text = "\uE5D1";
                 SemanticProperties.SetDescription(FullscreenButton, "Exit chart fullscreen");
+                MobileFullscreenButton.Text = "\uE5D1";
+                SemanticProperties.SetDescription(MobileFullscreenButton, "Exit chart fullscreen");
                 ChartRangeSelector.IsVisible = BindingContext is StockChartViewModel viewModel && viewModel.IsRangeControlEnabled;
                 return;
             }
@@ -1005,6 +1208,8 @@ namespace StockChart
             MainContentGrid.RowSpacing = 16;
             FullscreenButton.Text = "\uE5D0";
             SemanticProperties.SetDescription(FullscreenButton, "Enter chart fullscreen");
+            MobileFullscreenButton.Text = "\uE5D0";
+            SemanticProperties.SetDescription(MobileFullscreenButton, "Enter chart fullscreen");
             ChartRangeSelector.IsVisible = false;
             StockPanel.IsVisible = true;
 

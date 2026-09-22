@@ -37,13 +37,15 @@ public partial class StockModel : ObservableObject
     };
 
     [JsonIgnore]
-    public CandleDataModel LatestCandle => Data[^1];
+    public CandleDataModel? LatestCandle => Data.Count > 0 ? Data[^1] : null;
 
     [JsonIgnore]
-    public string PriceText => $"${LatestCandle.Close:N2}";
+    public string PriceText => LatestCandle is null ? string.Empty : $"${LatestCandle.Close:N2}";
 
     [JsonIgnore]
-    public string ChangeText => $"{LatestCandle.Close - LatestCandle.Open:+0.00;-0.00;0.00} ({(LatestCandle.Close - LatestCandle.Open) / LatestCandle.Open:+0.00%;-0.00%;0.00%})";
+    public string ChangeText => LatestCandle is null || LatestCandle.Open == 0
+        ? string.Empty
+        : $"{LatestCandle.Close - LatestCandle.Open:+0.00;-0.00;0.00} ({(LatestCandle.Close - LatestCandle.Open) / LatestCandle.Open:+0.00%;-0.00%;0.00%})";
 
     [JsonIgnore]
     public string ExchangeText => Exchange;

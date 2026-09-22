@@ -181,12 +181,12 @@ public partial class StockChartViewModel : ObservableObject
     {
         get
         {
-            if (LastSelectedStock is null)
+            var latest = LastSelectedStock?.LatestCandle;
+            if (latest is null)
             {
                 return Colors.Gray;
             }
 
-            var latest = LastSelectedStock.LatestCandle;
             return latest.Close >= latest.Open ? Color.FromArgb("#16A34A") : Color.FromArgb("#DC2626");
         }
     }
@@ -523,33 +523,37 @@ public partial class StockChartViewModel : ObservableObject
             SetRangeSelection(0, 0);
             _chartRangeStartIndex = 0;
             _chartRangeEndIndex = 0;
-            _selectedRangeStartIndex = 0;
-            _selectedRangeEndIndex = 0;
             LoadAllCandles();
             return;
         }
 
+        // Only updates the current chart view; the committed baseline (_selectedRangeStartIndex/End)
+        // is left untouched so Reset can restore to it after a drag or zoom.
         var lastIndex = LastSelectedStock.Data.Count - 1;
         var startIndex = Math.Clamp((int)Math.Floor(RangeStart), 0, Math.Max(0, lastIndex - 1));
         var endIndex = Math.Clamp((int)Math.Ceiling(RangeEnd), startIndex + 1, lastIndex);
         SetRangeSelection(startIndex, endIndex);
         _chartRangeStartIndex = startIndex;
         _chartRangeEndIndex = endIndex;
-        _selectedRangeStartIndex = startIndex;
-        _selectedRangeEndIndex = endIndex;
         LoadAllCandles();
     }
 
     public void ResetZoomSelection()
     {
+        RestoreCommittedRange();
+    }
+
+    public (int Start, int End) RestoreCommittedRange()
+    {
         if (LastSelectedStock is null || LastSelectedStock.Data.Count == 0)
         {
-            return;
+            return (0, 0);
         }
 
         _chartRangeStartIndex = _selectedRangeStartIndex;
         _chartRangeEndIndex = _selectedRangeEndIndex;
         SetRangeSelection(_chartRangeStartIndex, _chartRangeEndIndex);
+        return (_chartRangeStartIndex, _chartRangeEndIndex);
     }
 
     public void ApplyZoomSelection(double zoomFactor, double zoomPosition)
@@ -580,6 +584,21 @@ public partial class StockChartViewModel : ObservableObject
         _chartRangeEndIndex = endIndex;
     }
 
+    public void ApplyVisibleRangeSelection(int startIndex, int endIndex)
+    {
+        if (LastSelectedStock is null || LastSelectedStock.Data.Count == 0)
+        {
+            return;
+        }
+
+        var lastIndex = LastSelectedStock.Data.Count - 1;
+        startIndex = Math.Clamp(startIndex, 0, lastIndex);
+        endIndex = Math.Clamp(endIndex, startIndex, lastIndex);
+        SetRangeSelection(startIndex, endIndex);
+        _chartRangeStartIndex = startIndex;
+        _chartRangeEndIndex = endIndex;
+    }
+
     private void SetRangeSelection(int startIndex, int endIndex)
     {
         _isUpdatingRange = true;
@@ -595,6 +614,7 @@ public partial class StockChartViewModel : ObservableObject
         {
             VisibleCandles.Add(candle);
         }
+
     }
 
     private void RefreshChartSeries()

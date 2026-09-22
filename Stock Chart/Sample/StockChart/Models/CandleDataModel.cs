@@ -21,4 +21,5 @@ public sealed class CandleDataModel
 
     [JsonPropertyName("Volume")]
     public double Volume { get; init; }
+
 }
