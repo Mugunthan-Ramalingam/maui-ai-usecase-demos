@@ -54,7 +54,7 @@
             <popup:SfPopup.ContentTemplate>
                 <DataTemplate x:DataType="vm:StockChartViewModel">
                     <Border Padding="28,24,28,20" Stroke="Transparent" StrokeThickness="0" StrokeShape="RoundRectangle 28,28,0,0" Background="{AppThemeBinding Light=#F8F8FF, Dark=#1E293B}">
-                        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="18">
+                        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="18">
                             <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
                                 <Label Text="Settings" FontSize="28" TextColor="{AppThemeBinding Light=#1F2937, Dark=#F8FAFC}" VerticalOptions="Center" />
                                 <buttons:SfButton Grid.Column="1" Text="&#xE5CD;" FontFamily="MaterialIcons" FontSize="24" WidthRequest="36" HeightRequest="36" Padding="0" Background="Transparent" TextColor="{AppThemeBinding Light=#374151, Dark=#CBD5E1}" Clicked="OnSettingsCloseClicked" />
@@ -79,15 +79,16 @@
                                     <CheckBox IsChecked="{Binding SettingsDraft.IsAxisOpposed, Mode=TwoWay}" Color="{AppThemeBinding Light=#49679D, Dark=#93A9D7}" />
                                     <Label Text="Opposed Y Axis" FontSize="16" VerticalOptions="Center" TextColor="{AppThemeBinding Light=#374151, Dark=#E5E7EB}" />
                                 </HorizontalStackLayout>
-                                <HorizontalStackLayout Spacing="16">
-                                    <CheckBox IsChecked="{Binding SettingsDraft.IsRangeControlEnabled, Mode=TwoWay}" Color="{AppThemeBinding Light=#49679D, Dark=#93A9D7}" />
-                                    <Label Text="Enable Range Control" FontSize="16" VerticalOptions="Center" TextColor="{AppThemeBinding Light=#374151, Dark=#E5E7EB}" />
-                                </HorizontalStackLayout>
-                                <HorizontalStackLayout HorizontalOptions="End" Spacing="26" Margin="0,6,0,0">
-                                    <buttons:SfButton Text="Cancel" FontSize="16" Background="Transparent" TextColor="{AppThemeBinding Light=#49679D, Dark=#93A9D7}" Clicked="OnSettingsCancelClicked" />
-                                    <buttons:SfButton Text="Apply" FontSize="16" Background="Transparent" TextColor="{AppThemeBinding Light=#49679D, Dark=#93A9D7}" Clicked="OnSettingsApplyClicked" />
-                                </HorizontalStackLayout>
                             </VerticalStackLayout>
+                            <Label Grid.Row="7" Text="Chart Range Control" FontFamily="OpenSansSemibold" FontSize="18" TextColor="{AppThemeBinding Light=#1F2937, Dark=#F8FAFC}" />
+                            <HorizontalStackLayout Grid.Row="8" Spacing="16">
+                                <CheckBox IsChecked="{Binding SettingsDraft.IsRangeControlEnabled, Mode=TwoWay}" Color="{AppThemeBinding Light=#49679D, Dark=#93A9D7}" />
+                                <Label Text="Enable Range Selector" FontSize="16" VerticalOptions="Center" TextColor="{AppThemeBinding Light=#374151, Dark=#E5E7EB}" />
+                            </HorizontalStackLayout>
+                            <HorizontalStackLayout Grid.Row="9" HorizontalOptions="End" Spacing="26" Margin="0,6,0,0">
+                                <buttons:SfButton Text="Cancel" FontSize="16" Background="Transparent" TextColor="{AppThemeBinding Light=#49679D, Dark=#93A9D7}" Clicked="OnSettingsCancelClicked" />
+                                <buttons:SfButton Text="Apply" FontSize="16" Background="Transparent" TextColor="{AppThemeBinding Light=#49679D, Dark=#93A9D7}" Clicked="OnSettingsApplyClicked" />
+                            </HorizontalStackLayout>
                         </Grid>
                     </Border>
                 </DataTemplate>

@@ -430,7 +430,7 @@ namespace StockChart
             else
             {
                 SettingsPopup.WidthRequest = 625;
-                SettingsPopup.HeightRequest = 570;
+                SettingsPopup.HeightRequest = 625;
                 ConfigureDesktopPopupStyle(SettingsPopup);
                 SafePopupOperation(() => SettingsPopup.Show());
             }
