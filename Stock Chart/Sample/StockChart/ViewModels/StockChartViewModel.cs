@@ -376,14 +376,6 @@ public partial class StockChartViewModel : ObservableObject
         OnPropertyChanged(nameof(AvailableDataEndDate));
     }
 
-    partial void OnRangeStartChanged(double value)
-    {
-    }
-
-    partial void OnRangeEndChanged(double value)
-    {
-    }
-
     partial void OnSelectedChartTypeChanged(string value)
     {
         RefreshChartSeries();
@@ -405,10 +397,6 @@ public partial class StockChartViewModel : ObservableObject
         SelectedTrendline = "Trendline";
         _isResettingTrendlineSelection = false;
         RefreshChartSeries();
-    }
-
-    partial void OnIsTooltipEnabledChanged(bool value)
-    {
     }
 
     private void ApplyTimeRange(string range)
@@ -690,19 +678,14 @@ public partial class StockChartViewModel : ObservableObject
 
         ChartSeries.Add(series);
 
-        // Financial and range series do not expose a single YBindingPath. A transparent
-        // close-price line is used as the trendline host so every chart option supports
-        // the same overlays without changing the primary rendering.
-        foreach (var overlay in ActiveTrendlines)
+        if (series is CartesianSeries trendlineHost)
         {
-            var trendlineHost = CreateValueSeries(new LineSeries
+            foreach (var overlay in ActiveTrendlines)
             {
-                StrokeWidth = 0,
-                IsVisible = overlay.IsVisible,
-                EnableTooltip = false
-            });
-            trendlineHost.Trendlines.Add(CreateTrendline(overlay.Name));
-            ChartSeries.Add(trendlineHost);
+                var trendline = CreateTrendline(overlay.Name);
+                trendline.IsVisible = overlay.IsVisible;
+                trendlineHost.Trendlines.Add(trendline);
+            }
         }
 
     }
@@ -729,8 +712,9 @@ public partial class StockChartViewModel : ObservableObject
             _ => new LinearTrendline()
         };
 
-        trendline.Stroke = Color.FromArgb("#2196F3");
+        trendline.Stroke = new SolidColorBrush(Color.FromArgb("#2196F3"));
         trendline.StrokeWidth = 2;
+        trendline.IsVisible = true;
         return trendline;
     }
 
