@@ -1206,8 +1206,7 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         }
 
         // Ensure key is loaded from storage before checking
-        if (!AzureOpenAIService.HasApiKey)
-            await AzureOpenAIService.LoadApiKeyFromStorageAsync();
+        await AzureOpenAIService.EnsureApiKeyLoadedAsync();
 
         if (!AzureOpenAIService.HasApiKey)
         {
@@ -1491,8 +1490,7 @@ Keep each line under 140 characters. Use the Indian Rupee symbol ₹. Do not use
         }
 
         // Ensure the API key is loaded (guards against the App startup race condition)
-        if (!AzureOpenAIService.HasApiKey)
-            await AzureOpenAIService.LoadApiKeyFromStorageAsync();
+        await AzureOpenAIService.EnsureApiKeyLoadedAsync();
 
         // No API key — surface the "not configured" state and stop
         if (!AzureOpenAIService.HasApiKey)

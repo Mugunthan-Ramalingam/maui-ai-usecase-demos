@@ -22,6 +22,14 @@ public class AIAssistViewModel : INotifyPropertyChanged
     private Vehicle? _selectedVehicle;
     private double _vehicleHealthScore;
     private string _vehicleHealthLabel = "—";
+    private bool _isGeneratingResponse;
+
+    /// <summary>True while an AI request is in flight; drives the chat loading indicator.</summary>
+    public bool IsGeneratingResponse
+    {
+        get => _isGeneratingResponse;
+        private set => SetProperty(ref _isGeneratingResponse, value);
+    }
 
     public ObservableCollection<Vehicle> Vehicles { get; } = new();
 
@@ -364,29 +372,37 @@ User Query: {requestText}
             "Be specific and reference actual data from the vehicle records. " +
             "Keep answers to 2-3 sentences unless a detailed breakdown is needed.";
 
-        var aiText = await _ai.GetResultsFromAI(vehicleInfo, systemMsg);
-
-        if (string.IsNullOrEmpty(aiText))
-            aiText = $"I'm having trouble reaching the AI right now ({_ai.LastError ?? "no response"}). Please try again shortly.";
-
-        var requestItem = args.RequestItem ?? new AssistItem
+        IsGeneratingResponse = true;
+        try
         {
-            Text = requestText,
-            IsRequested = true,
-            DateTime = DateTime.Now
-        };
+            var aiText = await _ai.GetResultsFromAI(vehicleInfo, systemMsg);
 
-        AssistItems.Add(new AssistItem
+            if (string.IsNullOrEmpty(aiText))
+                aiText = $"I'm having trouble reaching the AI right now ({_ai.LastError ?? "no response"}). Please try again shortly.";
+
+            var requestItem = args.RequestItem ?? new AssistItem
+            {
+                Text = requestText,
+                IsRequested = true,
+                DateTime = DateTime.Now
+            };
+
+            AssistItems.Add(new AssistItem
+            {
+                Text        = aiText,
+                IsRequested = false,
+                RequestItem = requestItem,
+                DateTime    = DateTime.Now,
+            });
+
+            OnPropertyChanged(nameof(HasChatItems));
+            RefreshConversationHistory();
+            args.Handled = true;
+        }
+        finally
         {
-            Text        = aiText,
-            IsRequested = false,
-            RequestItem = requestItem,
-            DateTime    = DateTime.Now,
-        });
-
-        OnPropertyChanged(nameof(HasChatItems));
-        RefreshConversationHistory();
-        args.Handled = true;
+            IsGeneratingResponse = false;
+        }
     }
 
     private async void ExecuteSuggestionRequest(object obj)

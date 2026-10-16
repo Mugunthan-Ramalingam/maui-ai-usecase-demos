@@ -24,17 +24,18 @@ public partial class SplashPage : ContentPage
 
     private async Task RunSplashSequenceAsync()
     {
+        // Brief staged progress so the splash feels animated without delaying startup (~1.2s total)
         InitProgress.Progress = 30;
-        await Task.Delay(900);
+        await Task.Delay(400);
 
         InitProgress.Progress = 60;
-        await Task.Delay(600);
+        await Task.Delay(350);
 
         InitProgress.Progress = 80;
-        await Task.Delay(600);
+        await Task.Delay(250);
 
         InitProgress.Progress = 100;
-        await Task.Delay(700);
+        await Task.Delay(200);
 
         // Navigate to welcome
         if (Application.Current != null)

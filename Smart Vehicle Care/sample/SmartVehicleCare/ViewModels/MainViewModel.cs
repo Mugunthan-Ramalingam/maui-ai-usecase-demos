@@ -800,8 +800,7 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(HasAiInsights));
 
         // Ensure key is loaded from storage before checking
-        if (!AzureOpenAIService.HasApiKey)
-            await AzureOpenAIService.LoadApiKeyFromStorageAsync();
+        await AzureOpenAIService.EnsureApiKeyLoadedAsync();
 
         var services = VehicleDataService.Instance.GetServiceRecords(vehicleId)
             .OrderByDescending(s => s.ServiceDate)
@@ -1501,8 +1500,7 @@ public class MainViewModel : INotifyPropertyChanged
         }
 
         // Ensure key is loaded before checking
-        if (!AzureOpenAIService.HasApiKey)
-            await AzureOpenAIService.LoadApiKeyFromStorageAsync();
+        await AzureOpenAIService.EnsureApiKeyLoadedAsync();
 
         if (!AzureOpenAIService.HasApiKey)
         {

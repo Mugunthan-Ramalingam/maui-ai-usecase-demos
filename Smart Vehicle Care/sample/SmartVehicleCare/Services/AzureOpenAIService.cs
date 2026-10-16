@@ -46,6 +46,16 @@ internal class AzureOpenAIService
         catch { _apiKey = string.Empty; }
     }
 
+    /// <summary>
+    /// Ensures the API key is loaded from SecureStorage before an AI call.
+    /// Shared guard used by all ViewModels to avoid the App-startup race.
+    /// </summary>
+    internal static async Task EnsureApiKeyLoadedAsync()
+    {
+        if (!HasApiKey)
+            await LoadApiKeyFromStorageAsync();
+    }
+
     internal static async Task SaveApiKeyToStorageAsync(string? key)
     {
         _apiKey = key?.Trim() ?? string.Empty;

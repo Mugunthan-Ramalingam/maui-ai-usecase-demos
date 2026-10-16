@@ -72,7 +72,7 @@ The app runs fully offline — AI features are optional enhancements.
 
 * User types a vehicle-related question in `SfAIAssistView`.
 * `AIAssistViewModel` forwards the message to `AzureOpenAIService` with a vehicle-context system prompt.
-* The response streams back and is displayed as an AI bubble.
+* The full response is returned and displayed as an AI bubble (non-streaming request/response).
 * If no API key is configured, the assistant shows a graceful offline message.
 
 ### Nearby Network

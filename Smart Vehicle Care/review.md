@@ -171,7 +171,9 @@ Do not assume.
 # Review Output
 
 ## Verdict
-⚠️ Approve with Changes
+✅ Approve (pending demo GIF)
+
+> Review issues 1, 3, 4, 5 below were fixed in this branch (see **Fix Log**). Remaining: add the demo GIF (owner: author).
 
 ---
 
@@ -179,50 +181,20 @@ Do not assume.
 - None. No secrets, API keys, or tokens are committed. The Syncfusion license key (`MauiProgram.cs`) and the Azure endpoint (`Services/AzureOpenAIService.cs`) both follow the expected `TODO` + placeholder pattern (`"YOUR_LICENSE_KEY"`, `"API_ENDPOINT"`), and the Azure API key is entered at runtime and stored via `SecureStorage`.
 
 ## Major Issues
-- **Documentation inaccuracy — "response streams back" (README, "AI Assistant" section).** The implementation is not streaming: `AzureOpenAIService.GetResultsFromAI` performs a single non-streaming `HttpClient` POST to `/chat/completions` and returns the full parsed string in one `await`. Either implement streaming or reword the README to say the response is displayed after completion.
-- **README screenshot section is self-flagged as missing.** The README states no `VehicleCareApp.gif`/screenshot asset exists in the repository. A customer-facing showcase should include a demo screenshot/GIF before publishing.
+- ~~Documentation inaccuracy — "response streams back"~~ **FIXED**: README now states the full response is displayed (non-streaming request/response).
+- **README screenshot section is still self-flagged as missing.** The README states no `VehicleCareApp.gif`/screenshot asset exists in the repository. A customer-facing showcase should include a demo screenshot/GIF before publishing. *(Author will add the demo.)*
 
 ## Minor Issues
-- **Oversized ViewModels.** `VehicleCenterViewModel.cs` (1,954 lines) and `MainViewModel.cs` (1,614 lines) concentrate dashboard, vehicle center, scheduler, fuel, map, and AI-insight logic. MVVM separation is intact, but splitting per-feature (or extracting shared AI-refresh logic — `LoadApiKeyFromStorageAsync` + guard + refresh is duplicated across `MainViewModel` lines 56/804/1505 and `VehicleCenterViewModel` lines 1210/1495) would improve readability.
-- **Presentation logic in code-behind (`VehicleCenterPage.xaml.cs`, 210 lines).** Marker wiring (`AttachToViewModel`, `OnMapMarkersChanged`, manual `MainThread.BeginInvokeOnMainThread` marker sync between `DesktopMapLayer`/`MobileMapLayer`) is control-integration code, which is defensible, but duplicating desktop/mobile marker layers forces this manual sync pattern; consider a single map layer with adaptive layout.
-- **No chat loading/typing indicator for the AI Assistant.** Loading state exists for dashboard AI insights (`IsAiInsightsLoading`), but `AIAssistViewModel`'s request handler (`Requesting` → `GetResultsFromAI` → add response item) provides no visual in-progress state in `SfAIAssistView`; a 30 s HttpClient timeout with no feedback may look frozen. (SfAIAssistView supports a "generating" item pattern.)
-- **Artificial splash sequence (`SplashPage.xaml.cs`).** ~2.8 s of hard-coded `Task.Delay` progress steps add no showcase value before navigating to `welcome`; consider shortening.
-- **Onboarding/settings scope.** The Welcome wizard and Settings tab are flagged categories in this checklist. Here they are justified (vehicle profile setup; API-key entry), but the wizard's adaptive two-panel hero layout and the constellation splash push toward feature creep beyond the control showcase.
-- **`Preferences.Default.Clear()` in `SettingsViewModel` (line 29)** wipes all preferences including the stored deployment name; verify this is intended (it does not touch the SecureStorage key, but it clears unrelated preferences if any are added later).
-- **No tests and no CI in the repository.** Runtime behavior, build success, and platform-specific layout claims are **Unable to verify from PR.**
+- **Oversized ViewModels.** `VehicleCenterViewModel.cs` and `MainViewModel.cs` still concentrate multiple feature areas (MVVM separation intact; readability concern only).
+- **Presentation logic in code-behind (`VehicleCenterPage.xaml.cs`).** Manual desktop/mobile marker-layer sync is control-integration code; acceptable, but a single adaptive map layer would remove the sync pattern.
+- ~~No chat loading/typing indicator~~ **FIXED**: `AIAssistViewModel.IsGeneratingResponse` + `SfBusyIndicator` "Generating response…" row in `AIAssistPage.xaml`.
+- ~~Artificial splash sequence~~ **FIXED**: shortened from ~2.8 s to ~1.2 s total.
+- ~~Duplicated "load key → refresh AI" guard~~ **FIXED**: extracted into `AzureOpenAIService.EnsureApiKeyLoadedAsync()`, used at all 4 guard sites (`MainViewModel` ×2, `VehicleCenterViewModel` ×2).
+- **`Preferences.Default.Clear()` in `SettingsViewModel`** wipes all preferences including the stored deployment name; verify this is intended (does not touch the SecureStorage key).
+- **No tests and no CI in the repository.** Runtime behavior, build success, and platform-specific layout claims are **Unable to verify from PR.** (The MAUI workload is unavailable in the review environment, so the fixes were verified by inspection only.)
 
----
-
-## Summary
-
-### Scope
-✅ Pass — Focused on Syncfusion control showcase (SfAIAssistView, SfScheduler, SfMaps, SfDataGrid, SfCharts, SfTabView, SfPopup, SfPicker, SfProgressBar); data is local/mock via `VehicleDataService` singleton; Overpass is a documented external enhancement, not a backend dependency. Minor wizard/splash creep noted above.
-
-### MVVM & Architecture
-✅ Pass — Clean View/ViewModel separation; all ViewModels registered via `MauiProgram`; code-behind files are thin (mostly ≤ 36 lines) except `VehicleCenterPage.xaml.cs` (justified control wiring, see Minor). Commands/binding used throughout. Only minor maintainability concerns (VM size, duplicated AI-refresh logic).
-
-### Control Showcase
-✅ Pass — Syncfusion controls are the primary UI surface, used meaningfully (DataGrid for service/fuel records, Scheduler with color-coded appointment types, Maps with live markers + template selector, AIAssistView with suggestions/stop/pinnable items, Charts, TabView). Adaptive desktop/mobile layouts via converters and `OnPlatform` demonstrate real-world usage patterns.
-
-### AI Functionality
-✅ Pass — End-to-end flow implemented: key loading from SecureStorage, request build with vehicle-context system prompt, response parsing, error capture (`LastError`), graceful fallback messages, and AI-generated nearby-place fallback for Overpass failures. Minor gap: no chat loading indicator.
-
-### Security
-✅ Pass — No secrets in source. By design: the API key is entered at runtime via the in-app popup and stored via `SecureStorage`, while the endpoint and deployment name are configured in the sample source (`AzureOpenAIService.cs` / default deployment `gpt-5-mini`, overridable via Settings). License key and endpoint use the required TODO + placeholder pattern. HttpClient timeout set (30 s).
-
-### Documentation
-⚠️ Needs Improvement — README covers overview, controls, prerequisites, setup, run instructions, and troubleshooting, but contains a streaming inaccuracy and a missing screenshot (self-acknowledged). Endpoint-in-source and key-via-popup setup steps are documented correctly and match the intended behavior.
-
----
-
-## Final Recommendation
-Actionable items before merge/publish:
-1. Fix the README streaming claim (or implement streaming).
-2. Add a screenshot/demo GIF to the README.
-3. Add a loading/typing indicator for AI chat responses.
-4. Extract the duplicated "load key → refresh AI" logic (4+ copies) into a shared helper.
-5. Shorten the artificial splash delay.
-
-Endpoint/deployment-in-source is the intended design (confirmed by author) — API key via in-app popup; no change required.
-
-Build success and runtime behavior on Android/iOS/Windows/macOS: **Unable to verify from PR.**
+## Fix Log (this branch)
+1. `README.md` — replaced the "streams back" claim with an accurate non-streaming description.
+2. `AIAssistViewModel.cs` + `AIAssistPage.xaml` — added `IsGeneratingResponse` (try/finally around the AI call) and a visible busy indicator row; disclaimer label hidden while generating.
+3. `AzureOpenAIService.cs` — added `EnsureApiKeyLoadedAsync()` shared guard; replaced the 4 duplicated `if (!HasApiKey) await LoadApiKeyFromStorageAsync()` blocks.
+4. `SplashPage.xaml.cs` — splash delays reduced (900/600/600/700 ms → 400/350/250/200 ms; ~1.2 s total).
