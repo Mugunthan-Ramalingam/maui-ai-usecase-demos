@@ -171,53 +171,58 @@ Do not assume.
 # Review Output
 
 ## Verdict
-✅ Approve
-
 ⚠️ Approve with Changes
-
-❌ Reject
 
 ---
 
 ## Critical Issues
-- Item
+- None. No secrets, API keys, or tokens are committed. The Syncfusion license key (`MauiProgram.cs`) and the Azure endpoint (`Services/AzureOpenAIService.cs`) both follow the expected `TODO` + placeholder pattern (`"YOUR_LICENSE_KEY"`, `"API_ENDPOINT"`), and the Azure API key is entered at runtime and stored via `SecureStorage`.
 
 ## Major Issues
-- Item
+- **Documentation inaccuracy — "response streams back" (README, "AI Assistant" section).** The implementation is not streaming: `AzureOpenAIService.GetResultsFromAI` performs a single non-streaming `HttpClient` POST to `/chat/completions` and returns the full parsed string in one `await`. Either implement streaming or reword the README to say the response is displayed after completion.
+- **Endpoint requires a source-code edit, contradicting the README's "nothing is committed to source / runs fully offline" framing.** `BaseEndpoint` is a `const string` in `AzureOpenAIService.cs` with placeholder `"API_ENDPOINT"`. The API key and deployment name are configurable at runtime via Settings, but the endpoint is not. Move the endpoint into Settings alongside the key (SecureStorage/Preferences) so the sample runs without modifying source, matching the pattern already established by the key.
+- **README screenshot section is self-flagged as missing.** The README states no `VehicleCareApp.gif`/screenshot asset exists in the repository. A customer-facing showcase should include a demo screenshot/GIF before publishing.
 
 ## Minor Issues
-- Item
+- **Oversized ViewModels.** `VehicleCenterViewModel.cs` (1,954 lines) and `MainViewModel.cs` (1,614 lines) concentrate dashboard, vehicle center, scheduler, fuel, map, and AI-insight logic. MVVM separation is intact, but splitting per-feature (or extracting shared AI-refresh logic — `LoadApiKeyFromStorageAsync` + guard + refresh is duplicated across `MainViewModel` lines 56/804/1505 and `VehicleCenterViewModel` lines 1210/1495) would improve readability.
+- **Presentation logic in code-behind (`VehicleCenterPage.xaml.cs`, 210 lines).** Marker wiring (`AttachToViewModel`, `OnMapMarkersChanged`, manual `MainThread.BeginInvokeOnMainThread` marker sync between `DesktopMapLayer`/`MobileMapLayer`) is control-integration code, which is defensible, but duplicating desktop/mobile marker layers forces this manual sync pattern; consider a single map layer with adaptive layout.
+- **No chat loading/typing indicator for the AI Assistant.** Loading state exists for dashboard AI insights (`IsAiInsightsLoading`), but `AIAssistViewModel`'s request handler (`Requesting` → `GetResultsFromAI` → add response item) provides no visual in-progress state in `SfAIAssistView`; a 30 s HttpClient timeout with no feedback may look frozen. (SfAIAssistView supports a "generating" item pattern.)
+- **Artificial splash sequence (`SplashPage.xaml.cs`).** ~2.8 s of hard-coded `Task.Delay` progress steps add no showcase value before navigating to `welcome`; consider shortening.
+- **Onboarding/settings scope.** The Welcome wizard and Settings tab are flagged categories in this checklist. Here they are justified (vehicle profile setup; API-key entry), but the wizard's adaptive two-panel hero layout and the constellation splash push toward feature creep beyond the control showcase.
+- **`Preferences.Default.Clear()` in `SettingsViewModel` (line 29)** wipes all preferences including the stored deployment name; verify this is intended (it does not touch the SecureStorage key, but it clears unrelated preferences if any are added later).
+- **No tests and no CI in the repository.** Runtime behavior, build success, and platform-specific layout claims are **Unable to verify from PR.**
 
 ---
 
 ## Summary
 
 ### Scope
-✅ Pass / ⚠️ Needs Improvement / ❌ Fail
+✅ Pass — Focused on Syncfusion control showcase (SfAIAssistView, SfScheduler, SfMaps, SfDataGrid, SfCharts, SfTabView, SfPopup, SfPicker, SfProgressBar); data is local/mock via `VehicleDataService` singleton; Overpass is a documented external enhancement, not a backend dependency. Minor wizard/splash creep noted above.
 
 ### MVVM & Architecture
-✅ Pass / ⚠️ Needs Improvement / ❌ Fail
+✅ Pass — Clean View/ViewModel separation; all ViewModels registered via `MauiProgram`; code-behind files are thin (mostly ≤ 36 lines) except `VehicleCenterPage.xaml.cs` (justified control wiring, see Minor). Commands/binding used throughout. Only minor maintainability concerns (VM size, duplicated AI-refresh logic).
 
 ### Control Showcase
-✅ Pass / ⚠️ Needs Improvement / ❌ Fail
+✅ Pass — Syncfusion controls are the primary UI surface, used meaningfully (DataGrid for service/fuel records, Scheduler with color-coded appointment types, Maps with live markers + template selector, AIAssistView with suggestions/stop/pinnable items, Charts, TabView). Adaptive desktop/mobile layouts via converters and `OnPlatform` demonstrate real-world usage patterns.
 
 ### AI Functionality
-✅ Pass / ⚠️ Needs Improvement / ❌ Fail / N/A
+✅ Pass — End-to-end flow implemented: key loading from SecureStorage, request build with vehicle-context system prompt, response parsing, error capture (`LastError`), graceful fallback messages, and AI-generated nearby-place fallback for Overpass failures. Minor gap: no chat loading indicator.
 
 ### Security
-✅ Pass / ⚠️ Needs Improvement / ❌ Fail
+✅ Pass — No secrets in source. API key runtime-entered and stored via `SecureStorage`; license key and endpoint use the required TODO + placeholder pattern. HttpClient timeout set (30 s).
 
 ### Documentation
-✅ Pass / ⚠️ Needs Improvement / ❌ Fail
+⚠️ Needs Improvement — README covers overview, controls, prerequisites, setup, run instructions, and troubleshooting, but contains a streaming inaccuracy, a missing screenshot (self-acknowledged), and the endpoint-setup flow is inconsistent with the "no source edit" story.
 
 ---
 
 ## Final Recommendation
+Actionable items before merge/publish:
+1. Fix the README streaming claim (or implement streaming).
+2. Make the Azure endpoint configurable via Settings (SecureStorage), removing the required source edit.
+3. Add a screenshot/demo GIF to the README.
+4. Add a loading/typing indicator for AI chat responses.
+5. Extract the duplicated "load key → refresh AI" logic (4+ copies) into a shared helper.
+6. Shorten the artificial splash delay.
 
-Provide only actionable findings.
-
-Avoid generic comments.
-
-If something cannot be verified from the PR, explicitly state:
-
-**Unable to verify from PR.**
+Build success and runtime behavior on Android/iOS/Windows/macOS: **Unable to verify from PR.**
