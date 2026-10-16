@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using SmartVehicleCare.Views;
 using SmartVehicleCare.ViewModels;
 using SmartVehicleCare.Services;
@@ -11,7 +11,8 @@ namespace SmartVehicleCare
     {
         public static MauiApp CreateMauiApp()
         {
-            SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1JAaF1cXmhIfkx1WmFZfVhgdVRMZVpbQHBPMyBoS35RcEVqWH9eeHVQR2VeVExzVEFZ");
+            // TODO: Add your Syncfusion license key before running
+            SyncfusionLicenseProvider.RegisterLicense("YOUR_LICENSE_KEY");
 
             var builder = MauiApp.CreateBuilder();
             builder
@@ -22,7 +23,6 @@ namespace SmartVehicleCare
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                     fonts.AddFont("MaterialIcons-Regular.ttf", "MaterialIcons");
-                    // TODO: Add Inter-Regular.ttf and Inter-SemiBold.ttf to Resources/Fonts for PDS typography compliance
                 });
 
             // Register the in-memory demo store as the single source of truth.

@@ -44,7 +44,7 @@ public class WelcomeViewModel : INotifyPropertyChanged
     }
 
     public bool IsWizardVisible => CurrentStep > 0;
-    public bool IsLandingVisible => CurrentStep == 0 && !_isLoginPhoneVisible && !_isLoginOtpVisible;
+    public bool IsLandingVisible => CurrentStep == 0;
 
     public bool IsStep1Visible => CurrentStep == 1;
     public bool IsStep2Visible => CurrentStep == 2;
@@ -199,108 +199,6 @@ public class WelcomeViewModel : INotifyPropertyChanged
 
     #endregion
 
-    #region Mobile OTP Login
-
-    private bool _isLoginPhoneVisible;
-    public bool IsLoginPhoneVisible
-    {
-        get => _isLoginPhoneVisible;
-        set
-        {
-            if (SetProperty(ref _isLoginPhoneVisible, value))
-                OnPropertyChanged(nameof(IsLandingVisible));
-        }
-    }
-
-    private bool _isLoginOtpVisible;
-    public bool IsLoginOtpVisible
-    {
-        get => _isLoginOtpVisible;
-        set
-        {
-            if (SetProperty(ref _isLoginOtpVisible, value))
-                OnPropertyChanged(nameof(IsLandingVisible));
-        }
-    }
-
-    private string _loginPhone = string.Empty;
-    public string LoginPhone
-    {
-        get => _loginPhone;
-        set
-        {
-            if (SetProperty(ref _loginPhone, value))
-            {
-                OnPropertyChanged(nameof(IsLoginPhoneValid));
-                ((Command)SendOtpCommand).ChangeCanExecute();
-            }
-        }
-    }
-
-    public bool IsLoginPhoneValid => _loginPhone.Length == 10;
-
-    private string _loginOtp = string.Empty;
-    public string LoginOtp
-    {
-        get => _loginOtp;
-        set
-        {
-            if (SetProperty(ref _loginOtp, value))
-            {
-                OnPropertyChanged(nameof(IsOtpValid));
-                ((Command)VerifyOtpCommand).ChangeCanExecute();
-            }
-        }
-    }
-
-    public bool IsOtpValid => _loginOtp.Length == 6 && _loginOtp.All(char.IsDigit);
-
-    private string _otpSentMessage = string.Empty;
-    public string OtpSentMessage
-    {
-        get => _otpSentMessage;
-        set => SetProperty(ref _otpSentMessage, value);
-    }
-
-    private string _resendOtpText = "Resend OTP";
-    public string ResendOtpText
-    {
-        get => _resendOtpText;
-        set => SetProperty(ref _resendOtpText, value);
-    }
-
-    private bool _isResendEnabled = true;
-    public bool IsResendEnabled
-    {
-        get => _isResendEnabled;
-        set => SetProperty(ref _isResendEnabled, value);
-    }
-
-    private string _simulatedOtp = string.Empty;
-
-    public ICommand ShowLoginCommand { get; private set; } = null!;
-    public ICommand SendOtpCommand { get; private set; } = null!;
-    public ICommand VerifyOtpCommand { get; private set; } = null!;
-    public ICommand BackFromLoginCommand { get; private set; } = null!;
-    public ICommand BackToPhoneCommand { get; private set; } = null!;
-    public ICommand ResendOtpCommand { get; private set; } = null!;
-
-    private async Task StartResendCountdownAsync()
-    {
-        IsResendEnabled = false;
-        ((Command)ResendOtpCommand).ChangeCanExecute();
-        for (int i = 30; i > 0; i--)
-        {
-            ResendOtpText = $"Resend in {i}s";
-            await Task.Delay(1000);
-        }
-        ResendOtpText = "Resend OTP";
-        IsResendEnabled = true;
-        ((Command)ResendOtpCommand).ChangeCanExecute();
-    }
-
-    #endregion
-
     #region Commands
 
     public ICommand GoToWizardCommand { get; }
@@ -331,14 +229,6 @@ public class WelcomeViewModel : INotifyPropertyChanged
     {
         CurrentStep = 0;
 
-        IsLoginPhoneVisible = false;
-        IsLoginOtpVisible = false;
-        LoginPhone = string.Empty;
-        LoginOtp = string.Empty;
-        OtpSentMessage = string.Empty;
-        ResendOtpText = "Resend OTP";
-        IsResendEnabled = true;
-
         SelectedVehicleTypeIndex = -1;
         SelectedMake = string.Empty;
         VehicleModel = string.Empty;
@@ -350,67 +240,6 @@ public class WelcomeViewModel : INotifyPropertyChanged
     public WelcomeViewModel(VehicleDataService dataService)
     {
         _dataService = dataService;
-
-        ShowLoginCommand = new Command(() =>
-        {
-            IsLoginPhoneVisible = true;
-            IsLoginOtpVisible = false;
-            LoginPhone = string.Empty;
-            LoginOtp = string.Empty;
-            OtpSentMessage = string.Empty;
-        });
-
-        SendOtpCommand = new Command(
-            execute: async () =>
-            {
-                // TODO: Replace with real OTP API (e.g., Firebase Phone Auth, Twilio Verify)
-                _simulatedOtp = new Random().Next(100000, 999999).ToString();
-                OtpSentMessage = $"OTP sent to +91 {_loginPhone[..5]} {_loginPhone[5..]}. Enter the code below.";
-                System.Diagnostics.Debug.WriteLine($"[Demo OTP] {_simulatedOtp}");
-                LoginOtp = string.Empty;
-                IsLoginPhoneVisible = false;
-                IsLoginOtpVisible = true;
-                _ = StartResendCountdownAsync();
-            },
-            canExecute: () => IsLoginPhoneValid);
-
-        VerifyOtpCommand = new Command(
-            execute: async () =>
-            {
-                // TODO: Replace with real OTP verification API call
-                await Shell.Current.GoToAsync("///main");
-            },
-            canExecute: () => IsOtpValid);
-
-        BackFromLoginCommand = new Command(() =>
-        {
-            IsLoginPhoneVisible = false;
-            IsLoginOtpVisible = false;
-            LoginPhone = string.Empty;
-            LoginOtp = string.Empty;
-            OtpSentMessage = string.Empty;
-            ResendOtpText = "Resend OTP";
-            IsResendEnabled = true;
-        });
-
-        BackToPhoneCommand = new Command(() =>
-        {
-            IsLoginOtpVisible = false;
-            IsLoginPhoneVisible = true;
-            LoginOtp = string.Empty;
-            OtpSentMessage = string.Empty;
-        });
-
-        ResendOtpCommand = new Command(
-            execute: async () =>
-            {
-                // TODO: Replace with real OTP resend API call
-                _simulatedOtp = new Random().Next(100000, 999999).ToString();
-                System.Diagnostics.Debug.WriteLine($"[Demo OTP] Resent: {_simulatedOtp}");
-                LoginOtp = string.Empty;
-                _ = StartResendCountdownAsync();
-            },
-            canExecute: () => IsResendEnabled);
 
         GoToWizardCommand = new Command(() =>
         {

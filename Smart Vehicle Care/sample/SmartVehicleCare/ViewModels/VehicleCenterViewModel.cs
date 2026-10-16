@@ -1,5 +1,4 @@
 using Microsoft.Maui.Graphics;
-using Newtonsoft.Json.Linq;
 using SmartVehicleCare.Helpers;
 using SmartVehicleCare.Models;
 using SmartVehicleCare.Services;
@@ -1504,13 +1503,13 @@ Keep each line under 140 characters. Use the Indian Rupee symbol ₹. Do not use
             return;
         }
 
-        JArray? items = null;
+        JsonElementArray? items = null;
 
         // ── Primary: Overpass OSM API (real data from OpenStreetMap) ─────────────
         {
             var helper = new ServiceCenterDataHelper();
             var data = await helper.GetNearbyPlacesAsync(latitude, longitude, 10, 8, _nearbyMapMode);
-            items = data?["markercollections"] as JArray;
+            items = ServiceCenterDataHelper.UnwrapMarkerCollections(data);
         }
 
         // ── Fallback 1: Azure OpenAI (if Overpass returned nothing) ──────────────
@@ -1538,7 +1537,7 @@ Keep each line under 140 characters. Use the Indian Rupee symbol ₹. Do not use
 
     // Builds a prompt following the blog pattern and calls Azure OpenAI.
     // Returns (parsed items, raw response text) so the caller can display the full response.
-    private async Task<(JArray? Items, string RawResponse)> GetNearbyPlacesFromAIAsync(double latitude, double longitude)
+    private async Task<(JsonElementArray? Items, string RawResponse)> GetNearbyPlacesFromAIAsync(double latitude, double longitude)
     {
         var isServiceMode = string.Equals(_nearbyMapMode, "Service", StringComparison.OrdinalIgnoreCase);
         var modeLabel = isServiceMode
@@ -1600,34 +1599,24 @@ Keep each line under 140 characters. Use the Indian Rupee symbol ₹. Do not use
             }
 
             // Parse — expect raw array; fall back to object with any common wrapper key
-            JArray? parsed = null;
-            try { parsed = JArray.Parse(clean); }
+            JsonElementArray? parsed = null;
+            try { parsed = ServiceCenterDataHelper.ParseJsonArray(clean); }
             catch
             {
-                try
-                {
-                    var obj = JObject.Parse(clean);
-                    parsed = (obj["markercollections"]
-                            ?? obj["places"] ?? obj["locations"]
-                            ?? obj["results"] ?? obj["stations"]
-                            ?? obj["centers"] ?? obj["data"]) as JArray;
-                }
-                catch (Exception parseEx)
-                {
-                    return (null, $"(JSON parse error: {parseEx.Message})\n\nRaw response:\n{response}");
-                }
+                return (null, $"(JSON parse error)\n\nRaw response:\n{response}");
             }
 
             // Filter out non-place items the model may have embedded (Zoom objects, error objects)
             if (parsed != null)
             {
-                var valid = new JArray(parsed
-                    .OfType<JObject>()
+                var valid = new JsonElementArray(parsed
+                    .Where(o => o.ValueKind == System.Text.Json.JsonValueKind.Object)
                     .Where(o =>
-                        o["Latitude"] != null && o["Longitude"] != null  // must have coords
-                        && o["Name"] != null                              // must have a name
-                        && !string.Equals(o["Name"]?.ToString(), "Error", StringComparison.OrdinalIgnoreCase)
-                        && o["Zoom"] == null));                           // discard stray Zoom objects
+                        ServiceCenterDataHelper.HasProperty(o, "Latitude")
+                        && ServiceCenterDataHelper.HasProperty(o, "Longitude")  // must have coords
+                        && ServiceCenterDataHelper.HasProperty(o, "Name")       // must have a name
+                        && !string.Equals(ServiceCenterDataHelper.GetStringOrNull(o, "Name"), "Error", StringComparison.OrdinalIgnoreCase)
+                        && !ServiceCenterDataHelper.HasProperty(o, "Zoom")));   // discard stray Zoom objects
                 parsed = valid;
             }
 
@@ -1640,29 +1629,29 @@ Keep each line under 140 characters. Use the Indian Rupee symbol ₹. Do not use
         }
     }
 
-    private void PopulateNearbyFromResults(JArray items, double userLat, double userLon)
+    private void PopulateNearbyFromResults(JsonElementArray items, double userLat, double userLon)
     {
         var isServiceMode = string.Equals(_nearbyMapMode, "Service", StringComparison.OrdinalIgnoreCase);
 
         foreach (var item in items)
         {
-            var name = item["Name"]?.ToString() ?? "Nearby location";
+            var name = ServiceCenterDataHelper.GetStringOrNull(item, "Name") ?? "Nearby location";
             var displayName = ShortPlaceName(name);
-            var details = item["Details"]?.ToString() ?? string.Empty;
-            var address = item["Address"]?.ToString() ?? string.Empty;
-            var type = item["Type"]?.ToString() ?? (isServiceMode ? "Service Center" : "Fuel Station");
+            var details = ServiceCenterDataHelper.GetStringOrNull(item, "Details") ?? string.Empty;
+            var address = ServiceCenterDataHelper.GetStringOrNull(item, "Address") ?? string.Empty;
+            var type = ServiceCenterDataHelper.GetStringOrNull(item, "Type") ?? (isServiceMode ? "Service Center" : "Fuel Station");
 
-            var markerLat = item["Latitude"]?.Value<double?>() ?? userLat;
-            var markerLon = item["Longitude"]?.Value<double?>() ?? userLon;
+            var markerLat = ServiceCenterDataHelper.GetDoubleOrNull(item, "Latitude") ?? userLat;
+            var markerLon = ServiceCenterDataHelper.GetDoubleOrNull(item, "Longitude") ?? userLon;
 
             // Compute distance if not already in the item
-            var distanceKm = item["DistanceKm"]?.Value<double?>()
+            var distanceKm = ServiceCenterDataHelper.GetDoubleOrNull(item, "DistanceKm")
                           ?? VehicleCenterCalculations.HaversineKm(userLat, userLon, markerLat, markerLon);
 
             var isFuelItem = string.Equals(type, "Fuel Station", StringComparison.OrdinalIgnoreCase)
                           || string.Equals(type, "fuel", StringComparison.OrdinalIgnoreCase);
 
-            var openTime = item["OpenTime"]?.ToString();
+            var openTime = ServiceCenterDataHelper.GetStringOrNull(item, "OpenTime");
             if (string.IsNullOrWhiteSpace(openTime))
                 openTime = "Hours unavailable";
 

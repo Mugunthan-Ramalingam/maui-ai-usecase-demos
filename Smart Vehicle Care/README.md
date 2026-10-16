@@ -30,28 +30,35 @@ This repository demonstrates how to build a complete vehicle management app in .
 
 * .NET SDK compatible with .NET MAUI (net10.0 or later)
 * Visual Studio 2022 with .NET MAUI workload installed
-* Azure OpenAI account with an API endpoint, API key, and deployment name (optional — app works offline without it)
-* Syncfusion license key
+* Syncfusion license key (register in `MauiProgram.cs`)
+* Azure OpenAI account (optional — key is entered in the in-app Settings tab and stored via `SecureStorage`; endpoint goes in `Services/AzureOpenAIService.cs`)
 
 ## Quick Install
 
 **Clone:**
 ```bash
 git clone https://github.com/syncfusion/maui-ai-usecase-demos
-cd VehicleCareApp
+cd "Smart Vehicle Care/sample"
 ```
 
-**Configure Azure OpenAI credentials** in `Services/AzureOpenAIService.cs`:
+**Register the Syncfusion license** in `sample/SmartVehicleCare/MauiProgram.cs`:
 ```csharp
-private const string Endpoint       = "YOUR_AZURE_OPENAI_ENDPOINT";
-private const string DeploymentName = "YOUR_DEPLOYMENT_NAME";
-private const string ApiKey         = "YOUR_API_KEY";
+// TODO: Add your Syncfusion license key before running
+SyncfusionLicenseProvider.RegisterLicense("YOUR_LICENSE_KEY");
 ```
 
-**Register Syncfusion license** in `MauiProgram.cs`:
-```csharp
-Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("YOUR_LICENSE_KEY");
-```
+**Configure Azure OpenAI (optional)** — the app stores credentials securely on the device; nothing is committed to source:
+
+1. Run the app and open the **Settings** tab.
+2. Paste your **Azure OpenAI API key** — it is saved via `SecureStorage` and never written to source code.
+3. Set the **deployment name** (default: `gpt-5-mini`) if your deployment differs.
+4. In `Services/AzureOpenAIService.cs`, replace `BaseEndpoint` with your Azure AI Foundry `/openai/v1` project endpoint:
+   ```csharp
+   // TODO: Add your API endpoint before running
+   const string BaseEndpoint = "API_ENDPOINT";
+   ```
+
+The app runs fully offline — AI features are optional enhancements.
 
 ## How It Works
 
@@ -91,7 +98,7 @@ Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("YOUR_LICENSE_KEY
 
 ## Screenshot
 
-![Vehicle Care AI — .NET MAUI](VehicleCareApp.gif)
+**Unable to verify from PR** — no `VehicleCareApp.gif` asset exists in the repository. Add a screenshot/demo GIF here before publishing.
 
 ## Documentation
 
