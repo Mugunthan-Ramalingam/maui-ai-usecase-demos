@@ -180,7 +180,6 @@ Do not assume.
 
 ## Major Issues
 - **Documentation inaccuracy — "response streams back" (README, "AI Assistant" section).** The implementation is not streaming: `AzureOpenAIService.GetResultsFromAI` performs a single non-streaming `HttpClient` POST to `/chat/completions` and returns the full parsed string in one `await`. Either implement streaming or reword the README to say the response is displayed after completion.
-- **Endpoint requires a source-code edit, contradicting the README's "nothing is committed to source / runs fully offline" framing.** `BaseEndpoint` is a `const string` in `AzureOpenAIService.cs` with placeholder `"API_ENDPOINT"`. The API key and deployment name are configurable at runtime via Settings, but the endpoint is not. Move the endpoint into Settings alongside the key (SecureStorage/Preferences) so the sample runs without modifying source, matching the pattern already established by the key.
 - **README screenshot section is self-flagged as missing.** The README states no `VehicleCareApp.gif`/screenshot asset exists in the repository. A customer-facing showcase should include a demo screenshot/GIF before publishing.
 
 ## Minor Issues
@@ -209,20 +208,21 @@ Do not assume.
 ✅ Pass — End-to-end flow implemented: key loading from SecureStorage, request build with vehicle-context system prompt, response parsing, error capture (`LastError`), graceful fallback messages, and AI-generated nearby-place fallback for Overpass failures. Minor gap: no chat loading indicator.
 
 ### Security
-✅ Pass — No secrets in source. API key runtime-entered and stored via `SecureStorage`; license key and endpoint use the required TODO + placeholder pattern. HttpClient timeout set (30 s).
+✅ Pass — No secrets in source. By design: the API key is entered at runtime via the in-app popup and stored via `SecureStorage`, while the endpoint and deployment name are configured in the sample source (`AzureOpenAIService.cs` / default deployment `gpt-5-mini`, overridable via Settings). License key and endpoint use the required TODO + placeholder pattern. HttpClient timeout set (30 s).
 
 ### Documentation
-⚠️ Needs Improvement — README covers overview, controls, prerequisites, setup, run instructions, and troubleshooting, but contains a streaming inaccuracy, a missing screenshot (self-acknowledged), and the endpoint-setup flow is inconsistent with the "no source edit" story.
+⚠️ Needs Improvement — README covers overview, controls, prerequisites, setup, run instructions, and troubleshooting, but contains a streaming inaccuracy and a missing screenshot (self-acknowledged). Endpoint-in-source and key-via-popup setup steps are documented correctly and match the intended behavior.
 
 ---
 
 ## Final Recommendation
 Actionable items before merge/publish:
 1. Fix the README streaming claim (or implement streaming).
-2. Make the Azure endpoint configurable via Settings (SecureStorage), removing the required source edit.
-3. Add a screenshot/demo GIF to the README.
-4. Add a loading/typing indicator for AI chat responses.
-5. Extract the duplicated "load key → refresh AI" logic (4+ copies) into a shared helper.
-6. Shorten the artificial splash delay.
+2. Add a screenshot/demo GIF to the README.
+3. Add a loading/typing indicator for AI chat responses.
+4. Extract the duplicated "load key → refresh AI" logic (4+ copies) into a shared helper.
+5. Shorten the artificial splash delay.
+
+Endpoint/deployment-in-source is the intended design (confirmed by author) — API key via in-app popup; no change required.
 
 Build success and runtime behavior on Android/iOS/Windows/macOS: **Unable to verify from PR.**
