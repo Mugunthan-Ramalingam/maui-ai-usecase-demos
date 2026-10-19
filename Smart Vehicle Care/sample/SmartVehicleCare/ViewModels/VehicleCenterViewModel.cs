@@ -695,7 +695,7 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         get => _editServiceDate;
         set { if (SetProperty(ref _editServiceDate, value)) OnPropertyChanged(nameof(EditServiceDateDisplay)); }
     }
-    public string EditServiceDateDisplay => _editServiceDate.ToString("dd MMM yyyy");
+    public string EditServiceDateDisplay => _editServiceDate.ToString("dd MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
     private string _editServiceStatus = "Completed";
     public string EditServiceStatus
     {
@@ -781,7 +781,7 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         get => _editFuelDate;
         set { if (SetProperty(ref _editFuelDate, value)) OnPropertyChanged(nameof(EditFuelDateDisplay)); }
     }
-    public string EditFuelDateDisplay => _editFuelDate.ToString("dd MMM yyyy");
+    public string EditFuelDateDisplay => _editFuelDate.ToString("dd MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
     private string _editFuelOdometer = string.Empty;
     public string EditFuelOdometer { get => _editFuelOdometer; set => SetProperty(ref _editFuelOdometer, value); }
     private bool _editFuelIsFullTank = true;
@@ -1261,8 +1261,8 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
             ? $"Fuel: ₹{recentFuelSpend:N0} in the last 90 days vs ₹{previousFuelSpend:N0} previously. Total spend changed {spendChange:+0.0;-0.0;0}% ({deltaText})."
             : $"Fuel spend in the last 90 days: ₹{recentFuelSpend:N0}. There is not enough previous data for a comparison.";
         var odometer = vehicle.OdometerReading;
-        var lastServiceDate = services.FirstOrDefault()?.ServiceDate.ToString("dd MMM yyyy") ?? "unknown";
-        var lastFuelDate = fuels.FirstOrDefault()?.FuelDate.ToString("dd MMM yyyy") ?? "unknown";
+        var lastServiceDate = services.FirstOrDefault()?.ServiceDate.ToString("dd MMM yyyy", System.Globalization.CultureInfo.InvariantCulture) ?? "unknown";
+        var lastFuelDate = fuels.FirstOrDefault()?.FuelDate.ToString("dd MMM yyyy", System.Globalization.CultureInfo.InvariantCulture) ?? "unknown";
         var avgFuelCost = fuels.Any() ? fuels.Average(f => f.CostPerLitre) : 0;
         var prompt = $"""
 Vehicle: {vehicle.Make} {vehicle.Model} {vehicle.Year}, odometer {odometer} km
@@ -1493,7 +1493,7 @@ Keep each line under 140 characters. Use the Indian Rupee symbol ₹. Do not use
             if (status == PermissionStatus.Granted)
             {
                 var loc = await Geolocation.GetLastKnownLocationAsync();
-                loc ??= await Geolocation.GetLocationAsync(new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(10)));
+                loc ??= await Geolocation.GetLocationAsync(new GeolocationRequest(GeolocationAccuracy.High, TimeSpan.FromSeconds(10)));
                 if (loc != null)
                 {
                     latitude = loc.Latitude;

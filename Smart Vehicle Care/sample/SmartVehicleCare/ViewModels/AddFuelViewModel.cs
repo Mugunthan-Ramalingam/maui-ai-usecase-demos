@@ -55,7 +55,7 @@ public class AddFuelViewModel : INotifyPropertyChanged
             }
         }
     }
-    public string FuelDateDisplay => _isFuelDateSet ? _fuelDate.ToString("dd MMM yyyy") : string.Empty;
+    public string FuelDateDisplay => _isFuelDateSet ? _fuelDate.ToString("dd MMM yyyy", System.Globalization.CultureInfo.InvariantCulture) : string.Empty;
     #endregion
 
     #region Station

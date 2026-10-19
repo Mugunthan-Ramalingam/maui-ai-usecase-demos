@@ -67,7 +67,7 @@ public class AddScheduleViewModel : INotifyPropertyChanged
             }
         }
     }
-    public string DueDateDisplay => _isDueDateSet ? _dueDate.ToString("dd MMM yyyy") : string.Empty;
+    public string DueDateDisplay => _isDueDateSet ? _dueDate.ToString("dd MMM yyyy", System.Globalization.CultureInfo.InvariantCulture) : string.Empty;
 
     // ── Due Time ──────────────────────────────────────────────────────────────
 

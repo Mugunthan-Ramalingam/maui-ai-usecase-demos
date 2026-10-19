@@ -75,10 +75,10 @@ internal class AzureOpenAIService
 
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(30) };
 
-    internal async Task<string> GetResultsFromAI(string userPrompt, string systemMessage = "You are a helpful assistant.")
+    internal async Task<string> GetResultsFromAI(string userPrompt, string systemMessage = "You are a helpful assistant.", bool captureDiagnostics = false)
     {
         LastError = null;
-        LastRawResponse = string.Empty;
+        if (captureDiagnostics) LastRawResponse = string.Empty;
         try
         {
             if (!HasApiKey)
@@ -113,7 +113,7 @@ internal class AzureOpenAIService
 
             var response = await Http.SendAsync(request);
             var raw      = await response.Content.ReadAsStringAsync();
-            LastRawResponse = raw; // always capture for diagnostics
+            if (captureDiagnostics) LastRawResponse = raw; // capture for diagnostics only when requested
 
             if (!response.IsSuccessStatusCode)
             {
@@ -124,9 +124,9 @@ internal class AzureOpenAIService
 
             // Parse choices[0].message.content from the OpenAI response envelope
             var doc     = JsonDocument.Parse(raw);
-            if (!doc.RootElement.TryGetProperty("choices", out var choices))
+            if (!doc.RootElement.TryGetProperty("choices", out var choices) || choices.GetArrayLength() == 0)
             {
-                LastError = $"No 'choices' in response. Raw: {raw[..Math.Min(300, raw.Length)]}";
+                LastError = $"No 'choices' in response or choices array is empty. Raw: {raw[..Math.Min(300, raw.Length)]}";
                 return string.Empty;
             }
             var content = choices[0]

@@ -54,7 +54,7 @@ public class MainViewModel : INotifyPropertyChanged
     {
         // Load the key from storage first so we don't race against the App startup fire-and-forget
         await AzureOpenAIService.LoadApiKeyFromStorageAsync();
-        await Task.Delay(800);
+        // Removed Task.Delay(800) race hack - now using proper async initialization
         if (!AzureOpenAIService.HasApiKey && !_hasSkippedApiKeyThisSession)
             IsApiKeyPromptVisible = true;
     }
@@ -92,9 +92,9 @@ public class MainViewModel : INotifyPropertyChanged
             _hasSkippedApiKeyThisSession = true;
         });
 
-        OilChangeCommand = new Command(async () => await Shell.Current.DisplayAlertAsync("Oil Change", "Next oil change scheduled on Jun 27.\nEstimated cost: ₹1,200.", "OK"));
-        LastFuelCommand = new Command(async () => await Shell.Current.DisplayAlertAsync("Last Fuel Log", "Last refuel: 3 days ago.\nAmount: 30 L · ₹2,850.", "OK"));
-        AddActionCommand = new Command(async () => await Shell.Current.DisplayAlertAsync("Add Action", "Log a new action such as fuel or service.", "OK"));
+        OilChangeCommand = new Command(() => OnShowOilChangeAlert?.Invoke());
+        LastFuelCommand = new Command(() => OnShowLastFuelAlert?.Invoke());
+        AddActionCommand = new Command(() => OnShowAddActionAlert?.Invoke());
 
         ShowAddVehicleCommand = new Command(() =>
         {
@@ -590,6 +590,11 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand OilChangeCommand { get; }
     public ICommand LastFuelCommand { get; }
     public ICommand AddActionCommand { get; }
+    
+    // Events for UI alerts (MVVM compliant)
+    public event Action OnShowOilChangeAlert;
+    public event Action OnShowLastFuelAlert;
+    public event Action OnShowAddActionAlert;
     // ── Add Vehicle ───────────────────────────────────────────────────────────
 
     private bool _isAddVehicleDrawerVisible = false;
@@ -1136,7 +1141,7 @@ public class MainViewModel : INotifyPropertyChanged
         {
             var row = new DashboardTableRow
             {
-                Date = s.ServiceDate.ToString("dd MMM yyyy"),
+                Date = s.ServiceDate.ToString("dd MMM yyyy", System.Globalization.CultureInfo.InvariantCulture),
                 Type = "Service",
                 Detail = s.ServiceType,
                 Status = s.Status
@@ -1159,7 +1164,7 @@ public class MainViewModel : INotifyPropertyChanged
         {
             var row = new DashboardTableRow
             {
-                Date = f.FuelDate.ToString("dd MMM yyyy"),
+                Date = f.FuelDate.ToString("dd MMM yyyy", System.Globalization.CultureInfo.InvariantCulture),
                 Type = "Fuel",
                 Detail = $"{f.FuelType} · {f.Station}",
                 Status = $"₹{f.TotalCost:N0}"
@@ -1182,7 +1187,7 @@ public class MainViewModel : INotifyPropertyChanged
         {
             var row = new DashboardTableRow
             {
-                Date = r.DueDate.ToString("dd MMM yyyy"),
+                Date = r.DueDate.ToString("dd MMM yyyy", System.Globalization.CultureInfo.InvariantCulture),
                 Type = r.ReminderType,
                 Detail = r.Title,
                 Status = r.Priority
@@ -1201,7 +1206,7 @@ public class MainViewModel : INotifyPropertyChanged
             }));
         }
 
-        foreach (var row in activityRows.OrderByDescending(r => DateTime.ParseExact(r.Date == "—" ? DateTime.Today.ToString("dd MMM yyyy") : r.Date, "dd MMM yyyy", System.Globalization.CultureInfo.InvariantCulture)).ToList())
+        foreach (var row in activityRows.OrderByDescending(r => DateTime.ParseExact(r.Date == "—" ? DateTime.Today.ToString("dd MMM yyyy", System.Globalization.CultureInfo.InvariantCulture) : r.Date, "dd MMM yyyy", System.Globalization.CultureInfo.InvariantCulture)).ToList())
             AllRecentActivityRows.Add(row);
 
         foreach (var row in AllRecentActivityRows.Take(6))
@@ -1211,7 +1216,7 @@ public class MainViewModel : INotifyPropertyChanged
         {
             var row = new DashboardTableRow
             {
-                Date = fuel.FuelDate.ToString("dd MMM yyyy"),
+                Date = fuel.FuelDate.ToString("dd MMM yyyy", System.Globalization.CultureInfo.InvariantCulture),
                 Type = fuel.FuelType,
                 Detail = fuel.Station,
                 Status = $"₹{fuel.TotalCost:N0}"
@@ -1225,7 +1230,7 @@ public class MainViewModel : INotifyPropertyChanged
         {
             var row = new DashboardTableRow
             {
-                Date = service.ServiceDate.ToString("dd MMM yyyy"),
+                Date = service.ServiceDate.ToString("dd MMM yyyy", System.Globalization.CultureInfo.InvariantCulture),
                 Type = service.ServiceType,
                 Detail = string.IsNullOrWhiteSpace(service.Workshop) ? "Workshop not set" : service.Workshop,
                 Status = service.Amount
