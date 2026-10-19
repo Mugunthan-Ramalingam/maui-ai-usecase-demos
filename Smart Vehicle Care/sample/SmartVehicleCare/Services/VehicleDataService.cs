@@ -67,6 +67,16 @@ public class VehicleDataService
     }
 
 
+    /// <summary>
+    /// Resets the service to a clean state and loads fresh demo data.
+    /// </summary>
+    public void FullReset()
+    {
+        ClearAllData();
+        _currentMode = DataMode.Demo;
+        ModeChanged?.Invoke(_currentMode);
+        TryLoadDemoData();
+    }
 
     /// <summary>
     /// Switches to Demo mode and loads sample data.

@@ -879,6 +879,13 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         set => SetProperty(ref _isAddScheduleBottomSheetVisible, value);
     }
 
+    private bool _isAddScheduleRequested;
+    public bool IsAddScheduleRequested
+    {
+        get => _isAddScheduleRequested;
+        set => SetProperty(ref _isAddScheduleRequested, value);
+    }
+
     public ICommand AddScheduleCommand { get; }   // initialized in constructor
     public ICommand CloseAddScheduleCommand { get; }   // initialized in constructor
     public ICommand DeleteScheduleCommand { get; }
@@ -1547,13 +1554,13 @@ Keep each line under 140 characters. Use the Indian Rupee symbol ₹. Do not use
             {
                 // Check if this refresh is still current before making the AI call
                 if (refreshVersion != _nearbyNetworkRefreshVersion)
-                    return (null, string.Empty);
+                    return;
 
-                var (aiItems, _) = await GetNearbyPlacesFromAIAsync(latitude, longitude, refreshVersion);
+                var (aiItems, _) = await GetNearbyPlacesFromAIAsync(latitude, longitude);
                 
                 // Check if this refresh is still current after the AI call
                 if (refreshVersion != _nearbyNetworkRefreshVersion)
-                    return (null, string.Empty);
+                    return;
                     
                 items = aiItems;
             }
@@ -1574,12 +1581,8 @@ Keep each line under 140 characters. Use the Indian Rupee symbol ₹. Do not use
 
     // Builds a prompt following the blog pattern and calls Azure OpenAI.
     // Returns (parsed items, raw response text) so the caller can display the full response.
-    private async Task<(JsonElementArray? Items, string RawResponse)> GetNearbyPlacesFromAIAsync(double latitude, double longitude, int refreshVersion)
+    private async Task<(JsonElementArray? Items, string RawResponse)> GetNearbyPlacesFromAIAsync(double latitude, double longitude)
     {
-        // Check if this refresh is still current
-        if (refreshVersion != _nearbyNetworkRefreshVersion)
-            return (null, string.Empty);
-
         var isServiceMode = string.Equals(_nearbyMapMode, "Service", StringComparison.OrdinalIgnoreCase);
         var modeLabel = isServiceMode
             ? "auto service centers, car repair workshops, and vehicle repair shops"
@@ -1608,17 +1611,13 @@ Keep each line under 140 characters. Use the Indian Rupee symbol ₹. Do not use
 
         try
         {
-            // Check if this refresh is still current before making the AI call
-            if (refreshVersion != _nearbyNetworkRefreshVersion)
-                return (null, string.Empty);
+
 
             var ai = new AzureOpenAIService();
             var response = await ai.GetResultsFromAI(prompt,
                 "You are a location data assistant. Return only valid JSON with no markdown or explanation.");
 
-            // Check if this refresh is still current after the AI call
-            if (refreshVersion != _nearbyNetworkRefreshVersion)
-                return (null, string.Empty);
+
 
             if (string.IsNullOrWhiteSpace(response))
             {
