@@ -97,7 +97,14 @@ public class SettingsViewModel : INotifyPropertyChanged
         {
             if (vehicle == null) return;
 
-            var confirmed = await OnDeleteVehicleConfirmationRequested?.Invoke(vehicle) ?? false;
+            // Check if we have a handler for the confirmation dialog
+            bool confirmed = true; // Default to true if no handler is attached
+            var handler = OnDeleteVehicleConfirmationRequested;
+            if (handler != null)
+            {
+                confirmed = await handler(vehicle);
+            }
+            // If no handler is attached, we proceed with deletion (similar to original behavior)
             if (!confirmed) return;
 
             VehicleDataService.Instance.DeleteVehicle(vehicle);
