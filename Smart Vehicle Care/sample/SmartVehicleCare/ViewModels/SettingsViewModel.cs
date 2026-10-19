@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using Microsoft.Maui.Controls;
 using SmartVehicleCare.Models;
 using SmartVehicleCare.Services;
 
@@ -27,8 +28,27 @@ public class SettingsViewModel : INotifyPropertyChanged
             // For Sign Out, we only want to navigate to Welcome page without clearing vehicle data
             await AzureOpenAIService.SaveApiKeyToStorageAsync(string.Empty);
             // Only clear the API key, don't reset all vehicle data
-            // VehicleDataService.Instance.FullReset();
-            OnNavigateToWelcomeRequested?.Invoke();
+            
+            // Try to use MVVM event for navigation first
+            var handler = OnNavigateToWelcomeRequested;
+            if (handler != null)
+            {
+                handler.Invoke();
+            }
+            else
+            {
+                // Fallback to direct navigation if no handler is attached
+                // This maintains functionality even if MVVM event isn't handled
+                try
+                {
+                    await Shell.Current.GoToAsync("///welcome");
+                }
+                catch (Exception ex)
+                {
+                    // Log the exception but don't crash the app
+                    System.Diagnostics.Debug.WriteLine($"Navigation failed: {ex.Message}");
+                }
+            }
         });
 
         SaveApiKeyCommand = new Command(async () =>
