@@ -98,8 +98,10 @@ public class MainViewModel : INotifyPropertyChanged
 
         ShowAddVehicleCommand = new Command(() =>
         {
-            // Let the View decide which UI element to show based on platform
-            IsAddVehicleRequested = true;
+            if (DeviceInfo.Platform == DevicePlatform.WinUI || DeviceInfo.Platform == DevicePlatform.MacCatalyst)
+                IsAddVehicleDrawerVisible = true;
+            else
+                IsAddVehicleBottomSheetVisible = true;
         });
 
         ShowAllRecordsCommand = new Command(() => IsAllRecordsPopupVisible = true);
@@ -281,8 +283,10 @@ public class MainViewModel : INotifyPropertyChanged
     public bool IsServiceNavActive => CurrentSection == NavSection.ServiceCenter;
     public bool IsSettingsNavActive => CurrentSection == NavSection.Settings;
     // Show header for all sections including AI Assist (with vehicle selector)
-    public bool IsDesktopHeaderVisible => true; // Let the View decide based on platform
-    public bool IsMobileHeaderVisible => false; // Let the View decide based on platform
+    public bool IsDesktopHeaderVisible =>
+        (DeviceInfo.Platform == DevicePlatform.WinUI || DeviceInfo.Platform == DevicePlatform.MacCatalyst);
+    public bool IsMobileHeaderVisible =>
+        (DeviceInfo.Platform == DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS);
     public bool IsMobileAddVehicleButtonVisible =>
         IsDashboardVisible && (IsMobileHeaderVisible || IsCompactDesktop);
 
@@ -600,13 +604,6 @@ public class MainViewModel : INotifyPropertyChanged
     {
         get => _isAddVehicleBottomSheetVisible;
         set => SetProperty(ref _isAddVehicleBottomSheetVisible, value);
-    }
-
-    private bool _isAddVehicleRequested;
-    public bool IsAddVehicleRequested
-    {
-        get => _isAddVehicleRequested;
-        set => SetProperty(ref _isAddVehicleRequested, value);
     }
 
 

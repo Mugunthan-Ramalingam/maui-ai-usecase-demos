@@ -30,8 +30,10 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         AddScheduleCommand = new Command(() =>
         {
             AddScheduleViewModel.VehicleLabel = $"{SelectedVehicleName} • {SelectedVehicleRegistration}";
-            // Let the View decide which UI element to show based on platform
-            IsAddScheduleRequested = true;
+            if (DeviceInfo.Platform == DevicePlatform.WinUI || DeviceInfo.Platform == DevicePlatform.MacCatalyst)
+                IsAddScheduleDrawerVisible = true;
+            else
+                IsAddScheduleBottomSheetVisible = true;
         });
 
         CloseAddScheduleCommand = new Command(() =>
@@ -88,8 +90,10 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         AddServiceCommand = new Command(() =>
         {
             AddServiceViewModel.VehicleLabel = $"{SelectedVehicleName} • {SelectedVehicleRegistration}";
-            // Let the View decide which UI element to show based on platform
-            IsAddServiceRequested = true;
+            if (DeviceInfo.Platform == DevicePlatform.WinUI || DeviceInfo.Platform == DevicePlatform.MacCatalyst)
+                IsAddServiceDrawerVisible = true;
+            else
+                IsAddServiceBottomSheetVisible = true;
         });
         CloseAddServiceCommand = new Command(() =>
         {
@@ -141,8 +145,10 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         AddFuelCommand = new Command(() =>
         {
             AddFuelViewModel.VehicleLabel = $"\U0001F697 {SelectedVehicleName} \u2022 {SelectedVehicleRegistration}";
-            // Let the View decide which UI element to show based on platform
-            IsAddFuelRequested = true;
+            if (DeviceInfo.Platform == DevicePlatform.WinUI || DeviceInfo.Platform == DevicePlatform.MacCatalyst)
+                IsAddFuelDrawerVisible = true;
+            else
+                IsAddFuelBottomSheetVisible = true;
         });
         CloseAddFuelCommand = new Command(() =>
         {
@@ -612,13 +618,6 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         set => SetProperty(ref _isAddServiceDrawerVisible, value);
     }
 
-    private bool _isAddServiceRequested;
-    public bool IsAddServiceRequested
-    {
-        get => _isAddServiceRequested;
-        set => SetProperty(ref _isAddServiceRequested, value);
-    }
-
     private bool _isAddServiceBottomSheetVisible;
     public bool IsAddServiceBottomSheetVisible
     {
@@ -646,12 +645,6 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         set => SetProperty(ref _isAddFuelBottomSheetVisible, value);
     }
 
-    private bool _isAddFuelRequested;
-    public bool IsAddFuelRequested
-    {
-        get => _isAddFuelRequested;
-        set => SetProperty(ref _isAddFuelRequested, value);
-    }
 
     public ICommand AddFuelCommand { get; private set; } = default!;
     public ICommand CloseAddFuelCommand { get; private set; } = default!;
@@ -877,13 +870,6 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
     {
         get => _isAddScheduleBottomSheetVisible;
         set => SetProperty(ref _isAddScheduleBottomSheetVisible, value);
-    }
-
-    private bool _isAddScheduleRequested;
-    public bool IsAddScheduleRequested
-    {
-        get => _isAddScheduleRequested;
-        set => SetProperty(ref _isAddScheduleRequested, value);
     }
 
     public ICommand AddScheduleCommand { get; }   // initialized in constructor
