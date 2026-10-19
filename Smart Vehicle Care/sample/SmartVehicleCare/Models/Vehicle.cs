@@ -42,7 +42,7 @@ public class Vehicle : INotifyPropertyChanged
 
     // Computed Properties
     public string MakeModel   => $"{Make} {Model}".Trim();
-    public string DisplayName => $"{Make} {Model} ";
+    public string DisplayName => $"{Make} {Model}";
 
     // Legacy properties for backward compatibility
     public int LegacyYear

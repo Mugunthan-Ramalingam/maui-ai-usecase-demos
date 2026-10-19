@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -8,7 +8,7 @@ namespace SmartVehicleCare.Services;
 internal class AzureOpenAIService
 {
     // Base endpoint — uses the Azure AI Foundry /openai/v1 project endpoint
-    const string BaseEndpoint          = "API_ENDPOINT";
+    const string BaseEndpoint          = "";
     const string DefaultDeploymentName = "gpt-5-mini";
 
     internal const string SecureStorageKey       = "AzureOpenAI_ApiKey";
@@ -98,6 +98,13 @@ internal class AzureOpenAIService
                 max_completion_tokens = 8000,
             };
 
+            if (string.IsNullOrWhiteSpace(BaseEndpoint))
+            {
+                LastError = "Azure OpenAI endpoint not configured. Please set the endpoint URL in settings.";
+                System.Diagnostics.Debug.WriteLine($"[AzureAI] {LastError}");
+                return string.Empty;
+            }
+            
             var url     = $"{BaseEndpoint}/chat/completions";
             var request = new HttpRequestMessage(HttpMethod.Post, url);
             request.Headers.Add("api-key", _apiKey);

@@ -14,7 +14,7 @@ public class VehicleDataService
     /// <summary>
     /// The sample keeps one in-memory demo mode for the lifetime of the app process.
     /// </summary>
-    public enum DataMode { Demo, Real }
+    public enum DataMode { Demo }
 
     private DataMode _currentMode = DataMode.Demo;
 
@@ -66,12 +66,7 @@ public class VehicleDataService
         _vehicleReminders.Clear();
     }
 
-    public void FullReset()
-    {
-        ClearAllData();
-        _currentMode = DataMode.Demo;
-        ModeChanged?.Invoke(_currentMode);
-    }
+
 
     /// <summary>
     /// Switches to Demo mode and loads sample data.

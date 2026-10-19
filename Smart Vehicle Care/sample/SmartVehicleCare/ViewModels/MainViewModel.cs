@@ -98,10 +98,8 @@ public class MainViewModel : INotifyPropertyChanged
 
         ShowAddVehicleCommand = new Command(() =>
         {
-            if (DeviceInfo.Platform == DevicePlatform.WinUI || DeviceInfo.Platform == DevicePlatform.MacCatalyst)
-                IsAddVehicleDrawerVisible = true;
-            else
-                IsAddVehicleBottomSheetVisible = true;
+            // Let the View decide which UI element to show based on platform
+            IsAddVehicleRequested = true;
         });
 
         ShowAllRecordsCommand = new Command(() => IsAllRecordsPopupVisible = true);
@@ -283,10 +281,8 @@ public class MainViewModel : INotifyPropertyChanged
     public bool IsServiceNavActive => CurrentSection == NavSection.ServiceCenter;
     public bool IsSettingsNavActive => CurrentSection == NavSection.Settings;
     // Show header for all sections including AI Assist (with vehicle selector)
-    public bool IsDesktopHeaderVisible =>
-        (DeviceInfo.Platform == DevicePlatform.WinUI || DeviceInfo.Platform == DevicePlatform.MacCatalyst);
-    public bool IsMobileHeaderVisible =>
-        (DeviceInfo.Platform == DevicePlatform.Android || DeviceInfo.Platform == DevicePlatform.iOS);
+    public bool IsDesktopHeaderVisible => true; // Let the View decide based on platform
+    public bool IsMobileHeaderVisible => false; // Let the View decide based on platform
     public bool IsMobileAddVehicleButtonVisible =>
         IsDashboardVisible && (IsMobileHeaderVisible || IsCompactDesktop);
 
@@ -529,6 +525,7 @@ public class MainViewModel : INotifyPropertyChanged
 
     private bool _isAiInsightsLoading;
     private int _aiInsightsRefreshVersion;
+    private int _aiHealthSummaryRefreshVersion;
     public bool IsAiInsightsLoading
     {
         get => _isAiInsightsLoading;
@@ -603,6 +600,13 @@ public class MainViewModel : INotifyPropertyChanged
     {
         get => _isAddVehicleBottomSheetVisible;
         set => SetProperty(ref _isAddVehicleBottomSheetVisible, value);
+    }
+
+    private bool _isAddVehicleRequested;
+    public bool IsAddVehicleRequested
+    {
+        get => _isAddVehicleRequested;
+        set => SetProperty(ref _isAddVehicleRequested, value);
     }
 
 
@@ -1200,7 +1204,7 @@ public class MainViewModel : INotifyPropertyChanged
             }));
         }
 
-        foreach (var row in activityRows.OrderByDescending(r => DateTime.Parse(r.Date == "—" ? DateTime.Today.ToString("dd MMM yyyy") : r.Date)).ToList())
+        foreach (var row in activityRows.OrderByDescending(r => DateTime.ParseExact(r.Date == "—" ? DateTime.Today.ToString("dd MMM yyyy") : r.Date, "dd MMM yyyy", System.Globalization.CultureInfo.InvariantCulture)).ToList())
             AllRecentActivityRows.Add(row);
 
         foreach (var row in AllRecentActivityRows.Take(6))
@@ -1483,6 +1487,7 @@ public class MainViewModel : INotifyPropertyChanged
 
     private async Task RefreshAiHealthSummaryAsync(int vehicleId)
     {
+        var refreshVersion = Interlocked.Increment(ref _aiHealthSummaryRefreshVersion);
         var vehicle = VehicleDataService.Instance.Vehicles.FirstOrDefault(v => v.Id == vehicleId) ?? _selectedVehicle;
         if (vehicle == null) return;
 
@@ -1501,6 +1506,10 @@ public class MainViewModel : INotifyPropertyChanged
 
         // Ensure key is loaded before checking
         await AzureOpenAIService.EnsureApiKeyLoadedAsync();
+
+        // Check if this refresh is still current
+        if (refreshVersion != _aiHealthSummaryRefreshVersion)
+            return;
 
         if (!AzureOpenAIService.HasApiKey)
         {
@@ -1539,9 +1548,17 @@ Use the owner's vehicle name ({vehicle.Make} {vehicle.Model}) naturally.
 Do not use bullet points, headers, bold text, or markdown. Do not start with words like "Biggest risk" or "Summary".
 """;
 
+        // Check if this refresh is still current before making the AI call
+        if (refreshVersion != _aiHealthSummaryRefreshVersion)
+            return;
+
         var result = await new AzureOpenAIService().GetResultsFromAI(
             prompt,
             "You are a friendly vehicle health advisor writing a short summary for a car owner. Use plain English, complete sentences, and only the data provided. Never use markdown or bullet points.");
+
+        // Check if this refresh is still current after the AI call
+        if (refreshVersion != _aiHealthSummaryRefreshVersion)
+            return;
         var summary = string.IsNullOrWhiteSpace(result)
             ? $"Your {vehicle.Make} {vehicle.Model} is in {_healthLabel.ToLower()} condition (score {_healthScore}/100). {(_scoreBoostHint.Length > 0 ? _scoreBoostHint : "Keep your service schedule current and log fuel entries regularly.")}"
             : result;

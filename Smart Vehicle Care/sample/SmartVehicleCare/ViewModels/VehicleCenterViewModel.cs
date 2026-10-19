@@ -30,10 +30,8 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         AddScheduleCommand = new Command(() =>
         {
             AddScheduleViewModel.VehicleLabel = $"{SelectedVehicleName} • {SelectedVehicleRegistration}";
-            if (DeviceInfo.Platform == DevicePlatform.WinUI || DeviceInfo.Platform == DevicePlatform.MacCatalyst)
-                IsAddScheduleDrawerVisible = true;
-            else
-                IsAddScheduleBottomSheetVisible = true;
+            // Let the View decide which UI element to show based on platform
+            IsAddScheduleRequested = true;
         });
 
         CloseAddScheduleCommand = new Command(() =>
@@ -90,10 +88,8 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         AddServiceCommand = new Command(() =>
         {
             AddServiceViewModel.VehicleLabel = $"{SelectedVehicleName} • {SelectedVehicleRegistration}";
-            if (DeviceInfo.Platform == DevicePlatform.WinUI || DeviceInfo.Platform == DevicePlatform.MacCatalyst)
-                IsAddServiceDrawerVisible = true;
-            else
-                IsAddServiceBottomSheetVisible = true;
+            // Let the View decide which UI element to show based on platform
+            IsAddServiceRequested = true;
         });
         CloseAddServiceCommand = new Command(() =>
         {
@@ -145,10 +141,8 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         AddFuelCommand = new Command(() =>
         {
             AddFuelViewModel.VehicleLabel = $"\U0001F697 {SelectedVehicleName} \u2022 {SelectedVehicleRegistration}";
-            if (DeviceInfo.Platform == DevicePlatform.WinUI || DeviceInfo.Platform == DevicePlatform.MacCatalyst)
-                IsAddFuelDrawerVisible = true;
-            else
-                IsAddFuelBottomSheetVisible = true;
+            // Let the View decide which UI element to show based on platform
+            IsAddFuelRequested = true;
         });
         CloseAddFuelCommand = new Command(() =>
         {
@@ -560,6 +554,10 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
     public bool HasExpenseHistory => ServiceHistory.Count > 0 || FuelEntries.Count > 0;
     public bool NoExpenseHistory => !HasExpenseHistory;
 
+    // Version counter to prevent stale AI responses from overwriting newer ones
+    private int _spendingOptimizationRefreshVersion;
+    private int _nearbyNetworkRefreshVersion;
+
     // ── Maintenance tab — Health radar chart ────────────────────────────
 
     public ObservableCollection<RadarDataPoint> HealthRadarData { get; } = new();
@@ -614,6 +612,13 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
         set => SetProperty(ref _isAddServiceDrawerVisible, value);
     }
 
+    private bool _isAddServiceRequested;
+    public bool IsAddServiceRequested
+    {
+        get => _isAddServiceRequested;
+        set => SetProperty(ref _isAddServiceRequested, value);
+    }
+
     private bool _isAddServiceBottomSheetVisible;
     public bool IsAddServiceBottomSheetVisible
     {
@@ -639,6 +644,13 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
     {
         get => _isAddFuelBottomSheetVisible;
         set => SetProperty(ref _isAddFuelBottomSheetVisible, value);
+    }
+
+    private bool _isAddFuelRequested;
+    public bool IsAddFuelRequested
+    {
+        get => _isAddFuelRequested;
+        set => SetProperty(ref _isAddFuelRequested, value);
     }
 
     public ICommand AddFuelCommand { get; private set; } = default!;
@@ -1184,6 +1196,7 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
 
     private async Task RefreshSpendingOptimizationAsync()
     {
+        var refreshVersion = Interlocked.Increment(ref _spendingOptimizationRefreshVersion);
         var vehicle = SelectedVehicle ?? VehicleDataService.Instance.SelectedVehicle;
         if (vehicle == null)
         {
@@ -1216,6 +1229,10 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
                 "You can still use the expense chart to review logged costs.");
             return;
         }
+
+        // Check if this refresh is still current
+        if (refreshVersion != _spendingOptimizationRefreshVersion)
+            return;
 
         var serviceSpend = services.Sum(s => VehicleCenterCalculations.ParseCurrency(s.Amount));
         var fuelSpend = fuels.Sum(f => f.TotalCost);
@@ -1268,9 +1285,17 @@ ACTION: one specific, practical fuel-saving action for this vehicle
 Keep each line under 140 characters. Use the Indian Rupee symbol ₹. Do not use markdown, bullets, greetings, or extra explanation.
 """;
 
+        // Check if this refresh is still current before making the AI call
+        if (refreshVersion != _spendingOptimizationRefreshVersion)
+            return;
+
         var aiResponse = await new AzureOpenAIService().GetResultsFromAI(
             prompt,
             "You are a concise automotive spending advisor for Indian vehicle owners. Use only the exact numbers provided. Return exactly TREND, DETAIL, and ACTION lines as requested, with no markdown or extra text.");
+
+        // Check if this refresh is still current after the AI call
+        if (refreshVersion != _spendingOptimizationRefreshVersion)
+            return;
 
         if (!TryApplyStructuredInsight(aiResponse))
             SetSpendingInsight(trendText, trendDetail, recommendation);
@@ -1456,6 +1481,7 @@ Keep each line under 140 characters. Use the Indian Rupee symbol ₹. Do not use
 
     private async Task RefreshNearbyNetworkAsync()
     {
+        var refreshVersion = Interlocked.Increment(ref _nearbyNetworkRefreshVersion);
         NearbyNetworkItems.Clear();
         MapMarkers.Clear();
         IsNearbyEmpty = false;
@@ -1492,6 +1518,10 @@ Keep each line under 140 characters. Use the Indian Rupee symbol ₹. Do not use
         // Ensure the API key is loaded (guards against the App startup race condition)
         await AzureOpenAIService.EnsureApiKeyLoadedAsync();
 
+        // Check if this refresh is still current
+        if (refreshVersion != _nearbyNetworkRefreshVersion)
+            return;
+
         // No API key — surface the "not configured" state and stop
         if (!AzureOpenAIService.HasApiKey)
         {
@@ -1515,7 +1545,16 @@ Keep each line under 140 characters. Use the Indian Rupee symbol ₹. Do not use
         {
             if (AzureOpenAIService.HasApiKey)
             {
-                var (aiItems, _) = await GetNearbyPlacesFromAIAsync(latitude, longitude);
+                // Check if this refresh is still current before making the AI call
+                if (refreshVersion != _nearbyNetworkRefreshVersion)
+                    return (null, string.Empty);
+
+                var (aiItems, _) = await GetNearbyPlacesFromAIAsync(latitude, longitude, refreshVersion);
+                
+                // Check if this refresh is still current after the AI call
+                if (refreshVersion != _nearbyNetworkRefreshVersion)
+                    return (null, string.Empty);
+                    
                 items = aiItems;
             }
         }
@@ -1535,8 +1574,12 @@ Keep each line under 140 characters. Use the Indian Rupee symbol ₹. Do not use
 
     // Builds a prompt following the blog pattern and calls Azure OpenAI.
     // Returns (parsed items, raw response text) so the caller can display the full response.
-    private async Task<(JsonElementArray? Items, string RawResponse)> GetNearbyPlacesFromAIAsync(double latitude, double longitude)
+    private async Task<(JsonElementArray? Items, string RawResponse)> GetNearbyPlacesFromAIAsync(double latitude, double longitude, int refreshVersion)
     {
+        // Check if this refresh is still current
+        if (refreshVersion != _nearbyNetworkRefreshVersion)
+            return (null, string.Empty);
+
         var isServiceMode = string.Equals(_nearbyMapMode, "Service", StringComparison.OrdinalIgnoreCase);
         var modeLabel = isServiceMode
             ? "auto service centers, car repair workshops, and vehicle repair shops"
@@ -1565,9 +1608,17 @@ Keep each line under 140 characters. Use the Indian Rupee symbol ₹. Do not use
 
         try
         {
+            // Check if this refresh is still current before making the AI call
+            if (refreshVersion != _nearbyNetworkRefreshVersion)
+                return (null, string.Empty);
+
             var ai = new AzureOpenAIService();
             var response = await ai.GetResultsFromAI(prompt,
                 "You are a location data assistant. Return only valid JSON with no markdown or explanation.");
+
+            // Check if this refresh is still current after the AI call
+            if (refreshVersion != _nearbyNetworkRefreshVersion)
+                return (null, string.Empty);
 
             if (string.IsNullOrWhiteSpace(response))
             {
