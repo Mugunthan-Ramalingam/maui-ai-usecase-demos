@@ -24,10 +24,10 @@ public class SettingsViewModel : INotifyPropertyChanged
 
         ExitToWelcomeCommand = new Command(async () =>
         {
-            // Wipe all persisted state so the app starts clean on next launch
+            // For Sign Out, we only want to navigate to Welcome page without clearing vehicle data
             await AzureOpenAIService.SaveApiKeyToStorageAsync(string.Empty);
-            // Removed Preferences.Default.Clear() to prevent wiping user settings
-            VehicleDataService.Instance.FullReset();
+            // Only clear the API key, don't reset all vehicle data
+            // VehicleDataService.Instance.FullReset();
             OnNavigateToWelcomeRequested?.Invoke();
         });
 
