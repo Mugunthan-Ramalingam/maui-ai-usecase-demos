@@ -98,7 +98,7 @@ The app runs fully offline — AI features are optional enhancements.
 
 ## Screenshot
 
-[Vehicle care demo](vehicle-care-demo.gif)
+![Vehicle care demo](vehicle-care-demo.gif)
 
 ## Documentation
 
