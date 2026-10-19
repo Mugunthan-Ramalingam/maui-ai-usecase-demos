@@ -98,7 +98,7 @@ The app runs fully offline — AI features are optional enhancements.
 
 ## Screenshot
 
-**Unable to verify from PR** — no `VehicleCareApp.gif` asset exists in the repository. Add a screenshot/demo GIF here before publishing.
+[Vehicle care demo](vehicle-care-demo.gif)
 
 ## Documentation
 
