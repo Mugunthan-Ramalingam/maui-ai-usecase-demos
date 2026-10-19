@@ -77,7 +77,7 @@ public class AddServiceViewModel : INotifyPropertyChanged
             }
         }
     }
-    public string ServiceDateDisplay => _isServiceDateSet ? _serviceDate.ToString("dd MMM yyyy") : string.Empty;
+    public string ServiceDateDisplay => _isServiceDateSet ? _serviceDate.ToString("dd MMM yyyy", System.Globalization.CultureInfo.InvariantCulture) : string.Empty;
     #endregion
 
     #region Mileage

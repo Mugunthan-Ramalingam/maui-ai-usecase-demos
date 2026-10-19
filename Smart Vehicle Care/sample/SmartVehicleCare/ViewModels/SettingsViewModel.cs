@@ -26,9 +26,9 @@ public class SettingsViewModel : INotifyPropertyChanged
         {
             // Wipe all persisted state so the app starts clean on next launch
             await AzureOpenAIService.SaveApiKeyToStorageAsync(string.Empty);
-            Preferences.Default.Clear();
+            // Removed Preferences.Default.Clear() to prevent wiping user settings
             VehicleDataService.Instance.FullReset();
-            await Shell.Current.GoToAsync("///welcome");
+            OnNavigateToWelcomeRequested?.Invoke();
         });
 
         SaveApiKeyCommand = new Command(async () =>
@@ -97,11 +97,7 @@ public class SettingsViewModel : INotifyPropertyChanged
         {
             if (vehicle == null) return;
 
-            var confirmed = await Shell.Current.DisplayAlertAsync(
-                "Delete vehicle",
-                $"Delete {vehicle.MakeModel} and all of its service, fuel, and schedule data?",
-                "Delete",
-                "Cancel");
+            var confirmed = await OnDeleteVehicleConfirmationRequested?.Invoke(vehicle) ?? false;
             if (!confirmed) return;
 
             VehicleDataService.Instance.DeleteVehicle(vehicle);
@@ -121,6 +117,10 @@ public class SettingsViewModel : INotifyPropertyChanged
     // ── Exit ──────────────────────────────────────────────────────────────────
 
     public ICommand ExitToWelcomeCommand { get; }
+    
+    // Events for navigation and confirmation dialogs (MVVM compliant)
+    public event Func<Vehicle, Task<bool>> OnDeleteVehicleConfirmationRequested;
+    public event Action OnNavigateToWelcomeRequested;
 
     // ── AI API Key & Deployment ───────────────────────────────────────────────
 

@@ -304,9 +304,9 @@ public class WelcomeViewModel : INotifyPropertyChanged
     /// <summary>Creates the vehicle entered in the wizard and makes it the active vehicle.</summary>
     private void AddVehicleFromWizard()
     {
-        if (_dataService.IsDemoMode)
-            _dataService.TryLoadDemoData();
-
+        // Removed the condition that was always true - this was wiping demo data unnecessarily
+        // _dataService.TryLoadDemoData(); // This line was causing the data wipe
+        
         var vehicle = new Vehicle
         {
             VehicleType     = SelectedVehicleTypeIndex,

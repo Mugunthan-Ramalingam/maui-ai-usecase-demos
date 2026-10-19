@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
@@ -92,8 +92,8 @@ public class AIAssistViewModel : INotifyPropertyChanged
 
     public AIAssistViewModel()
     {
-        RequestCommand = new Command<object>(ExecuteRequest);
-        SuggestionTappedCommand = new Command<object>(ExecuteSuggestionRequest);
+        RequestCommand = new Command<object>(async (obj) => await ExecuteRequest(obj));
+        SuggestionTappedCommand = new Command<object>(async (obj) => await ExecuteSuggestionRequest(obj));
         InitializeVehicles();
 
         VehicleDataService.Instance.Vehicles.CollectionChanged += (_, e) =>
@@ -185,8 +185,14 @@ public class AIAssistViewModel : INotifyPropertyChanged
         }
         else if (svc.IsDemoMode)
         {
-            Vehicles.Add(new Vehicle { Id = 1, Make = "Hyundai", Model = "i20" });
-            SelectedVehicle = Vehicles[0];
+            // Removed hardcoded vehicle creation to prevent conflicts with real data
+            // Vehicles.Add(new Vehicle { Id = 1, Make = "Hyundai", Model = "i20" });
+            // SelectedVehicle = Vehicles[0];
+            
+            // Instead, rely on the actual demo data from the service
+            foreach (var v in svc.Vehicles) 
+                Vehicles.Add(v);
+            SelectedVehicle = svc.SelectedVehicle ?? (Vehicles.Count > 0 ? Vehicles[0] : null);
         }
         else
         {
@@ -318,7 +324,7 @@ public class AIAssistViewModel : INotifyPropertyChanged
     }
 
 
-    private async void ExecuteRequest(object obj)
+    private async Task ExecuteRequest(object obj)
     {
         if (obj is not RequestEventArgs args) return;
 
@@ -405,7 +411,7 @@ User Query: {requestText}
         }
     }
 
-    private async void ExecuteSuggestionRequest(object obj)
+    private async Task ExecuteSuggestionRequest(object obj)
     {
         if (obj is not ISuggestion suggestion) return;
 
