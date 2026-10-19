@@ -304,7 +304,7 @@ public class WelcomeViewModel : INotifyPropertyChanged
     /// <summary>Creates the vehicle entered in the wizard and makes it the active vehicle.</summary>
     private void AddVehicleFromWizard()
     {
-        if (!_dataService.IsDemoMode)
+        if (_dataService.IsDemoMode)
             _dataService.TryLoadDemoData();
 
         var vehicle = new Vehicle

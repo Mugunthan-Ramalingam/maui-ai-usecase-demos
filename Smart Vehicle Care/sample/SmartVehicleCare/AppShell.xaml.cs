@@ -1,15 +1,12 @@
-﻿using SmartVehicleCare.Views;
+using SmartVehicleCare.Views;
 
 namespace SmartVehicleCare
 {
     public partial class AppShell : Shell
     {
-        public AppShell(SplashPage splashPage, WelcomePage welcomePage, MainPage mainPage)
+        public AppShell()
         {
             InitializeComponent();
-            SplashShellContent.Content = splashPage;
-            WelcomeShellContent.Content = welcomePage;
-            MainShellContent.Content = mainPage;
         }
     }
 }

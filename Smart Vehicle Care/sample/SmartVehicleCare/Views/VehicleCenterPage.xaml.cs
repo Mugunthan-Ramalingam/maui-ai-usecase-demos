@@ -20,9 +20,9 @@ public partial class VehicleCenterPage : ContentView
             ServiceHistoryGrid.ColumnWidthMode = ColumnWidthMode.None;
             ServiceHistoryGrid.Columns[0].Width = 120; // Date
             ServiceHistoryGrid.Columns[1].Width = 190; // ServiceType
-            ServiceHistoryGrid.Columns[2].Width = 130; // Mileage
-            ServiceHistoryGrid.Columns[3].Width = 90;  // Amount
-            ServiceHistoryGrid.Columns[4].Width = 100; // Status
+            ServiceHistoryGrid.Columns[2].Width = 145; // Amount
+            ServiceHistoryGrid.Columns[3].Width = 145; // Status
+            ServiceHistoryGrid.Columns[4].Width = 72;  // Action buttons
         }
     }
 
