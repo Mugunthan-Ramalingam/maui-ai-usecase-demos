@@ -21,8 +21,8 @@ This repository demonstrates how to build a complete vehicle management app in .
 
 ## Technologies Used
 
-* **.NET MAUI (net10.0)** – Cross-platform framework for Android, iOS, macOS, and Windows.
-* **Syncfusion 34.2.3** – SfAIAssistView, SfScheduler, SfMaps, SfDataGrid, SfTabView, SfCharts, SfPopup, SfPicker, SfProgressBar, SfButtons, SfInputs, and more.
+* **.NET MAUI** – Cross-platform framework for Android, iOS, macOS, and Windows.
+* **Syncfusion Controls** – SfAIAssistView, SfScheduler, SfMaps, SfDataGrid, SfTabView, SfCharts, SfPopup, SfPicker, SfProgressBar, SfButtons, SfInputs, and more.
 * **Azure OpenAI Services** – AI Assistant chat.
 * **Overpass API (OpenStreetMap)** – Real-time nearby fuel stations and service centers.
 
@@ -98,7 +98,7 @@ The app runs fully offline — AI features are optional enhancements.
 
 ## Screenshot
 
-**Unable to verify from PR** — no `VehicleCareApp.gif` asset exists in the repository. Add a screenshot/demo GIF here before publishing.
+![Vehicle care demo](vehicle-care-demo.gif)
 
 ## Documentation
 
