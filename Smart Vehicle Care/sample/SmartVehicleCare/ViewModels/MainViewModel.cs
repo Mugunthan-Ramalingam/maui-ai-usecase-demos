@@ -484,7 +484,7 @@ public class MainViewModel : INotifyPropertyChanged
     private double _allTimeTotal => _allTimeFuel + _allTimeService;
     private double _avgMonthly => _trackedMonths > 0 ? _allTimeTotal / _trackedMonths : 0;
 
-    public string CurrentMonthName => GetSelectedExpenseDate().ToString("MMMM yyyy");
+    public string CurrentMonthName => GetSelectedExpenseDate().ToString("MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
     public string ExpenseBreakdownTitle => $"{CurrentMonthName} breakdown";
     public string CurrentMonthTotal => _currentTotal > 0 ? $"₹{_currentTotal:N0}" : "₹0";
     public string CurrentMonthFuelLabel => _currentMonthFuel > 0 ? $"₹{_currentMonthFuel:N0}" : "₹0";
@@ -736,12 +736,12 @@ public class MainViewModel : INotifyPropertyChanged
         if (_expenseVehicleId != vid)
         {
             _expenseVehicleId = vid;
-            _selectedExpenseMonth = currentMonth.ToString("MMMM yyyy");
+            _selectedExpenseMonth = currentMonth.ToString("MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
         }
 
         ExpenseMonths.Clear();
         for (var month = firstMonth; month <= currentMonth; month = month.AddMonths(1))
-            ExpenseMonths.Add(month.ToString("MMMM yyyy"));
+            ExpenseMonths.Add(month.ToString("MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture));
 
         var selectedMonth = DateTime.TryParse(_selectedExpenseMonth, out var parsedMonth)
             ? new DateTime(parsedMonth.Year, parsedMonth.Month, 1)
@@ -749,7 +749,7 @@ public class MainViewModel : INotifyPropertyChanged
         if (selectedMonth < firstMonth || selectedMonth > currentMonth)
             selectedMonth = currentMonth;
 
-        var selectedMonthName = selectedMonth.ToString("MMMM yyyy");
+        var selectedMonthName = selectedMonth.ToString("MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
         if (_selectedExpenseMonth != selectedMonthName)
             _selectedExpenseMonth = selectedMonthName;
 
@@ -1598,11 +1598,11 @@ Do not use bullet points, headers, bold text, or markdown. Do not start with wor
     private static string FormatTimestamp(DateTime date)
     {
         var diff = (DateTime.Today - date.Date).TotalDays;
-        if (diff < 0) return date.ToString("dd MMM").ToUpper();
+        if (diff < 0) return date.ToString("dd MMM", System.Globalization.CultureInfo.InvariantCulture).ToUpper();
         if (diff < 1) return "TODAY";
         if (diff < 2) return "YESTERDAY";
         if (diff < 7) return $"{(int)diff}D AGO";
-        return date.ToString("dd MMM").ToUpper();
+        return date.ToString("dd MMM", System.Globalization.CultureInfo.InvariantCulture).ToUpper();
     }
 
     private static Color GetTimestampColor(DateTime date)

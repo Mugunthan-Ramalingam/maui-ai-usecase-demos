@@ -353,9 +353,9 @@ public class VehicleCenterViewModel : INotifyPropertyChanged
 
     public string SchedulePeriodTitle => CurrentSchedulerView switch
     {
-        SchedulerView.Day => CurrentMonthDisplayDate.ToString("dd MMMM yyyy"),
+        SchedulerView.Day => CurrentMonthDisplayDate.ToString("dd MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture),
         SchedulerView.Week => $"{StartOfScheduleWeek(CurrentMonthDisplayDate):dd MMM} - {StartOfScheduleWeek(CurrentMonthDisplayDate).AddDays(6):dd MMM yyyy}",
-        _ => CurrentMonthDisplayDate.ToString("MMMM yyyy")
+        _ => CurrentMonthDisplayDate.ToString("MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture)
     };
 
     private static DateTime StartOfScheduleWeek(DateTime date)
@@ -1435,8 +1435,8 @@ Keep each line under 140 characters. Use the Indian Rupee symbol ₹. Do not use
         {
             var label = bucket switch
             {
-                VehicleCenterCalculations.ExpenseBucket.Day => item.Key.ToString("dd MMM"),
-                VehicleCenterCalculations.ExpenseBucket.Week => item.Key.ToString("dd MMM"),
+                VehicleCenterCalculations.ExpenseBucket.Day => item.Key.ToString("dd MMM", System.Globalization.CultureInfo.InvariantCulture),
+                VehicleCenterCalculations.ExpenseBucket.Week => item.Key.ToString("dd MMM", System.Globalization.CultureInfo.InvariantCulture),
                 _ => item.Key.ToString("MMM yy")
             };
             var rangeLabel = bucket == VehicleCenterCalculations.ExpenseBucket.Week
@@ -1493,7 +1493,9 @@ Keep each line under 140 characters. Use the Indian Rupee symbol ₹. Do not use
             if (status == PermissionStatus.Granted)
             {
                 var loc = await Geolocation.GetLastKnownLocationAsync();
-                loc ??= await Geolocation.GetLocationAsync(new GeolocationRequest(GeolocationAccuracy.High, TimeSpan.FromSeconds(10)));
+                // Android manifest only declares ACCESS_COARSE_LOCATION; requesting High
+                // accuracy would fail or degrade on that permission, so use Medium.
+                loc ??= await Geolocation.GetLocationAsync(new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(10)));
                 if (loc != null)
                 {
                     latitude = loc.Latitude;

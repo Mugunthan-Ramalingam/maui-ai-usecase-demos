@@ -41,7 +41,11 @@ public class SettingsViewModel : INotifyPropertyChanged
                 // This maintains functionality even if MVVM event isn't handled
                 try
                 {
-                    await Shell.Current.GoToAsync("///welcome");
+                    var mainPage = Application.Current?.MainPage;
+                    if (mainPage is Shell shell)
+                        await shell.GoToAsync("///welcome");
+                    else if (mainPage?.Navigation != null && mainPage.Navigation.NavigationStack.Count > 0)
+                        await mainPage.Navigation.PopToRootAsync();
                 }
                 catch (Exception ex)
                 {
@@ -117,14 +121,26 @@ public class SettingsViewModel : INotifyPropertyChanged
         {
             if (vehicle == null) return;
 
-            // Check if we have a handler for the confirmation dialog
-            bool confirmed = true; // Default to true if no handler is attached
+            // Confirm before irreversible deletion of the vehicle and all its data
+            bool confirmed = false;
             var handler = OnDeleteVehicleConfirmationRequested;
             if (handler != null)
             {
                 confirmed = await handler(vehicle);
             }
-            // If no handler is attached, we proceed with deletion (similar to original behavior)
+            else
+            {
+                // Fallback: direct confirmation dialog so deletion is never unconfirmed
+                var mainPage = Application.Current?.MainPage;
+                if (mainPage != null)
+                {
+                    confirmed = await mainPage.DisplayAlert(
+                        "Delete vehicle",
+                        $"Delete {vehicle.MakeModel} and all of its service, fuel, and schedule data?",
+                        "Delete",
+                        "Cancel");
+                }
+            }
             if (!confirmed) return;
 
             VehicleDataService.Instance.DeleteVehicle(vehicle);
