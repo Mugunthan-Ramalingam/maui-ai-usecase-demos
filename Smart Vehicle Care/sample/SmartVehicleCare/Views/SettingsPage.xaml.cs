@@ -1,3 +1,5 @@
+using SmartVehicleCare.ViewModels;
+
 namespace SmartVehicleCare.Views;
 
 public partial class SettingsPage : ContentView
