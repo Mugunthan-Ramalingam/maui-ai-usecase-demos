@@ -162,7 +162,8 @@ public class SettingsViewModel : INotifyPropertyChanged
     public ICommand ExitToWelcomeCommand { get; }
     
     // Events for navigation and confirmation dialogs (MVVM compliant)
-    public event Func<Vehicle, Task<bool>> OnDeleteVehicleConfirmationRequested;
+    // Delegate properties for view-driven dialogs (MVVM compliant; assigned by the view, not subscribed)
+    public Func<Vehicle, Task<bool>>? OnDeleteVehicleConfirmationRequested { get; set; }
     public event Action OnNavigateToWelcomeRequested;
 
     // ── AI API Key & Deployment ───────────────────────────────────────────────
