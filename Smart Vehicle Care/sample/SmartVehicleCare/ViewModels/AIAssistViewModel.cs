@@ -185,11 +185,7 @@ public class AIAssistViewModel : INotifyPropertyChanged
         }
         else if (svc.IsDemoMode)
         {
-            // Removed hardcoded vehicle creation to prevent conflicts with real data
-            // Vehicles.Add(new Vehicle { Id = 1, Make = "Hyundai", Model = "i20" });
-            // SelectedVehicle = Vehicles[0];
-            
-            // Instead, rely on the actual demo data from the service
+            // Rely on the actual demo data from the service
             foreach (var v in svc.Vehicles) 
                 Vehicles.Add(v);
             SelectedVehicle = svc.SelectedVehicle ?? (Vehicles.Count > 0 ? Vehicles[0] : null);

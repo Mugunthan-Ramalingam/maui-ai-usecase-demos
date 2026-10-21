@@ -1517,15 +1517,8 @@ Keep each line under 140 characters. Use the Indian Rupee symbol ₹. Do not use
         if (refreshVersion != _nearbyNetworkRefreshVersion)
             return;
 
-        // No API key — surface the "not configured" state and stop
-        if (!AzureOpenAIService.HasApiKey)
-        {
-            IsNearbyEmpty = true;
-            IsNearbyLoading = false;
-            OnPropertyChanged(nameof(IsApiKeyMissing));
-            return;
-        }
-
+        // NOTE: no API-key gate here — Overpass is public and works without a key.
+        // The Azure OpenAI fallback below checks HasApiKey on its own.
         JsonElementArray? items = null;
 
         // ── Primary: Overpass OSM API (real data from OpenStreetMap) ─────────────
@@ -1552,6 +1545,15 @@ Keep each line under 140 characters. Use the Indian Rupee symbol ₹. Do not use
                     
                 items = aiItems;
             }
+        }
+
+        // ── Fallback 2: static curated sample data (per README) ─────────────────
+        if (items == null || items.Count == 0)
+        {
+            if (refreshVersion != _nearbyNetworkRefreshVersion)
+                return;
+            items = ServiceCenterDataHelper.UnwrapMarkerCollections(
+                ServiceCenterDataHelper.GetStaticFallback(latitude, longitude, _nearbyMapMode, 8));
         }
 
         if (items == null || items.Count == 0)
