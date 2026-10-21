@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SmartAIComboBox.SmartAIComboBoxPage"
+             xmlns:syncfusion="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core"
+             xmlns:editors="clr-namespace:Syncfusion.Maui.Inputs;assembly=Syncfusion.Maui.Inputs"
+             xmlns:local="clr-namespace:SmartAIComboBox"
+             Title="AI MultiSelect ComboBox">
+
+    <!-- BindingContext is set in the code-behind constructor from DI. -->
+
+    <ContentPage.Resources>
+        <local:InverseBoolConverter x:Key="InverseBoolConverter"/>
+        <Color x:Key="ErrorBackgroundLight">#FDECEA</Color>
+        <Color x:Key="ErrorBackgroundDark">#3A1F1F</Color>
+        <Color x:Key="ErrorText">#B3261E</Color>
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout
+                             Margin="20"
+                             WidthRequest="560"
+                             HorizontalOptions="Center"
+                             VerticalOptions="Center">
+
+            <!-- ===== Element 1: Title ===== -->
+            <Label Text="AI-Powered Intent-Based Fruit Selection"
+                   FontSize="20" Margin="0,0,0,12"
+                   FontAttributes="Bold"
+                   TextColor="{AppThemeBinding Light='#1C1B1F', Dark='#E6E1E5'}"
+                   HorizontalOptions="Center"/>
+
+            <!-- ===== Element 2: Query input with trailing search/loading/clear slot ===== -->
+            <syncfusion:SfTextInputLayout x:Name="queryInputLayout"
+                                          WidthRequest="500" HeightRequest="90"
+                                          HorizontalOptions="Center"
+                                          Hint="Describe your needs..."
+                                          ContainerType="Outlined"
+                                          ContainerBackground="Transparent"
+
+                                          ShowHint="True">
+                <syncfusion:SfTextInputLayout.HintLabelStyle>
+                    <syncfusion:LabelStyle TextColor="#808080" FontSize="14"/>
+                </syncfusion:SfTextInputLayout.HintLabelStyle>
+                <syncfusion:SfTextInputLayout.TrailingView>
+                    <!-- Three overlapping children; only one is visible at a time (bound to VM state) -->
+                    <Grid WidthRequest="36" HeightRequest="36"
+                          VerticalOptions="Center" HorizontalOptions="Center">
+
+                        <!-- Search magnifier icon (vector Path, no emoji) -->
+                        <Grid WidthRequest="24" HeightRequest="26"
+                              IsVisible="{Binding IsIdle}"
+                              VerticalOptions="Center" HorizontalOptions="Center"
+                              Margin="0,10,4,0"
+                              InputTransparent="False">
+                            <Path Data="M11.170988,2.0000026C6.1139962,2.0000026 1.9999944,6.1120075 1.9999944,11.16603 1.9999944,16.219991 6.1139962,20.331996 11.170988,20.331996 16.227981,20.331996 20.341006,16.219991 20.341006,11.16603 20.341006,6.1120075 16.227981,2.0000026 11.170988,2.0000026z M11.170988,0C17.33003,0 22.341001,5.0089787 22.341001,11.16603 22.341001,13.76351 21.449155,16.156669 19.95551,18.055608L19.942527,18.071714 31.999898,30.615001 30.5589,32.001003 18.567029,19.525854 18.476871,19.605846C16.516895,21.303544 13.961804,22.332 11.170988,22.332 5.0119487,22.332 1.6168633E-07,17.32302 0,11.16603 1.6168633E-07,5.0089787 5.0119487,0 11.170988,0z" Background="Transparent"    Fill="{AppThemeBinding Light=#5F6368, Dark=#BDBDBD}"   Margin="0,0,0,0" >
+                                <Path.RenderTransform>
+                                    <TransformGroup>
+                                        <TransformGroup.Children>
+                                            <RotateTransform Angle="0" />
+                                            <ScaleTransform ScaleX="0.6" ScaleY="0.6" />
+                                        </TransformGroup.Children>
+                                    </TransformGroup>
+                                </Path.RenderTransform>
+                            </Path>
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnSearchClicked"/>
+                            </Grid.GestureRecognizers>
+                        </Grid>
+
+                        <!-- Loading indicator while the AI request is in flight -->
+                        <ActivityIndicator WidthRequest="24"
+                                          HeightRequest="24"
+                                          VerticalOptions="Center"
+                                          HorizontalOptions="Center"
+                                          Color="#6750A4"
+                                          IsRunning="{Binding IsBusy}"
+                                          IsVisible="{Binding IsBusy}"/>
+
+                        <!-- Clear (X) icon (vector Path, no emoji) -->
+                        <Grid WidthRequest="26" HeightRequest="26"
+                              IsVisible="{Binding CanClear}"
+                              VerticalOptions="Center" HorizontalOptions="Center"
+                              Margin="0,10,0,0"
+                              InputTransparent="False">
+
+                            <Path Data="M29.916016,0L31.999023,2.0700073 17.988037,16 32,29.930054 29.91803,32 15.905029,18.070007 2.0820313,31.812012 0,29.742004 13.822998,16 0.0010375977,2.2590332 2.0840454,0.18902588 15.905029,13.929016z" Background="Transparent"    Fill="{AppThemeBinding Light=#5F6368, Dark=#BDBDBD}"     Margin="0,0,0,0"  >
+                                <Path.RenderTransform>
+                                    <TransformGroup>
+                                        <TransformGroup.Children>
+                                            <RotateTransform Angle="0" />
+                                            <ScaleTransform ScaleX="0.4" ScaleY="0.4" />
+                                        </TransformGroup.Children>
+                                    </TransformGroup>
+                                </Path.RenderTransform>
+                            </Path>
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnClearClicked"/>
+                            </Grid.GestureRecognizers>
+                        </Grid>
+                    </Grid>
+                </syncfusion:SfTextInputLayout.TrailingView>
+
+                <Entry x:Name="queryEntry"
+                       Text="{Binding UserQuery, Mode=TwoWay}"
+                       ReturnType="Search"
+                       PlaceholderColor="#AAAAAA"
+                       Completed="OnQueryCompleted"
+                       TextChanged="OnQueryTextChanged"/>
+            </syncfusion:SfTextInputLayout>
+
+            <!-- ===== Error banner (visible only when HasError) ===== -->
+            <Border IsVisible="{Binding HasError}"
+                    BackgroundColor="{AppThemeBinding Light={StaticResource ErrorBackgroundLight}, Dark={StaticResource ErrorBackgroundDark}}"
+                    Stroke="{StaticResource ErrorText}"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 8"
+                    Padding="12,8"
+                    Margin="0,12,0,0"
+                    HorizontalOptions="Fill"
+                    WidthRequest="500">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <Label Grid.Column="0"
+                           Text="{Binding ErrorMessage}"
+                           TextColor="{StaticResource ErrorText}"
+                           FontSize="13"
+                           VerticalOptions="Center"/>
+                    <Button Grid.Column="1"
+                            Text="Dismiss"
+                            FontSize="12"
+                            Padding="10,4"
+                            BackgroundColor="Transparent"
+                            TextColor="{StaticResource ErrorText}"
+                            Command="{Binding DismissErrorCommand}"/>
+                </Grid>
+            </Border>
+
+            <!-- ===== Element 3: Combo box (with checkbox ItemTemplate) ===== -->
+            <editors:SfComboBox x:Name="comboBox" WidthRequest="500"
+                                    Margin="0,16,0,0"
+                                    SelectionMode="Multiple"
+                                    IsEditable="False"
+                                    IsFilteringEnabled="False"
+                                    MaxDropDownHeight="250"
+                                    DropDownPlacement="Bottom"
+                                    DisplayMemberPath="Name" Placeholder="{Binding ComboHint}"
+                                    TextMemberPath="Name"
+                                    MultiSelectionDisplayMode="Token"
+                                    TokensWrapMode="Wrap" DropDownBackground="White"
+                                    ItemsSource="{Binding Fruits}" EnableAutoSize="True"
+                                    SelectedItems="{Binding SelectedItems, Mode=TwoWay}">
+
+                    <!-- Each dropdown row = name + CheckBox. -->
+                    <editors:SfComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="local:FruitModel">
+                            <Grid ColumnDefinitions="0.9*,0.1*"
+                                  ColumnSpacing="8"
+                                  HeightRequest="48"
+                                  Padding="10,0">
+                                <HorizontalStackLayout Grid.Column="0"
+                                                       VerticalOptions="Center"
+                                                       Spacing="6">
+                                    <Label Text="{Binding Name}"
+                                           FontSize="14"
+                                           VerticalOptions="Center"/>
+                                </HorizontalStackLayout>
+                                <CheckBox Grid.Column="1"
+                                          IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                          CheckedChanged="OnDropDownItemCheckBoxChanged"
+                                          VerticalOptions="Center"/>
+                            </Grid>
+                        </DataTemplate>
+                    </editors:SfComboBox.ItemTemplate>
+                </editors:SfComboBox>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

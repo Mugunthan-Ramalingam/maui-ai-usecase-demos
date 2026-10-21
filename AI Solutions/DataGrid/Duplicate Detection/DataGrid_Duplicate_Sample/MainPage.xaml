@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:syncfusion="clr-namespace:Syncfusion.Maui.DataGrid;assembly=Syncfusion.Maui.DataGrid"
+             xmlns:local="clr-namespace:DataGrid_Duplicate_Sample"
+             xmlns:models="clr-namespace:DataGrid_Duplicate_Sample.Models"
+             x:Class="DataGrid_Duplicate_Sample.MainPage"
+             x:DataType="local:ViewModel"
+             Title="Customer Duplicate Detection"
+             BackgroundColor="White">
+
+    <Grid Padding="0"
+          RowDefinitions="Auto,*"
+          RowSpacing="0">
+
+        <!-- ====== HEADER + ACTION CARD ====== -->
+        <VerticalStackLayout Grid.Row="0"
+                             Padding="20,20,20,12"
+                             Spacing="16">
+
+            <!-- ====== HEADER ====== -->
+            <!--<VerticalStackLayout Spacing="6" HorizontalOptions="Center">
+                <Border BackgroundColor="#EEF2FF"
+                        StrokeShape="RoundRectangle 14"
+                        StrokeThickness="0"
+                        Padding="10,4"
+                        HorizontalOptions="Center">
+                    <HorizontalStackLayout Spacing="6" HorizontalOptions="Center" VerticalOptions="Center" >
+                        <Label Text="✦" TextColor="#3B5BDB" 
+                               FontSize="14" 
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center" />
+                        <Label Text="DataGrid"
+                               TextColor="#3B5BDB"
+                               FontFamily="Roboto"
+                               FontSize="12"
+                               FontAttributes="Bold"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"/>
+                    </HorizontalStackLayout>
+                </Border>
+
+                <Label Text="AI-Powered Duplicate Detection"
+                       FontSize="24"
+                       FontFamily="Roboto"
+                       FontAttributes="Bold"
+                       TextColor="#0F172A"
+                       HorizontalOptions="Center"/>
+
+                <Label Text="Identify similar records directly in the data grid."
+                       FontSize="13"
+                       FontFamily="Roboto"
+                       TextColor="#64748B"
+                       HorizontalOptions="Center"/>
+            </VerticalStackLayout>-->
+
+            <!-- ====== ACTION CARD ====== -->
+
+            <Border BackgroundColor="#F8FAFC"
+                    Stroke="#E2E8F0"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 12"
+                    Padding="16,8">
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto" ColumnSpacing="8">
+                    <Grid Grid.Column="1"
+                          ColumnDefinitions="Auto,Auto"
+                          ColumnSpacing="8"
+                          HorizontalOptions="End"
+                          VerticalOptions="Center">
+                        <ActivityIndicator Grid.Column="0"
+                                           IsRunning="{Binding IsBusy}"
+                                           IsVisible="{Binding IsBusy}"
+                                           Color="#3B5BDB"
+                                           WidthRequest="18" HeightRequest="18"
+                                           VerticalOptions="Center"/>
+                        <Button Grid.Column="1"
+                                Text="Identify Duplicates  &#xe7e1;"
+                                FontFamily="MauiSampleFontIcon"
+                                Command="{Binding IdentifyDuplicatesCommand}"
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}"
+                                BackgroundColor="#3B5BDB"
+                                TextColor="White"
+                                CornerRadius="8"
+                                Padding="14,8"
+                                FontSize="14"
+                                FontAttributes="Bold"
+                                HeightRequest="40"/>
+                    </Grid>
+                </Grid>
+            </Border>
+        </VerticalStackLayout>
+
+        <!-- ====== DATA GRID + LEGEND + FOOTER (Row 1, fills remaining height) ====== -->
+        <Grid Grid.Row="1"
+              Padding="20,0,20,16"
+              RowDefinitions="*,Auto,Auto"
+              RowSpacing="0">
+
+            <syncfusion:SfDataGrid Grid.Row="0"
+                                   x:Name="CustomerGrid"
+                                   ItemsSource="{Binding Customers}"
+                                   AutoGenerateColumnsMode="None"
+                                   AllowEditing="True"
+                                   SelectionMode="Single"
+                                   HeaderRowHeight="60"
+                                   RowHeight="60"
+                                   GridLinesVisibility="Horizontal"
+                                   HorizontalScrollBarVisibility="Always"
+                                   VerticalScrollBarVisibility="Never"
+                                   LostFocusBehavior="EndEditCurrentCell"
+                                   CurrentCellEndEdit="CustomerGrid_CurrentCellEndEdit"
+                                   BackgroundColor="White">
+                <syncfusion:SfDataGrid.Columns>
+                    <syncfusion:DataGridTextColumn MappingName="Name"
+                                                   HeaderText="Name"
+                                                   ColumnWidthMode="Fill"/>
+                    <syncfusion:DataGridTextColumn MappingName="Email"
+                                                   HeaderText="Email"
+                                                   ColumnWidthMode="Fill"/>
+                    <syncfusion:DataGridTextColumn MappingName="Phone"
+                                                   HeaderText="Phone"
+                                                   ColumnWidthMode="Fill"/>
+                    <syncfusion:DataGridTextColumn MappingName="Address"
+                                                   HeaderText="Address"
+                                                   ColumnWidthMode="Fill"/>
+                    <syncfusion:DataGridTextColumn MappingName="Match"
+                                                   HeaderText="Match"
+                                                   Visible="{Binding ShowAnalysisColumns}"
+                                                   ColumnWidthMode="Fill"/>
+                    <syncfusion:DataGridTemplateColumn MappingName="Status"
+                                                       HeaderText="Status"
+                                                       Visible="{Binding ShowAnalysisColumns}"
+                                                       ColumnWidthMode="Fill">
+                        <syncfusion:DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate x:DataType="models:Customer">
+                                <Border BackgroundColor="{Binding Status, Converter={StaticResource StatusPillColor}}"
+                                        StrokeThickness="0"
+                                        StrokeShape="RoundRectangle 6"
+                                        Padding="8,3"
+                                        HorizontalOptions="Start"
+                                        VerticalOptions="Center">
+                                    <Label Text="{Binding Status}"
+                                           TextColor="{Binding Status, Converter={StaticResource StatusPillTextColor}}"
+                                           FontSize="12"
+                                           FontAttributes="Bold"/>
+                                </Border>
+                            </DataTemplate>
+                        </syncfusion:DataGridTemplateColumn.CellTemplate>
+                    </syncfusion:DataGridTemplateColumn>
+                    <syncfusion:DataGridTemplateColumn HeaderText=""
+                                                       ColumnWidthMode="Auto"
+                                                       Visible="{Binding ShowAnalysisColumns}"
+                                                       AllowEditing="False">
+                        <syncfusion:DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate x:DataType="models:Customer">
+                                <Button Text="&#xE70F;"
+                                        FontFamily="MaterialAssets"
+                                        IsVisible="{Binding IsDuplicate}"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type local:ViewModel}}, Path=DeleteRowCommand}"
+                                        CommandParameter="{Binding .}"
+                                        BackgroundColor="Transparent"
+                                        TextColor="#94A3B8"
+                                        BorderWidth="0"
+                                        FontSize="14"
+                                        FontAttributes="Bold"
+                                        Padding="0"
+                                        WidthRequest="32"
+                                        HeightRequest="32"
+                                        CornerRadius="16"
+                                        HorizontalOptions="Center"
+                                        VerticalOptions="Center"/>
+                            </DataTemplate>
+                        </syncfusion:DataGridTemplateColumn.CellTemplate>
+                    </syncfusion:DataGridTemplateColumn>
+                </syncfusion:SfDataGrid.Columns>
+            </syncfusion:SfDataGrid>
+
+            <!-- ====== LEGEND ====== -->
+            <!--<HorizontalStackLayout Grid.Row="1"
+                                   Spacing="20"
+                                   Padding="0,12,0,4"
+                                   HorizontalOptions="Start">
+                <HorizontalStackLayout Spacing="6">
+                    <BoxView WidthRequest="14" HeightRequest="14"
+                             BackgroundColor="#DBEAFE"
+                             CornerRadius="3"/>
+                    <Label Text="Potential duplicate detected while typing"
+                           FontSize="12"
+                           TextColor="#475569"
+                           VerticalOptions="Center"/>
+                </HorizontalStackLayout>
+                <HorizontalStackLayout Spacing="6">
+                    <BoxView WidthRequest="14" HeightRequest="14"
+                             BackgroundColor="#FEF3C7"
+                             CornerRadius="3"/>
+                    <Label Text="Duplicate group found after scan"
+                           FontSize="12"
+                           TextColor="#475569"
+                           VerticalOptions="Center"/>
+                </HorizontalStackLayout>
+            </HorizontalStackLayout>-->
+        </Grid>
+    </Grid>
+</ContentPage>

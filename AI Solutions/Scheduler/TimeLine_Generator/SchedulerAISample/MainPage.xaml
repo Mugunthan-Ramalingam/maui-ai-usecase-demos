@@ -1,0 +1,333 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+			 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+			 xmlns:core="clr-namespace:Syncfusion.Maui.Core;assembly=Syncfusion.Maui.Core"
+			 xmlns:buttons="clr-namespace:Syncfusion.Maui.Buttons;assembly=Syncfusion.Maui.Buttons"
+			 xmlns:scheduler="clr-namespace:Syncfusion.Maui.Scheduler;assembly=Syncfusion.Maui.Scheduler"
+			 x:Class="SchedulerAISample.MainPage">
+
+	<Grid>
+		<ScrollView>
+			<VerticalStackLayout MaximumWidthRequest="900"
+								 HorizontalOptions="Center"
+								 Padding="{OnIdiom
+                    Default='24,28,24,24',
+                    Phone='12,14,12,20'}"
+								 Spacing="14">
+
+				<!-- INPUT CARD -->
+				<Border BackgroundColor="{StaticResource CardBackground}"
+						Stroke="{StaticResource BorderColor}"
+						StrokeThickness="1"
+                        Padding="{OnIdiom Default='22', Phone='16'}">
+
+					<Border.StrokeShape>
+						<RoundRectangle CornerRadius="14" />
+					</Border.StrokeShape>
+
+					<VerticalStackLayout Spacing="14">
+
+						<core:SfTextInputLayout ContainerType="Filled"
+												ContainerBackground="{StaticResource InputBackground}"
+												ShowHint="False"
+												OutlineCornerRadius="9"
+												HeightRequest="{OnIdiom Default='120', Phone='160'}">
+
+							<Editor Text="{Binding UserInput}"
+									HeightRequest="{OnIdiom Default='100', Phone='140'}"
+									Placeholder="Example: Organize a company event next month."
+									FontSize="14"
+									BackgroundColor="Transparent"
+									AutoSize="Disabled" />
+
+						</core:SfTextInputLayout>
+
+						<Grid Margin="0"
+							  ColumnDefinitions="{OnIdiom Default='*,Auto', Phone='*'}"
+							  RowDefinitions="{OnIdiom Default='*', Phone='Auto,*'}">
+
+							<HorizontalStackLayout Spacing="7"
+												   Margin="0,-14,0,0">
+								<Label Text="ⓘ"
+									   FontSize="16"
+									   TextColor="#0878D1"
+									   VerticalOptions="Center" />
+
+								<Label Text="Describe your objective to generate a structured, AI-powered task timeline."
+									   TextColor="{StaticResource SecondaryText}"
+									   FontSize="14"
+									   VerticalOptions="Center" />
+							</HorizontalStackLayout>
+
+							<!-- GENERATE BUTTON         -->
+							<buttons:SfButton Text="Generate Timeline"
+											  Grid.Column="{OnIdiom Default='1', Phone='0'}"
+											  Grid.Row="{OnIdiom Default='0', Phone='1'}"
+											  Command="{Binding GenerateTimelineCommand}"
+											  Margin="{OnIdiom Default='0,-12,0,0', Phone='0,16,0,0'}"
+											  WidthRequest="180"
+											  Background="#0878D1"
+											  HorizontalOptions="Center"
+											  TextColor="White"
+											  FontAttributes="Bold"
+											  FontSize="16"
+											  HeightRequest="48"
+											  CornerRadius="9" />
+						</Grid>
+					</VerticalStackLayout>
+				</Border>
+
+				<Grid IsVisible="{Binding IsBusy}">
+					<core:SfBusyIndicator IsRunning="{Binding IsBusy}"
+										  HeightRequest="100"
+										  WidthRequest="100"
+										  AnimationType="CircularMaterial"
+										  HorizontalOptions="Center"
+										  VerticalOptions="Start" />
+				</Grid>
+
+				<!-- REVIEW CARD -->
+				<Border IsVisible="{Binding IsReviewVisible}"
+						BackgroundColor="White"
+						Stroke="{StaticResource BorderColor}"
+						StrokeThickness="1"
+						Margin="{OnIdiom Default='4', Phone='2'}"
+						Padding="{OnIdiom Default='18', Phone='6'}">
+
+					<Border.StrokeShape>
+						<RoundRectangle CornerRadius="14" />
+					</Border.StrokeShape>
+
+					<VerticalStackLayout Spacing="14">
+
+						<Grid ColumnDefinitions="*,Auto"
+							  RowDefinitions="Auto,Auto"
+							  ColumnSpacing="12">
+
+							<VerticalStackLayout Spacing="4">
+								<Label Text="Review AI Timeline"
+									   FontSize="17"
+									   TextColor="{StaticResource PrimaryText}" />
+
+								<Label Text="Edit, add, or remove tasks. The schedule only updates after you tap Apply."
+									   FontSize="13"
+									   TextColor="{StaticResource SecondaryText}" />
+							</VerticalStackLayout>
+
+							<buttons:SfButton Text="{OnIdiom Default='Apply Scheduler', Phone='Apply'}"
+											  Grid.Column="1"
+											  Command="{Binding ApplyScheduleCommand}"
+											  WidthRequest="{OnIdiom Default='180', Phone='120'}"
+											  Background="#0878D1"
+											  HorizontalOptions="Center"
+											  TextColor="White"
+											  FontAttributes="Bold"
+											  FontSize="16"
+											  HeightRequest="48"
+											  CornerRadius="9" />
+						</Grid>
+
+						<Border StrokeThickness="1"
+								Padding="14">
+
+							<Border.StrokeShape>
+								<RoundRectangle CornerRadius="12" />
+							</Border.StrokeShape>
+
+							<Grid ColumnDefinitions="*,Auto"
+								  ColumnSpacing="12">
+
+								<VerticalStackLayout Spacing="8">
+									<Label Text="Plan title"
+										   FontSize="13"
+										   TextColor="{StaticResource SecondaryText}" />
+
+									<core:SfTextInputLayout ContainerType="Filled"
+															ContainerBackground="{StaticResource InputBackground}"
+															ShowHint="False"
+															OutlineCornerRadius="8"
+															VerticalOptions="Center"
+															HeightRequest="{OnIdiom Default='56', Phone='80'}">
+										<Editor Text="{Binding PlanTitle, Mode=TwoWay}"
+												BackgroundColor="Transparent"
+												FontSize="14"
+												AutoSize="Disabled"
+												HeightRequest="{OnIdiom Default='40', Phone='60'}"
+												Placeholder="Plan title" />
+									</core:SfTextInputLayout>
+								</VerticalStackLayout>
+
+								<Border BackgroundColor="#0878D1"
+										Grid.Column="1"
+										Stroke="#0878D1"
+										StrokeThickness="1"
+										StrokeShape="RoundRectangle 9"
+										HeightRequest="38"
+										Margin="0,8,0,0"
+										Padding="0">
+									<buttons:SfButton Text="＋  Add Task"
+													  Command="{Binding AddTaskCommand}"
+													  WidthRequest="{OnIdiom Default='140', Phone='100'}"
+													  Background="#0878D1"
+													  HorizontalOptions="Center"
+													  TextColor="White"
+													  FontAttributes="Bold"
+													  FontSize="14"
+													  HeightRequest="38"
+													  ShowIcon="False" />
+								</Border>
+							</Grid>
+						</Border>
+
+						<VerticalStackLayout BindableLayout.ItemsSource="{Binding PendingTasks}"
+											 Spacing="10">
+
+							<BindableLayout.ItemTemplate>
+								<DataTemplate>
+									<Border StrokeThickness="1"
+											Padding="14">
+
+										<Border.StrokeShape>
+											<RoundRectangle CornerRadius="12" />
+										</Border.StrokeShape>
+
+										<VerticalStackLayout Spacing="10">
+											<Grid ColumnDefinitions="*,Auto">
+												<Label Text="Task"
+													   FontSize="12"
+													   TextColor="{StaticResource SecondaryText}" />
+
+												<Border Grid.Column="1"
+														BackgroundColor="#0878D1"
+														Stroke="#0878D1"
+														StrokeThickness="1"
+														StrokeShape="RoundRectangle 9"
+														HeightRequest="38"
+														Padding="0">
+													<buttons:SfButton Text="✕  Remove"
+																	  Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.RemoveTaskCommand}"
+																	  CommandParameter="{Binding .}"
+																	  WidthRequest="{OnIdiom Default='140', Phone='100'}"
+																	  Background="#0878D1"
+																	  HorizontalOptions="Center"
+																	  TextColor="White"
+																	  FontAttributes="Bold"
+																	  FontSize="14"
+																	  HeightRequest="38"
+																	  ShowIcon="False" />
+												</Border>
+											</Grid>
+
+											<core:SfTextInputLayout ContainerType="Filled"
+																	ContainerBackground="{StaticResource InputBackground}"
+																	ShowHint="False"
+																	OutlineCornerRadius="8"
+																	VerticalOptions="Center"
+																	HeightRequest="{OnIdiom Default='56', Phone='80'}">
+												<Editor Text="{Binding TaskName, Mode=TwoWay}"
+														BackgroundColor="Transparent"
+														FontSize="14"
+														AutoSize="Disabled"
+														HeightRequest="{OnIdiom Default='40', Phone='60'}"
+														Placeholder="Task title" />
+											</core:SfTextInputLayout>
+
+											<Grid ColumnDefinitions="*,*"
+												  ColumnSpacing="10">
+												<core:SfTextInputLayout ContainerType="Filled"
+																		ContainerBackground="{StaticResource InputBackground}"
+																		ShowHint="True"
+																		Hint="Start date"
+																		OutlineCornerRadius="8">
+													<DatePicker Date="{Binding StartDate, Mode=TwoWay}"
+																Format="ddd, MMM d, yyyy"
+																TextColor="#0F172A" />
+												</core:SfTextInputLayout>
+
+												<core:SfTextInputLayout Grid.Column="1"
+																		ContainerType="Filled"
+																		ContainerBackground="{StaticResource InputBackground}"
+																		ShowHint="True"
+																		Hint="End date"
+																		OutlineCornerRadius="8">
+													<DatePicker Date="{Binding EndDate, Mode=TwoWay}"
+																MinimumDate="{Binding StartDate, Mode=OneWay}"
+																Format="ddd, MMM d, yyyy"
+																TextColor="#0F172A" />
+												</core:SfTextInputLayout>
+											</Grid>
+
+											<core:SfTextInputLayout ContainerType="Filled"
+																	ContainerBackground="{StaticResource InputBackground}"
+																	OutlineCornerRadius="8"
+																	HeightRequest="{OnIdiom Default='120', Phone='160'}">
+												<Editor Text="{Binding Description, Mode=TwoWay}"
+														HeightRequest="{OnIdiom Default='80', Phone='140'}"
+														AutoSize="Disabled"
+														FontSize="13"
+														BackgroundColor="Transparent"
+														Placeholder="Describe this task" />
+											</core:SfTextInputLayout>
+										</VerticalStackLayout>
+									</Border>
+								</DataTemplate>
+							</BindableLayout.ItemTemplate>
+						</VerticalStackLayout>
+					</VerticalStackLayout>
+				</Border>
+
+				<!-- SCHEDULER CARD -->
+				<Border IsVisible="{Binding ShowScheduler}"
+						BackgroundColor="White"
+						Stroke="{StaticResource BorderColor}"
+						StrokeThickness="1"
+						Margin="{OnIdiom Default='4', Phone='2'}"
+						Padding="{OnIdiom Default='18', Phone='6'}">
+
+					<Border.StrokeShape>
+						<RoundRectangle CornerRadius="14" />
+					</Border.StrokeShape>
+
+					<VerticalStackLayout Spacing="14">
+						<Grid ColumnDefinitions="*,Auto"
+							  ColumnSpacing="8">
+
+							<Label Text="{Binding PlanTitle}"
+								   FontSize="17"
+								   TextColor="{StaticResource PrimaryText}" />
+
+							<Border Grid.Column="3"
+									BackgroundColor="#EAF4FF"
+									StrokeThickness="0"
+									HeightRequest="24"
+									Padding="9,4"
+									VerticalOptions="Center">
+								<Border.StrokeShape>
+									<RoundRectangle CornerRadius="11" />
+								</Border.StrokeShape>
+
+								<Label Text="✦ AI Generated"
+									   FontSize="10"
+									   TextColor="#0878D1" />
+							</Border>
+
+						</Grid>
+
+						<!-- Main control -->
+						<scheduler:SfScheduler x:Name="ProjectScheduler"
+											   DisplayDate="{Binding DisplayDate}"
+											   AppointmentsSource="{Binding Appointments}"
+											   HeightRequest="540"
+											   View="Month">
+							<scheduler:SfScheduler.MonthView>
+								<scheduler:SchedulerMonthView ShowLeadingAndTrailingDates="True"
+															  ShowAppointmentsInline="True"
+															  AppointmentDisplayMode="Text" />
+							</scheduler:SfScheduler.MonthView>
+						</scheduler:SfScheduler>
+					</VerticalStackLayout>
+				</Border>
+			</VerticalStackLayout>
+		</ScrollView>
+	</Grid>
+</ContentPage>

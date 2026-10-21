@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:rte="clr-namespace:Syncfusion.Maui.RichTextEditor;assembly=Syncfusion.Maui.RichTextEditor"
+             xmlns:viewModels="clr-namespace:SmartRTEFormatter"
+             x:DataType="viewModels:MainPageViewModel"
+             x:Class="SmartRTEFormatter.MainPage">
+
+    <ScrollView Orientation="Vertical">
+        <Grid RowDefinitions="Auto,Auto,*" Padding="24" RowSpacing="10">
+            <VerticalStackLayout Spacing="4">
+                <Label Text="AI Powered RichTextEditor" FontSize="22" FontAttributes="Bold" HorizontalOptions="Start" />
+            </VerticalStackLayout>
+
+
+            <HorizontalStackLayout Grid.Row="1" Spacing="8" HorizontalOptions="End">
+                <Button
+                Text="Format text"
+                Command="{Binding FormatCommand}"
+                CommandParameter="{Binding Source={x:Reference RichTextEditor}, Path=Text}"
+                IsVisible="{Binding IsFormatButtonVisible}"
+                IsEnabled="{Binding IsFormatButtonVisible}"
+                SemanticProperties.Hint="Formats the entered text with Azure OpenAI." />
+                <ActivityIndicator
+                       IsVisible="{Binding IsFormatting}"
+                       IsRunning="{Binding IsFormatting}"
+                       InputTransparent="True"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center" />
+            </HorizontalStackLayout>
+
+            <VerticalStackLayout Grid.Row="2" Spacing="8">
+                <Label Text="{Binding ErrorMessage}"
+                       TextColor="Red"
+                       IsVisible="{Binding HasError}"
+                       SemanticProperties.Description="{Binding ErrorMessage}" />
+
+                <rte:SfRichTextEditor x:Name="RichTextEditor"
+                                  ShowToolbar="True"
+                                  HeightRequest="400"
+                                  HtmlText="{Binding FormattedHtml}"
+                                  Placeholder="Paste or enter unformatted text here. Click 'Format text' to transform it into structured content." />
+            </VerticalStackLayout>
+
+        </Grid>
+    </ScrollView>
+</ContentPage>

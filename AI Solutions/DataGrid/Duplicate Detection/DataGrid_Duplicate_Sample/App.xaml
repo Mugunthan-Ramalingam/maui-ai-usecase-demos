@@ -1,0 +1,60 @@
+<?xml version = "1.0" encoding = "UTF-8" ?>
+<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:DataGrid_Duplicate_Sample"
+             xmlns:syncfusion="clr-namespace:Syncfusion.Maui.DataGrid;assembly=Syncfusion.Maui.DataGrid"
+             x:Class="DataGrid_Duplicate_Sample.App">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
+                <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Converters used by the duplicate-detection UI -->
+            <local:RowHighlightConverter          x:Key="RowHighlightColor" />
+            <local:InverseBoolConverter            x:Key="Not" />
+            <local:StatusPillColorConverter        x:Key="StatusPillColor" />
+            <local:StatusPillTextColorConverter    x:Key="StatusPillTextColor" />
+
+            <!--
+                Per-row background tinting driven by Customer.RowHighlight.
+                IMPORTANT: SfDataGrid does NOT have a "RowStyle" property. The
+                correct pattern is an *implicit* style (no x:Key) targeting
+                DataGridRow. The grid applies it to every record row
+                automatically, and each row's BindingContext is the underlying
+                Customer — so we can bind Background directly.
+                Background is a Brush (not a Color) on these controls, hence
+                the SolidColorBrush returned by RowHighlightConverter.
+            -->
+            <Style TargetType="syncfusion:DataGridRow">
+                <Setter Property="Background"
+                        Value="{Binding RowHighlight, Converter={StaticResource RowHighlightColor}}" />
+            </Style>
+
+            <!--
+                Fallback: also tint the cells so columns painted by the cell
+                style (e.g. the Status template column) don't show a white
+                background through the row tint. Implicit style auto-applies.
+            -->
+            <Style TargetType="syncfusion:DataGridCell">
+                <Setter Property="Background"
+                        Value="{Binding RowHighlight, Converter={StaticResource RowHighlightColor}}" />
+            </Style>
+
+            <!--
+                Bold header row. SfDataGrid does not have a "HeaderStyle"
+                property — header cells are styled by targeting
+                DataGridHeaderCell implicitly. Bold + slightly darker text
+                makes the column names pop on a white background.
+            -->
+            <Style TargetType="syncfusion:DataGridHeaderCell">
+                <Setter Property="FontAttributes" Value="Bold" />
+                <Setter Property="FontSize"       Value="13" />
+                <Setter Property="TextColor"      Value="#0F172A" />
+                <Setter Property="Background"     Value="{AppThemeBinding Light=White, Dark=#0F172A}" />
+            </Style>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
+
